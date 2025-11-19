@@ -1,0 +1,397 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
+
+:root {
+  /* Light theme - TEI Admin Panel */
+  --background: #f8fafc;
+  --foreground: #1e293b;
+  --card: #ffffff;
+  --card-foreground: #1e293b;
+  --popover: #ffffff;
+  --popover-foreground: #1e293b;
+  --primary: #0ea5e9;
+  --primary-foreground: #ffffff;
+  --secondary: #f1f5f9;
+  --secondary-foreground: #475569;
+  --muted: #f1f5f9;
+  --muted-foreground: #64748b;
+  --accent: #06b6d4;
+  --accent-foreground: #ffffff;
+  --destructive: #ef4444;
+  --destructive-foreground: #ffffff;
+  --border: #e2e8f0;
+  --input: #ffffff;
+  --ring: #0ea5e9;
+  --chart-1: #0ea5e9;
+  --chart-2: #06b6d4;
+  --chart-3: #10b981;
+  --chart-4: #f59e0b;
+  --chart-5: #8b5cf6;
+  --radius: 0.625rem;
+  --sidebar: #ffffff;
+  --sidebar-foreground: #475569;
+  --sidebar-primary: #0ea5e9;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #f1f5f9;
+  --sidebar-accent-foreground: #0ea5e9;
+  --sidebar-border: #e2e8f0;
+  --sidebar-ring: #0ea5e9;
+
+  /* TEI Admin Panel - Light theme colors */
+  --tei-light-bg: #f8fafc;
+  --tei-light-card: #ffffff;
+  --tei-light-border: #e2e8f0;
+  --tei-light-text: #1e293b;
+  --tei-light-text-muted: #64748b;
+  --tei-electric-blue: #0ea5e9;
+  --tei-teal: #06b6d4;
+  --tei-lime: #10b981;
+  --tei-magenta: #ec4899;
+  --tei-purple: #8b5cf6;
+  --tei-orange: #f59e0b;
+}
+
+.dark {
+  /* Dark theme - TEI Admin Panel */
+  --background: #0f1419;
+  --foreground: #e8eef7;
+  --card: #1a1f2e;
+  --card-foreground: #e8eef7;
+  --popover: #1a1f2e;
+  --popover-foreground: #e8eef7;
+  --primary: #00d9ff;
+  --primary-foreground: #0f1419;
+  --secondary: #1a1f2e;
+  --secondary-foreground: #e8eef7;
+  --muted: #2a3142;
+  --muted-foreground: #8b92a9;
+  --accent: #00f5d4;
+  --accent-foreground: #0f1419;
+  --destructive: #ff006e;
+  --destructive-foreground: #fff;
+  --border: #2a3142;
+  --input: #1a1f2e;
+  --ring: #00d9ff;
+  --chart-1: #00d9ff;
+  --chart-2: #00f5d4;
+  --chart-3: #39ff14;
+  --chart-4: #ff006e;
+  --chart-5: #8b5cf6;
+  --sidebar: #0f1419;
+  --sidebar-foreground: #e8eef7;
+  --sidebar-primary: #00d9ff;
+  --sidebar-primary-foreground: #0f1419;
+  --sidebar-accent: #00f5d4;
+  --sidebar-accent-foreground: #0f1419;
+  --sidebar-border: #2a3142;
+  --sidebar-ring: #00d9ff;
+
+  /* TEI Admin Panel - Dark theme colors */
+  --tei-dark-bg: #0f1419;
+  --tei-dark-card: #1a1f2e;
+  --tei-dark-border: #2a3142;
+  --tei-dark-text: #e8eef7;
+  --tei-dark-text-muted: #8b92a9;
+  --tei-electric-blue: #00d9ff;
+  --tei-teal: #00f5d4;
+  --tei-lime: #39ff14;
+  --tei-magenta: #ff006e;
+  --tei-purple: #8b5cf6;
+  --tei-orange: #f59e0b;
+}
+
+@theme inline {
+  --font-sans: "Geist", "Geist Fallback";
+  --font-mono: "Geist Mono", "Geist Mono Fallback";
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+}
+
+/* Glassmorphism and neumorphism effects */
+.glass {
+  @apply backdrop-blur-md bg-white/10 border border-white/20;
+}
+
+.glass-dark {
+  @apply backdrop-blur-md bg-black/30 border border-white/10;
+}
+
+.glow-electric {
+  @apply shadow-lg shadow-cyan-500/50;
+}
+
+.glow-teal {
+  @apply shadow-lg shadow-teal-400/50;
+}
+
+.glow-lime {
+  @apply shadow-lg shadow-lime-400/50;
+}
+
+/* Theme-aware utility classes */
+@layer utilities {
+  .theme-bg {
+    background-color: var(--background);
+  }
+
+  .theme-text {
+    color: var(--foreground);
+  }
+
+  .theme-card {
+    background-color: var(--card);
+    border: 1px solid var(--border);
+  }
+
+  .theme-card-text {
+    color: var(--card-foreground);
+  }
+
+  .theme-muted {
+    color: var(--muted-foreground);
+  }
+
+  .theme-primary {
+    color: var(--primary);
+  }
+
+  .theme-accent {
+    color: var(--accent);
+  }
+}
+
+/* Light theme specific styles */
+.light .glass {
+  @apply backdrop-blur-md bg-white/20 border border-gray-200/30;
+}
+
+.light .glow-electric {
+  @apply shadow-lg shadow-blue-500/30;
+}
+
+.light .glow-teal {
+  @apply shadow-lg shadow-cyan-400/30;
+}
+
+.light .glow-lime {
+  @apply shadow-lg shadow-green-400/30;
+}
+
+/* Dark theme specific styles */
+.dark .glass {
+  @apply backdrop-blur-md bg-black/30 border border-white/10;
+}
+
+.dark .glow-electric {
+  @apply shadow-lg shadow-cyan-500/50;
+}
+
+.dark .glow-teal {
+  @apply shadow-lg shadow-teal-400/50;
+}
+
+.dark .glow-lime {
+  @apply shadow-lg shadow-lime-400/50;
+}
+
+/* Tiptap Rich Text Editor Theme Styling */
+.ProseMirror {
+  color: var(--foreground);
+  font-family: inherit;
+  font-size: 16px;
+  min-height: 200px;
+  padding: 16px;
+  outline: none;
+  word-wrap: break-word;
+}
+
+.ProseMirror:focus {
+  outline: none;
+}
+
+.ProseMirror p.is-editor-empty:first-child::before {
+  color: var(--muted-foreground);
+  content: attr(data-placeholder);
+  float: left;
+  height: 0;
+  pointer-events: none;
+}
+
+.ProseMirror p {
+  margin: 0.5rem 0;
+  line-height: 1.6;
+}
+
+.ProseMirror h1 {
+  font-size: 2em;
+  font-weight: bold;
+  margin: 0.5em 0;
+  line-height: 1.2;
+}
+
+.ProseMirror h2 {
+  font-size: 1.5em;
+  font-weight: bold;
+  margin: 0.5em 0;
+  line-height: 1.3;
+}
+
+.ProseMirror h3 {
+  font-size: 1.25em;
+  font-weight: bold;
+  margin: 0.5em 0;
+  line-height: 1.4;
+}
+
+.ProseMirror ul,
+.ProseMirror ol {
+  padding-left: 1.5rem;
+  margin: 0.5rem 0;
+  list-style-position: outside;
+}
+
+.ProseMirror ul {
+  list-style-type: disc;
+  list-style: disc outside;
+}
+
+.ProseMirror ol {
+  list-style-type: decimal;
+  list-style: decimal outside;
+}
+
+.ProseMirror li {
+  margin: 0.25rem 0;
+  line-height: 1.6;
+  display: list-item;
+  padding-left: 0.25rem;
+}
+
+.ProseMirror li p {
+  margin: 0;
+  display: inline;
+}
+
+.ProseMirror li::marker {
+  color: var(--foreground);
+}
+
+.ProseMirror strong {
+  font-weight: bold;
+}
+
+.ProseMirror em {
+  font-style: italic;
+}
+
+.ProseMirror ul[data-type="taskList"] {
+  list-style: none;
+  padding: 0;
+}
+
+.ProseMirror ul[data-type="taskList"] li {
+  display: flex;
+  align-items: flex-start;
+}
+
+.ProseMirror ul[data-type="taskList"] li > label {
+  flex: 0 0 auto;
+  margin-right: 0.5rem;
+  user-select: none;
+}
+
+.ProseMirror ul[data-type="taskList"] li > div {
+  flex: 1 1 auto;
+}
+
+/* Course Registration Form Animations */
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slide-up {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-in {
+  animation: fade-in 0.4s ease-out;
+}
+
+.animate-slide-up {
+  animation: slide-up 0.4s ease-out;
+}
+
+/* Smooth infinite scrolling animation for course carousel */
+@keyframes scroll {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
+.course-carousel {
+  animation-play-state: running;
+}
+
+.group:hover .course-carousel {
+  animation-play-state: paused;
+}

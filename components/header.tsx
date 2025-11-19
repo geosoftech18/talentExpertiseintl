@@ -1,0 +1,495 @@
+'use client'
+
+import { useState, useEffect } from 'react'
+import Link from 'next/link'
+import { useSession, signOut } from 'next-auth/react'
+import { Button } from '@/components/ui/button'
+import {
+  Menu,
+  X,
+  ChevronDown,
+  Search,
+  Phone,
+  Mail,
+  Globe,
+  BookOpen,
+  Calendar,
+  Award,
+  Building,
+  FileText,
+  Users,
+  GraduationCap,
+  BarChart3,
+  Briefcase,
+  Settings,
+  Shield,
+  Zap,
+  Target,
+  DollarSign,
+  MessageSquare,
+  Building2,
+  Code,
+  Wrench,
+  Lightbulb,
+  HeadphonesIcon,
+  ChevronRight,
+  LogIn,
+  User,
+  LogOut,
+} from 'lucide-react'
+import { Badge } from '@/components/ui/badge'
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
+import Image from 'next/image'
+// AuthModal removed - using full page auth instead
+
+// Categories from courses data - dynamically imported or matched from courses
+const courseCategories = [
+  'Project Management',
+  'Management & Leadership',
+  'Marketing',
+  'Finance & Accounting',
+  'Risk Management',
+  'Information Technology',
+  'Purchasing Management',
+  'Business & Management',
+  'Procurement & Supply Chain',
+  'Engineering & Technical',
+  'HSE & Security',
+  'Human Resources',
+  'Quality Management',
+  'Sales & Customer Service',
+  'Operations Management',
+  'Strategy & Planning',
+]
+
+export default function Header() {
+  const { data: session } = useSession()
+  const [isScrolled, setIsScrolled] = useState(false)
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
+  const [openDropdown, setOpenDropdown] = useState<string | null>(null)
+  // Auth modal removed - using full page auth at /auth
+
+  useEffect(() => {
+    const handleScroll = () => {
+      setIsScrolled(window.scrollY > 20)
+    }
+    window.addEventListener('scroll', handleScroll)
+    return () => window.removeEventListener('scroll', handleScroll)
+  }, [])
+
+  const handleLogout = async () => {
+    await signOut({ redirect: true, callbackUrl: '/' })
+  }
+
+  const getInitials = () => {
+    if (session?.user?.name) {
+      const names = session.user.name.split(' ')
+      return `${names[0]?.charAt(0) || ''}${names[1]?.charAt(0) || ''}`.toUpperCase()
+    }
+    if (session?.user?.email) {
+      return session.user.email.charAt(0).toUpperCase()
+    }
+    return 'U'
+  }
+
+  return (
+    <>
+      {/* Top Bar */}
+      <div className="bg-gradient-to-r from-slate-900 to-slate-800 text-white text-sm py-2 border-b border-slate-700">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-6">
+              <div className="flex items-center gap-2">
+                <Phone className="w-4 h-4" />
+                <span>+971 (04) 425 0700</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <Mail className="w-4 h-4" />
+                <span>info@teitraining.com</span>
+              </div>
+            </div>
+            <div className="hidden md:flex items-center gap-4">
+            
+              <Link
+                href="/about"
+                className="px-4 py-2  hover:text-blue-600 font-medium transition-colors rounded-lg "
+              >
+                About
+              </Link>
+              <span className="text-slate-500">|</span>
+
+              <Link
+                href="/contact"
+                className="px-4 py-2  hover:text-blue-600 font-medium transition-colors rounded-lg "
+              >
+                Contact Us
+              </Link>
+              <span className="text-slate-500">|</span>
+              <Link href="/courses" className="hover:text-blue-400 transition-colors">
+                Course Finder
+              </Link>
+              {/* <span className="text-slate-500">|</span>
+              <div className="flex items-center gap-2">
+                <Globe className="w-4 h-4" />
+                <span>العربية</span>
+              </div> */}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Main Header */}
+      <header
+        className={`sticky top-0 z-50 transition-all duration-300 ${
+          isScrolled
+            ? 'bg-white/95 backdrop-blur-md shadow-lg border-b border-slate-200'
+            : 'bg-white border-b border-slate-200'
+        }`}
+      >
+        <div className="max-w-8xl mx-auto px-4 sm:px-6 lg:px-20">
+          <div className="flex items-center justify-between h-20">
+            {/* Logo */}
+            <Link href="/" className="flex items-center gap-2 group">
+              {/* <div className="bg-gradient-to-r from-blue-600 to-purple-600 p-2 rounded-lg group-hover:scale-110 transition-transform">
+                <GraduationCap className="w-6 h-6 text-white" />
+              </div>
+              <div>
+                <div className="text-xl font-bold text-slate-900">TEI Training</div>
+                <div className="text-xs text-slate-600">Talent Expertise International</div>
+              </div> */}
+              <Image src="/talent-logo.png" alt="TEI Training" width={250} height={200} />
+            
+            </Link>
+
+            {/* Desktop Navigation */}
+            <nav className="hidden lg:flex items-center gap-1">
+              <Link
+                href="/"
+                className="px-4 py-2 text-slate-700 hover:text-blue-600 font-medium transition-colors rounded-lg hover:bg-blue-50"
+              >
+                Home
+              </Link>
+
+              {/* Training Subjects Dropdown */}
+              <div
+                className="relative"
+                onMouseEnter={() => setOpenDropdown('subjects')}
+                onMouseLeave={() => setOpenDropdown(null)}
+              >
+                <button className="flex items-center gap-1 px-4 py-2 text-slate-700 hover:text-blue-600 font-medium transition-colors rounded-lg hover:bg-blue-50">
+                  Training Subjects
+                  <ChevronDown className="w-4 h-4" />
+                </button>
+                {openDropdown === 'subjects' && (
+                  <div className="absolute top-full left-0 mt-2 w-[600px] bg-white rounded-xl shadow-2xl border border-slate-200 p-4 animate-slide-down">
+                    <div className="grid grid-cols-2 gap-2">
+                      {courseCategories.map((category, index) => (
+                        <Link
+                          key={index}
+                          href={`/courses?category=${encodeURIComponent(category)}`}
+                          className="block px-4 py-3 text-slate-700 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors group"
+                          onClick={() => setOpenDropdown(null)}
+                        >
+                          <div className="flex items-center justify-between">
+                            <span className="font-medium group-hover:text-blue-600 text-sm">{category}</span>
+                            <ChevronRight className="w-4 h-4 opacity-0 group-hover:opacity-100 transition-opacity" />
+                          </div>
+                        </Link>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              <Link
+                href="/calendar"
+                className="flex items-center gap-1 px-4 py-2 text-slate-700 hover:text-blue-600 font-medium transition-colors rounded-lg hover:bg-blue-50"
+              >
+                <Calendar className="w-4 h-4" />
+                Calendar
+              </Link>
+
+              <Link
+                href="/certificates"
+                className="flex items-center gap-1 px-4 py-2 text-slate-700 hover:text-blue-600 font-medium transition-colors rounded-lg hover:bg-blue-50"
+              >
+                <Award className="w-4 h-4" />
+                Certificates
+              </Link>
+
+              <Link
+                href="/venues"
+                className="px-4 py-2 text-slate-700 hover:text-blue-600 font-medium transition-colors rounded-lg hover:bg-blue-50"
+              >
+                Venues
+              </Link>
+
+              {/* <div
+                className="relative"
+                onMouseEnter={() => setOpenDropdown('resources')}
+                onMouseLeave={() => setOpenDropdown(null)}
+              >
+                <button className="flex items-center gap-1 px-4 py-2 text-slate-700 hover:text-blue-600 font-medium transition-colors rounded-lg hover:bg-blue-50">
+                  Resources
+                  <ChevronDown className="w-4 h-4" />
+                </button>
+                {openDropdown === 'resources' && (
+                  <div className="absolute top-full right-0 mt-2 w-64 bg-white rounded-xl shadow-2xl border border-slate-200 p-4 animate-slide-down">
+                    <Link
+                      href="/resources/articles"
+                      className="flex items-center gap-3 p-3 rounded-lg hover:bg-blue-50 transition-colors group"
+                    >
+                      <FileText className="w-5 h-5 text-blue-600" />
+                      <span className="group-hover:text-blue-600">Articles</span>
+                    </Link>
+                    <Link
+                      href="/resources/testimonials"
+                      className="flex items-center gap-3 p-3 rounded-lg hover:bg-blue-50 transition-colors group"
+                    >
+                      <MessageSquare className="w-5 h-5 text-blue-600" />
+                      <span className="group-hover:text-blue-600">Testimonials</span>
+                    </Link>
+                    <Link
+                      href="/resources/videos"
+                      className="flex items-center gap-3 p-3 rounded-lg hover:bg-blue-50 transition-colors group"
+                    >
+                      <Users className="w-5 h-5 text-blue-600" />
+                      <span className="group-hover:text-blue-600">Videos</span>
+                    </Link>
+                  </div>
+                )}
+              </div> */}
+
+              
+            </nav>
+
+            {/* Login and CTA */}
+            <div className="flex items-center gap-4">
+              {session ? (
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      className="hidden md:flex items-center gap-2 hover:bg-blue-50 transition-all duration-300"
+                    >
+                      <Avatar className="w-8 h-8 border-2 border-blue-600">
+                        <AvatarImage src={session.user?.image || ''} alt={session.user?.name || 'User'} />
+                        <AvatarFallback className="bg-blue-600 text-white text-sm font-semibold">
+                          {getInitials()}
+                        </AvatarFallback>
+                      </Avatar>
+                      <span className="font-medium text-slate-700">{session.user?.name || 'User'}</span>
+                      <ChevronDown className="w-4 h-4 text-slate-600" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-56">
+                    <DropdownMenuLabel>
+                      <div className="flex flex-col space-y-1">
+                        <p className="text-sm font-medium leading-none">{session.user?.name}</p>
+                        <p className="text-xs leading-none text-muted-foreground">{session.user?.email}</p>
+                      </div>
+                    </DropdownMenuLabel>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem asChild>
+                      <Link href="/profile" className="cursor-pointer">
+                        <User className="mr-2 h-4 w-4" />
+                        <span>Profile</span>
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                      <Link href="/courses" className="cursor-pointer">
+                        <BookOpen className="mr-2 h-4 w-4" />
+                        <span>My Courses</span>
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                      <Link href="/certificates" className="cursor-pointer">
+                        <Award className="mr-2 h-4 w-4" />
+                        <span>Certificates</span>
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem onClick={handleLogout} className="cursor-pointer text-red-600">
+                      <LogOut className="mr-2 h-4 w-4" />
+                      <span>Log out</span>
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              ) : (
+                <Button
+                  variant="outline"
+                  className="hidden md:flex items-center gap-2 border-2 border-blue-600 text-blue-600 hover:bg-blue-50 hover:text-blue-600 font-semibold transition-all duration-300 hover:scale-105"
+                  asChild
+                >
+                  <Link href="/auth">
+                    <LogIn className="w-4 h-4" />
+                    Login
+                  </Link>
+                </Button>
+              )}
+              <Button
+                asChild
+                className="hidden sm:flex bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white"
+              >
+                <Link href="/courses">
+                  Course Finder
+                </Link>
+              </Button>
+
+              {/* Mobile Menu Button */}
+              <Button
+                variant="ghost"
+                size="icon"
+                className="lg:hidden"
+                onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+              >
+                {isMobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+              </Button>
+            </div>
+          </div>
+        </div>
+
+        {/* Mobile Menu */}
+        {isMobileMenuOpen && (
+          <div className="lg:hidden border-t border-slate-200 bg-white animate-slide-down">
+            <div className="px-4 py-4 space-y-2 max-h-[calc(100vh-5rem)] overflow-y-auto">
+              <Link
+                href="/"
+                className="block px-4 py-2 rounded-lg hover:bg-blue-50 text-slate-700 font-medium"
+                onClick={() => setIsMobileMenuOpen(false)}
+              >
+                Home
+              </Link>
+              <div className="space-y-1">
+                <div className="px-4 py-2 text-sm font-semibold text-slate-500">Training Subjects</div>
+                {courseCategories.map((category, index) => (
+                  <Link
+                    key={index}
+                    href={`/courses?category=${encodeURIComponent(category)}`}
+                    className="block px-4 py-2 rounded-lg hover:bg-blue-50 text-slate-700 font-medium ml-4"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                  >
+                    {category}
+                  </Link>
+                ))}
+              </div>
+              <Link
+                href="/calendar"
+                className="block px-4 py-2 rounded-lg hover:bg-blue-50 text-slate-700 font-medium"
+                onClick={() => setIsMobileMenuOpen(false)}
+              >
+                Calendar
+              </Link>
+              <Link
+                href="/certificates"
+                className="block px-4 py-2 rounded-lg hover:bg-blue-50 text-slate-700 font-medium"
+                onClick={() => setIsMobileMenuOpen(false)}
+              >
+                Certificates
+              </Link>
+              <Link
+                href="/venues"
+                className="block px-4 py-2 rounded-lg hover:bg-blue-50 text-slate-700 font-medium"
+                onClick={() => setIsMobileMenuOpen(false)}
+              >
+                Venues
+              </Link>
+              <Link
+                href="/about"
+                className="block px-4 py-2 rounded-lg hover:bg-blue-50 text-slate-700 font-medium"
+                onClick={() => setIsMobileMenuOpen(false)}
+              >
+                About
+              </Link>
+              <Link
+                href="/contact"
+                className="block px-4 py-2 rounded-lg hover:bg-blue-50 text-slate-700 font-medium"
+                onClick={() => setIsMobileMenuOpen(false)}
+              >
+                Contact
+              </Link>
+              <Button
+                asChild
+                className="w-full mt-4 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white"
+              >
+                <Link href="/courses" onClick={() => setIsMobileMenuOpen(false)}>
+                  Course Finder
+                </Link>
+              </Button>
+              {session ? (
+                <>
+                  <Link
+                    href="/profile"
+                    className="block px-4 py-2 rounded-lg hover:bg-blue-50 text-slate-700 font-medium"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                  >
+                    <div className="flex items-center gap-2">
+                      <Avatar className="w-8 h-8">
+                        <AvatarImage src={session.user?.image || ''} alt={session.user?.name || 'User'} />
+                        <AvatarFallback className="bg-blue-600 text-white text-xs font-semibold">
+                          {getInitials()}
+                        </AvatarFallback>
+                      </Avatar>
+                      <span>{session.user?.name || 'Profile'}</span>
+                    </div>
+                  </Link>
+                  <Button
+                    variant="outline"
+                    className="w-full mt-2 border-2 border-red-600 text-red-600 hover:bg-red-50 font-semibold"
+                    onClick={() => {
+                      handleLogout()
+                      setIsMobileMenuOpen(false)
+                    }}
+                  >
+                    <LogOut className="w-4 h-4 mr-2" />
+                    Logout
+                  </Button>
+                </>
+              ) : (
+                <Button
+                  variant="outline"
+                  className="w-full mt-2 border-2 border-blue-600 text-blue-600 hover:bg-blue-50 font-semibold"
+                  asChild
+                  onClick={() => setIsMobileMenuOpen(false)}
+                >
+                  <Link href="/auth">
+                    <LogIn className="w-4 h-4 mr-2" />
+                    Login / Sign Up
+                  </Link>
+                </Button>
+              )}
+            </div>
+          </div>
+        )}
+      </header>
+
+      {/* Auth is now a full page at /auth */}
+
+      <style jsx>{`
+        @keyframes slide-down {
+          from {
+            opacity: 0;
+            transform: translateY(-10px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+
+        .animate-slide-down {
+          animation: slide-down 0.2s ease-out;
+        }
+      `}</style>
+    </>
+  )
+}
+

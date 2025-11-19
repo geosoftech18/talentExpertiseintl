@@ -1,0 +1,508 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mongodb"
+  url      = env("DATABASE_URL")
+}
+
+// ==========================================
+// PUBLIC-FACING FORM SUBMISSIONS
+// ==========================================
+
+// Course Enquiry Form Submissions
+model CourseEnquiry {
+  id                    String   @id @default(auto()) @map("_id") @db.ObjectId
+  // Personal Information
+  firstName            String
+  lastName             String
+  email                String
+  phone                String
+  countryCode          String   @default("+971")
+  // Company Information
+  company              String
+  jobTitle             String?
+  // Course Details
+  courseId             String?   // Reference to course if applicable
+  courseTitle          String?   // Store course title for reference
+  schedulePreference   String?
+  participants         String?   @default("1")
+  message              String?
+  // Status
+  status               String   @default("Pending") // Pending, Approved, Cancelled
+  // Metadata
+  submittedAt          DateTime @default(now())
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+
+  @@index([status])
+  @@map("course_enquiries")
+}
+
+// Course Registration Form Submissions
+model CourseRegistration {
+  id                    String   @id @default(auto()) @map("_id") @db.ObjectId
+  // Schedule Information
+  scheduleId           String?   // Reference to schedule if applicable
+  courseId             String?   // Reference to course
+  courseTitle          String?
+  // Personal Information
+  title                String?   // Mr, Mrs, Ms, Dr, Prof
+  name                 String
+  email                String
+  designation          String?
+  company              String?
+  // Address Information
+  address              String
+  city                 String
+  country              String
+  telephone            String
+  telephoneCountryCode String   @default("+971")
+  mobile               String?
+  mobileCountryCode    String?  @default("+971")
+  // Payment Information
+  paymentMethod        String    // credit, bank, invoice, purchase
+  paymentStatus        String?   // Paid, Unpaid, Partially Refunded, Refunded
+  orderStatus          String?   // In Progress, Completed, Incomplete, Cancelled - independent from payment status
+  participants         Int       @default(1) // Number of participants
+  differentBilling     Boolean   @default(false)
+  // Terms and Verification
+  acceptTerms          Boolean   @default(false)
+  captcha              String?
+  // Metadata
+  submittedAt          DateTime @default(now())
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+
+  @@map("course_registrations")
+}
+
+// In-House Course Request Form Submissions
+model InHouseCourseRequest {
+  id                    String   @id @default(auto()) @map("_id") @db.ObjectId
+  // Personal Information
+  title                String?   // Mr, Mrs, Ms, Dr, Prof
+  name                 String
+  email                String
+  designation          String?
+  company              String
+  // Address Information
+  address              String
+  city                 String
+  country              String
+  telephone            String
+  telephoneCountryCode String   @default("+971")
+  mobile               String?
+  mobileCountryCode    String?  @default("+971")
+  // Course Details
+  courseId             String?
+  courseTitle          String?
+  preferredDates       String?
+  participants        String
+  location             String?
+  message              String?
+  captcha              String?
+  // Metadata
+  submittedAt          DateTime @default(now())
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+
+  @@map("in_house_course_requests")
+}
+
+// Brochure Download Form Submissions
+model BrochureDownload {
+  id                    String   @id @default(auto()) @map("_id") @db.ObjectId
+  name                  String
+  email                 String
+  phone                 String
+  countryCode           String   @default("+971")
+  courseId              String?  // Reference to course
+  courseTitle           String?  // Store course title for reference
+  downloadedAt          DateTime @default(now())
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  @@map("brochure_downloads")
+}
+
+// Online Session Request Form Submissions
+model OnlineSessionRequest {
+  id                    String   @id @default(auto()) @map("_id") @db.ObjectId
+  courseId              String?
+  courseTitle           String?
+  // Additional fields can be added when form is fully implemented
+  submittedAt           DateTime @default(now())
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  @@map("online_session_requests")
+}
+
+// ==========================================
+// ADMIN PANEL ENTITIES
+// ==========================================
+
+// Programs/Courses (Admin Created)
+model Program {
+  id                    String   @id @default(auto()) @map("_id") @db.ObjectId
+  refCode               String
+  programName           String
+  shortDescription      String?
+  category              String
+  type                  String[] // Public Program, Signature Program, In-Company/Customized
+  status                String   @default("Draft") // Draft, Published
+  duration              String
+  targetAudience        String?
+  learningObjectives    String?
+  trainingMethodology   String?
+  introduction          String?
+  description           String?
+  organisationalImpact  String?
+  personalImpact        String?
+  whoShouldAttend       String?
+  // Images
+  mainCourseImageUrl    String?
+  cardImageUrl          String?
+  // Relations
+  courseOutline         CourseOutline[]
+  certifications        Certification[]  // Legacy - linked certifications
+  certificateIds        String[]         // Array of Certificate IDs (standalone certificates)
+  faqs                  FAQ[]
+  schedules             Schedule[]
+  // Metadata
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  @@unique([refCode])
+  @@index([category])
+  @@index([status])
+  @@index([createdAt])
+  @@map("programs")
+}
+
+// Course Outline Items (Related to Program)
+model CourseOutline {
+  id                    String   @id @default(auto()) @map("_id") @db.ObjectId
+  programId             String   @db.ObjectId
+  day                   String
+  title                 String
+  content               String
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  program               Program  @relation(fields: [programId], references: [id], onDelete: Cascade)
+
+  @@index([programId])
+  @@map("course_outlines")
+}
+
+// Certifications (Related to Program)
+model Certification {
+  id                    String   @id @default(auto()) @map("_id") @db.ObjectId
+  programId             String   @db.ObjectId
+  name                  String
+  description           String?
+  imageUrl              String?
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  program               Program  @relation(fields: [programId], references: [id], onDelete: Cascade)
+
+  @@index([programId])
+  @@map("certifications")
+}
+
+// FAQs (Related to Program)
+model FAQ {
+  id                    String   @id @default(auto()) @map("_id") @db.ObjectId
+  programId             String   @db.ObjectId
+  question              String
+  answer                String
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  program               Program  @relation(fields: [programId], references: [id], onDelete: Cascade)
+
+  @@index([programId])
+  @@map("faqs")
+}
+
+// Schedules (Related to Program)
+model Schedule {
+  id                    String   @id @default(auto()) @map("_id") @db.ObjectId
+  programId             String   @db.ObjectId
+  programName           String?  // Denormalized for quick access
+  mentorId              String?  @db.ObjectId
+  startDate             DateTime
+  endDate               DateTime?
+  venue                 String
+  fee                   Float?
+  status                String   @default("Open") // Open, Closed, Completed, Cancelled
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  program               Program  @relation(fields: [programId], references: [id], onDelete: Cascade)
+  mentor                Mentor?  @relation(fields: [mentorId], references: [id], onDelete: SetNull)
+
+  @@index([programId])
+  @@index([mentorId])
+  @@index([startDate])
+  @@index([status])
+  @@map("schedules")
+}
+
+// Mentors (Admin Created)
+model Mentor {
+  id                    String   @id @default(auto()) @map("_id") @db.ObjectId
+  name                  String
+  email                 String
+  bio                   String?
+  yearsOfExperience     Int?
+  imageUrl              String?
+  // Relations
+  schedules             Schedule[]
+  // Metadata
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  @@unique([email])
+  @@index([createdAt])
+  @@map("mentors")
+}
+
+// Team Members (Admin Created)
+model TeamMember {
+  id                    String   @id @default(auto()) @map("_id") @db.ObjectId
+  firstName             String
+  lastName              String
+  email                 String
+  phone                 String?
+  role                  String   // User, Support Staff, Admin, etc.
+  department            String?  // Management, Content, Course Management, Support
+  status                String   @default("Active") // Active, Inactive
+  password              String? // Hashed password (should be handled securely)
+  imageUrl              String?
+  notes                 String?
+  sendWelcomeEmail      Boolean  @default(true)
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  @@unique([email])
+  @@map("team_members")
+}
+
+// Venues (Admin Created)
+model Venue {
+  id                    String   @id @default(auto()) @map("_id") @db.ObjectId
+  name                  String
+  city                  String
+  country               String
+  status                String   @default("Active") // Active, Inactive
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  @@unique([name, city, country])
+  @@map("venues")
+}
+
+// Certificates (Standalone - Admin Created)
+model Certificate {
+  id                    String   @id @default(auto()) @map("_id") @db.ObjectId
+  name                  String
+  description           String?
+  imageUrl              String?
+  status                String   @default("Active") // Active, Inactive
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  @@index([name])
+  @@index([status])
+  @@index([createdAt])
+  @@map("certificates")
+}
+
+// ==========================================
+// AUTHENTICATION (NextAuth)
+// ==========================================
+
+// Users (Public Users - for login/signup)
+model User {
+  id                    String   @id @default(auto()) @map("_id") @db.ObjectId
+  name                  String?
+  email                 String
+  emailVerified         DateTime?
+  image                 String?
+  password              String?  // Hashed password for email/password auth
+  firstName             String?
+  lastName              String?
+  // Relations
+  accounts              Account[]
+  sessions              Session[]
+  // Metadata
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  @@unique([email])
+  @@map("users")
+}
+
+// OAuth Accounts (Google, LinkedIn, etc.)
+model Account {
+  id                    String   @id @default(auto()) @map("_id") @db.ObjectId
+  userId                String   @db.ObjectId
+  type                  String   // oauth, oidc, email
+  provider              String   // google, linkedin, credentials
+  providerAccountId     String
+  refresh_token         String?
+  access_token          String?
+  expires_at            Int?
+  token_type            String?
+  scope                 String?
+  id_token              String?
+  session_state         String?
+  // Relations
+  user                  User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  // Metadata
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  @@unique([provider, providerAccountId])
+  @@index([userId])
+  @@map("accounts")
+}
+
+// Sessions
+model Session {
+  id                    String   @id @default(auto()) @map("_id") @db.ObjectId
+  sessionToken          String   @unique
+  userId                String   @db.ObjectId
+  expires               DateTime
+  // Relations
+  user                  User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  // Metadata
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  @@index([userId])
+  @@map("sessions")
+}
+
+// Verification Tokens (for email verification)
+model VerificationToken {
+  id                    String   @id @default(auto()) @map("_id") @db.ObjectId
+  identifier            String
+  token                 String   @unique
+  expires               DateTime
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  @@unique([identifier, token])
+  @@map("verification_tokens")
+}
+
+// Password Reset Tokens
+model PasswordResetToken {
+  id                    String   @id @default(auto()) @map("_id") @db.ObjectId
+  email                 String
+  token                 String   @unique
+  expires               DateTime
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  @@index([email])
+  @@index([expires])
+  @@map("password_reset_tokens")
+}
+
+// ==========================================
+// INVOICE MANAGEMENT
+// ==========================================
+
+// Invoice Requests (Pending approval before becoming orders)
+model InvoiceRequest {
+  id                    String   @id @default(auto()) @map("_id") @db.ObjectId
+  // Schedule Information
+  scheduleId           String?   @db.ObjectId
+  courseId             String?   @db.ObjectId
+  courseTitle          String?
+  // Personal Information
+  title                String?
+  name                 String
+  email                String
+  designation          String?
+  company              String?
+  // Address Information
+  address              String
+  city                 String
+  country              String
+  telephone            String
+  telephoneCountryCode String   @default("+971")
+  mobile               String?
+  mobileCountryCode    String?
+  // Request Information
+  amount               Float
+  participants         Int      @default(1) // Number of participants
+  status               String   @default("PENDING") // PENDING, APPROVED, REJECTED
+  rejectionReason      String?
+  approvedBy           String?  @db.ObjectId // Admin user ID
+  approvedAt           DateTime?
+  // Metadata
+  submittedAt          DateTime @default(now())
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+
+  @@index([status])
+  @@index([email])
+  @@index([createdAt])
+  @@map("invoice_requests")
+}
+
+// Invoices
+model Invoice {
+  id                    String   @id @default(auto()) @map("_id") @db.ObjectId
+  userId                String?  @db.ObjectId // Optional - may not have user account
+  courseId              String?  @db.ObjectId
+  courseRegistrationId  String?  @db.ObjectId // Link to course registration
+  invoiceNo             String   @unique
+  amount                Float
+  status                String   @default("PENDING") // PENDING, PAID, OVERDUE, CANCELLED
+  paymentDate           DateTime? // Date when payment was received
+  transactionId         String?  // Transaction reference number
+  pdfUrl                String?
+  issueDate             DateTime @default(now())
+  dueDate               DateTime
+  // Customer Information (denormalized for invoice)
+  customerName          String
+  customerEmail         String
+  customerAddress       String?
+  customerCity          String?
+  customerCountry       String?
+  // Course Information (denormalized)
+  courseTitle           String?
+  scheduleId            String?  @db.ObjectId
+  // Metadata
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  @@index([userId])
+  @@index([courseId])
+  @@index([courseRegistrationId])
+  @@index([status])
+  @@index([dueDate])
+  @@map("invoices")
+}
+
+// Invoice Counter (for sequential invoice numbers per year)
+model InvoiceCounter {
+  id                    String   @id @default(auto()) @map("_id") @db.ObjectId
+  year                  Int      @unique
+  sequence              Int      @default(0)
+  updatedAt             DateTime @updatedAt
+
+  @@map("invoice_counters")
+}
