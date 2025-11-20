@@ -317,6 +317,7 @@ export default function CourseCategoriesSection() {
   const [searchTerm, setSearchTerm] = useState("")
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null)
   const [isAutoPlaying, setIsAutoPlaying] = useState(true)
+  const [cardsPerView, setCardsPerView] = useState(4)
   const sliderRef = useRef<HTMLDivElement>(null)
   const selectedCategoryRef = useRef<HTMLDivElement>(null)
 
@@ -327,27 +328,46 @@ export default function CourseCategoriesSection() {
   const featuredCategories = courseCategories.filter((cat) => cat.featured)
   const trendingCategories = courseCategories.filter((cat) => cat.trending)
 
+  // Calculate cards per view based on screen size
+  useEffect(() => {
+    const updateCardsPerView = () => {
+      if (typeof window !== 'undefined') {
+        if (window.innerWidth < 640) {
+          setCardsPerView(1) // Mobile: 1 card
+        } else if (window.innerWidth < 1024) {
+          setCardsPerView(2) // Tablet: 2 cards
+        } else {
+          setCardsPerView(4) // Desktop: 4 cards
+        }
+      }
+    }
+
+    updateCardsPerView()
+    window.addEventListener('resize', updateCardsPerView)
+    return () => window.removeEventListener('resize', updateCardsPerView)
+  }, [])
+
   useEffect(() => {
     if (!isAutoPlaying) return
 
     const interval = setInterval(() => {
       setCurrentSlide((prev) => {
-        const maxSlide = Math.max(0, specialOffers.length - 4)
+        const maxSlide = Math.max(0, specialOffers.length - cardsPerView)
         return prev >= maxSlide ? 0 : prev + 1
       })
     }, 4000)
 
     return () => clearInterval(interval)
-  }, [isAutoPlaying])
+  }, [isAutoPlaying, cardsPerView])
 
   const nextSlide = () => {
-    const maxSlide = Math.max(0, specialOffers.length - 4)
+    const maxSlide = Math.max(0, specialOffers.length - cardsPerView)
     setCurrentSlide((prev) => (prev >= maxSlide ? 0 : prev + 1))
     setIsAutoPlaying(false)
   }
 
   const prevSlide = () => {
-    const maxSlide = Math.max(0, specialOffers.length - 4)
+    const maxSlide = Math.max(0, specialOffers.length - cardsPerView)
     setCurrentSlide((prev) => (prev <= 0 ? maxSlide : prev - 1))
     setIsAutoPlaying(false)
   }
@@ -399,60 +419,60 @@ export default function CourseCategoriesSection() {
   }, [selectedCategory])
 
   return (
-    <section className="py-20 bg-gradient-to-br from-gray-50 via-white to-blue-50 relative overflow-hidden">
+    <section className="py-10 sm:py-16 lg:py-20 bg-gradient-to-br from-gray-50 via-white to-blue-50 relative overflow-hidden">
       {/* Background Elements */}
-      <div className="absolute top-0 left-0 w-96 h-96 bg-purple-200 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-pulse"></div>
-      <div className="absolute bottom-0 right-0 w-96 h-96 bg-blue-200 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-pulse delay-1000"></div>
+      <div className="absolute top-0 left-0 w-64 h-64 sm:w-96 sm:h-96 bg-purple-200 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-pulse"></div>
+      <div className="absolute bottom-0 right-0 w-64 h-64 sm:w-96 sm:h-96 bg-blue-200 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-pulse delay-1000"></div>
 
-      <div className="container mx-auto px-6 lg:px-8 relative z-10">
+      <div className="container mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
         {/* Section Header */}
-        <div className="text-center mb-20">
-          <div className="flex items-center justify-center mb-6">
-            <BookOpen className="w-8 h-8 text-purple-600 mr-3" />
-            <Badge variant="outline" className="border-purple-200 text-purple-700 bg-purple-50 px-4 py-2 text-lg">
+        <div className="text-center mb-10 sm:mb-16 lg:mb-20">
+          <div className="flex items-center justify-center mb-4 sm:mb-6">
+            <BookOpen className="w-6 h-6 sm:w-8 sm:h-8 text-purple-600 mr-2 sm:mr-3" />
+            <Badge variant="outline" className="border-purple-200 text-purple-700 bg-purple-50 px-3 py-1 sm:px-4 sm:py-2 text-sm sm:text-lg">
               Course Categories
             </Badge>
           </div>
-          <h2 className="text-5xl lg:text-6xl font-bold text-gray-900 mb-6">
+          <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl xl:text-6xl font-bold text-gray-900 mb-4 sm:mb-6 px-4">
             Explore Our{" "}
             <span className="bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
               Training Universe
             </span>
           </h2>
-          <p className="text-xl text-gray-600 max-w-4xl mx-auto leading-relaxed mb-8">
+          <p className="text-base sm:text-lg md:text-xl text-gray-600 max-w-4xl mx-auto leading-relaxed mb-6 sm:mb-8 px-4">
             Discover world-class professional development across 16+ specialized categories, delivered by industry
             experts in premium venues worldwide.
           </p>
 
           {/* Unified Search and Stats */}
-          <div className="max-w-4xl mx-auto">
-            <div className="relative mb-8">
-              <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+          <div className="max-w-4xl mx-auto px-4">
+            <div className="relative mb-6 sm:mb-8">
+              <Search className="absolute left-3 sm:left-4 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4 sm:w-5 sm:h-5" />
               <Input
                 placeholder="Search course categories..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-12 pr-4 py-4 text-lg border-2 border-gray-200 focus:border-purple-500 rounded-xl bg-white/80 backdrop-blur-sm shadow-lg"
+                className="pl-10 sm:pl-12 pr-4 py-3 sm:py-4 text-base sm:text-lg border-2 border-gray-200 focus:border-purple-500 rounded-xl bg-white/80 backdrop-blur-sm shadow-lg"
               />
             </div>
 
-            <div className="flex items-center justify-center space-x-8 text-sm text-gray-600">
+            <div className="flex flex-wrap items-center justify-center gap-4 sm:gap-6 lg:gap-8 text-xs sm:text-sm text-gray-600">
               <div className="flex items-center">
-                <BookOpen className="w-4 h-4 mr-2 text-purple-600" />
+                <BookOpen className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2 text-purple-600" />
                 <span className="font-medium">
                   {courseCategories.reduce((total, cat) => total + cat.courseCount, 0)} Total Courses
                 </span>
               </div>
               <div className="flex items-center">
-                <Globe className="w-4 h-4 mr-2 text-blue-600" />
+                <Globe className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2 text-blue-600" />
                 <span className="font-medium">16 Categories</span>
               </div>
               <div className="flex items-center">
-                <Star className="w-4 h-4 mr-2 text-yellow-500" />
+                <Star className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2 text-yellow-500" />
                 <span className="font-medium">{featuredCategories.length} Featured</span>
               </div>
               <div className="flex items-center">
-                <TrendingUp className="w-4 h-4 mr-2 text-green-500" />
+                <TrendingUp className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2 text-green-500" />
                 <span className="font-medium">{trendingCategories.length} Trending</span>
               </div>
             </div>
@@ -460,34 +480,39 @@ export default function CourseCategoriesSection() {
         </div>
 
         {/* Main Content Area */}
-        <div className="space-y-16">
-          {/* Special Offers - 4 Cards Per Slide */}
-          <div className="relative">
-            <div className="overflow-hidden rounded-2xl max-w-7xl mx-auto">
+        <div className="space-y-10 sm:space-y-12 lg:space-y-16">
+          {/* Special Offers - Responsive Cards Per Slide */}
+          <div className="relative px-2 sm:px-4">
+            <div className="overflow-hidden rounded-xl sm:rounded-2xl max-w-7xl mx-auto">
               <div
                 className="flex transition-transform duration-700 ease-in-out"
-                style={{ transform: `translateX(-${currentSlide * 25}%)` }}
+                style={{ 
+                  transform: `translateX(-${currentSlide * (100 / cardsPerView)}%)` 
+                }}
               >
                 {specialOffers.map((offer, index) => (
-                  <div key={offer.id} className="w-1/4 flex-shrink-0 px-2">
+                  <div 
+                    key={offer.id} 
+                    className="w-full sm:w-1/2 lg:w-1/4 flex-shrink-0 px-2 sm:px-3"
+                  >
                     <div
-                      className={`bg-gradient-to-r ${offer.gradient} p-6 text-white relative overflow-hidden min-h-[280px] flex flex-col justify-between rounded-xl shadow-lg`}
+                      className={`bg-gradient-to-r ${offer.gradient} p-4 sm:p-5 lg:p-6 text-white relative overflow-hidden min-h-[240px] sm:min-h-[260px] lg:min-h-[280px] flex flex-col justify-between rounded-lg sm:rounded-xl shadow-lg`}
                     >
-                      <div className="absolute top-0 right-0 w-24 h-24 bg-white/10 rounded-full -translate-y-12 translate-x-12"></div>
-                      <div className="absolute bottom-0 left-0 w-16 h-16 bg-white/10 rounded-full translate-y-8 -translate-x-8"></div>
+                      <div className="absolute top-0 right-0 w-16 h-16 sm:w-20 sm:h-20 lg:w-24 lg:h-24 bg-white/10 rounded-full -translate-y-8 sm:-translate-y-10 lg:-translate-y-12 translate-x-8 sm:translate-x-10 lg:translate-x-12"></div>
+                      <div className="absolute bottom-0 left-0 w-12 h-12 sm:w-14 sm:h-14 lg:w-16 lg:h-16 bg-white/10 rounded-full translate-y-6 sm:translate-y-7 lg:translate-y-8 -translate-x-6 sm:-translate-x-7 lg:-translate-x-8"></div>
 
                       <div className="relative z-10">
-                        <Badge className="bg-white/20 text-white border-white/30 px-2 py-1 text-xs font-semibold mb-3">
+                        <Badge className="bg-white/20 text-white border-white/30 px-2 py-0.5 sm:py-1 text-[10px] sm:text-xs font-semibold mb-2 sm:mb-3">
                           {offer.badge}
                         </Badge>
-                        <h3 className="text-xl font-bold mb-2 leading-tight">{offer.title}</h3>
-                        <p className="text-sm mb-2 opacity-90">{offer.subtitle}</p>
-                        <p className="text-xs mb-4 opacity-80 line-clamp-2">{offer.description}</p>
+                        <h3 className="text-base sm:text-lg lg:text-xl font-bold mb-1 sm:mb-2 leading-tight">{offer.title}</h3>
+                        <p className="text-xs sm:text-sm mb-1 sm:mb-2 opacity-90">{offer.subtitle}</p>
+                        <p className="text-[11px] sm:text-xs mb-3 sm:mb-4 opacity-80 line-clamp-2">{offer.description}</p>
                       </div>
 
                       <Button
                         size="sm"
-                        className="bg-white text-gray-900 hover:bg-gray-100 font-semibold px-4 py-2 text-sm rounded-lg shadow transition-all duration-200 relative z-10"
+                        className="bg-white text-gray-900 hover:bg-gray-100 font-semibold px-3 py-1.5 sm:px-4 sm:py-2 text-xs sm:text-sm rounded-lg shadow transition-all duration-200 relative z-10 w-full sm:w-auto"
                       >
                         {offer.cta}
                         <ArrowRight className="w-3 h-3 ml-1" />
@@ -501,31 +526,34 @@ export default function CourseCategoriesSection() {
             {/* Navigation Controls */}
             <button
               onClick={prevSlide}
-              className="absolute left-2 top-1/2 -translate-y-1/2 w-10 h-10 bg-white/90 hover:bg-white backdrop-blur-sm rounded-full flex items-center justify-center shadow-lg transition-all duration-200 disabled:opacity-50"
+              className="absolute left-0 sm:left-2 top-1/2 -translate-y-1/2 w-8 h-8 sm:w-10 sm:h-10 bg-white/90 hover:bg-white backdrop-blur-sm rounded-full flex items-center justify-center shadow-lg transition-all duration-200 disabled:opacity-50 z-20"
               disabled={currentSlide === 0}
+              aria-label="Previous slide"
             >
-              <ChevronLeft className="w-5 h-5 text-gray-700" />
+              <ChevronLeft className="w-4 h-4 sm:w-5 sm:h-5 text-gray-700" />
             </button>
             <button
               onClick={nextSlide}
-              className="absolute right-2 top-1/2 -translate-y-1/2 w-10 h-10 bg-white/90 hover:bg-white backdrop-blur-sm rounded-full flex items-center justify-center shadow-lg transition-all duration-200 disabled:opacity-50"
-              disabled={currentSlide >= specialOffers.length - 4}
+              className="absolute right-0 sm:right-2 top-1/2 -translate-y-1/2 w-8 h-8 sm:w-10 sm:h-10 bg-white/90 hover:bg-white backdrop-blur-sm rounded-full flex items-center justify-center shadow-lg transition-all duration-200 disabled:opacity-50 z-20"
+              disabled={currentSlide >= specialOffers.length - cardsPerView}
+              aria-label="Next slide"
             >
-              <ChevronRight className="w-5 h-5 text-gray-700" />
+              <ChevronRight className="w-4 h-4 sm:w-5 sm:h-5 text-gray-700" />
             </button>
 
             {/* Slide Indicators */}
-            <div className="flex justify-center mt-4 space-x-2">
-              {Array.from({ length: Math.max(1, specialOffers.length - 3) }, (_, index) => (
+            <div className="flex justify-center mt-3 sm:mt-4 space-x-1.5 sm:space-x-2">
+              {Array.from({ length: Math.max(1, specialOffers.length - cardsPerView + 1) }, (_, index) => (
                 <button
                   key={index}
                   onClick={() => {
                     setCurrentSlide(index)
                     setIsAutoPlaying(false)
                   }}
-                  className={`w-2 h-2 rounded-full transition-all duration-300 ${
+                  className={`w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full transition-all duration-300 ${
                     index === currentSlide ? "bg-purple-600 scale-125" : "bg-gray-300"
                   }`}
+                  aria-label={`Go to slide ${index + 1}`}
                 />
               ))}
             </div>
@@ -536,12 +564,12 @@ export default function CourseCategoriesSection() {
             {/* Interactive Categories and Courses Display */}
             <div>
               {/* Categories Slider */}
-              <div className="mb-12">
-                <h3 className="text-3xl font-bold text-gray-900 mb-6 text-center">Browse by Category</h3>
+              <div className="mb-8 sm:mb-10 lg:mb-12">
+                <h3 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900 mb-4 sm:mb-6 text-center px-4">Browse by Category</h3>
                 <div className="relative">
                   <div
                     ref={sliderRef}
-                    className="flex space-x-4 overflow-x-auto scrollbar-hide pb-4 px-4"
+                    className="flex space-x-3 sm:space-x-4 overflow-x-auto scrollbar-hide pb-4 px-2 sm:px-4 snap-x snap-mandatory"
                     style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
                   >
                     {(searchTerm ? filteredCategories : courseCategories).map((category) => {
@@ -552,7 +580,7 @@ export default function CourseCategoriesSection() {
                       return (
                         <Card
                           key={category.id}
-                          className={`flex-shrink-0 w-72 cursor-pointer transition-all duration-300 border-2 overflow-hidden ${
+                          className={`flex-shrink-0 w-[280px] sm:w-64 lg:w-72 cursor-pointer transition-all duration-300 border-2 overflow-hidden snap-start ${
                             isSelected
                               ? `${category.borderColor} shadow-xl scale-105 bg-gradient-to-br from-white to-${category.bgColor}`
                               : isHighlighted
@@ -561,25 +589,25 @@ export default function CourseCategoriesSection() {
                           }`}
                           onClick={() => handleCategoryClick(category.id)}
                         >
-                          <CardContent className="p-6">
-                            <div className="flex items-start justify-between mb-4">
+                          <CardContent className="p-4 sm:p-5 lg:p-6">
+                            <div className="flex items-start justify-between mb-3 sm:mb-4">
                               <div
-                                className={`p-3 rounded-xl ${category.bgColor} transition-transform duration-300 ${
+                                className={`p-2 sm:p-2.5 lg:p-3 rounded-xl ${category.bgColor} transition-transform duration-300 ${
                                   isSelected ? "scale-110" : ""
                                 }`}
                               >
-                                <IconComponent className={`w-8 h-8 ${category.textColor}`} />
+                                <IconComponent className={`w-6 h-6 sm:w-7 sm:h-7 lg:w-8 lg:h-8 ${category.textColor}`} />
                               </div>
                               <div className="flex flex-col items-end space-y-1">
                                 {category.trending && (
-                                  <Badge className="bg-green-100 text-green-800 text-xs px-2 py-1">
-                                    <TrendingUp className="w-3 h-3 mr-1" />
+                                  <Badge className="bg-green-100 text-green-800 text-[10px] sm:text-xs px-1.5 sm:px-2 py-0.5 sm:py-1">
+                                    <TrendingUp className="w-2.5 h-2.5 sm:w-3 sm:h-3 mr-0.5 sm:mr-1" />
                                     Hot
                                   </Badge>
                                 )}
                                 {category.featured && (
-                                  <Badge className="bg-yellow-100 text-yellow-800 text-xs px-2 py-1">
-                                    <Star className="w-3 h-3 mr-1" />
+                                  <Badge className="bg-yellow-100 text-yellow-800 text-[10px] sm:text-xs px-1.5 sm:px-2 py-0.5 sm:py-1">
+                                    <Star className="w-2.5 h-2.5 sm:w-3 sm:h-3 mr-0.5 sm:mr-1" />
                                     Featured
                                   </Badge>
                                 )}
@@ -587,25 +615,25 @@ export default function CourseCategoriesSection() {
                             </div>
 
                             <h4
-                              className={`text-lg font-bold mb-2 transition-colors ${
+                              className={`text-base sm:text-lg font-bold mb-1.5 sm:mb-2 transition-colors ${
                                 isSelected || isHighlighted ? category.textColor : "text-gray-900"
                               }`}
                             >
                               {category.title}
                             </h4>
-                            <p className="text-gray-600 mb-4 text-sm leading-relaxed line-clamp-2">
+                            <p className="text-gray-600 mb-3 sm:mb-4 text-xs sm:text-sm leading-relaxed line-clamp-2">
                               {category.description}
                             </p>
 
                             <div className="flex items-center justify-between">
                               <div className="flex items-center text-gray-500">
-                                <BookOpen className="w-4 h-4 mr-2" />
-                                <span className="text-sm font-medium">{category.courseCount} courses</span>
+                                <BookOpen className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
+                                <span className="text-xs sm:text-sm font-medium">{category.courseCount} courses</span>
                               </div>
                               <Button
                                 variant="ghost"
                                 size="sm"
-                                className={`transition-all duration-300 ${
+                                className={`text-xs sm:text-sm transition-all duration-300 ${
                                   isSelected
                                     ? `${category.textColor} bg-${category.bgColor}`
                                     : isHighlighted
@@ -615,7 +643,7 @@ export default function CourseCategoriesSection() {
                               >
                                 {isSelected ? "Selected" : "Select"}
                                 <ArrowRight
-                                  className={`w-4 h-4 ml-1 transition-transform ${isSelected ? "rotate-90" : ""}`}
+                                  className={`w-3 h-3 sm:w-4 sm:h-4 ml-1 transition-transform ${isSelected ? "rotate-90" : ""}`}
                                 />
                               </Button>
                             </div>
@@ -625,17 +653,19 @@ export default function CourseCategoriesSection() {
                     })}
                   </div>
 
-                  {/* Category Slider Controls */}
+                  {/* Category Slider Controls - Hidden on mobile, shown on larger screens */}
                   <button
                     onClick={() => scrollToCategory("left")}
-                    className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-4 w-10 h-10 bg-white shadow-lg rounded-full flex items-center justify-center hover:shadow-xl transition-all duration-200 group z-10"
+                    className="hidden sm:flex absolute left-0 top-1/2 -translate-y-1/2 -translate-x-4 w-10 h-10 bg-white shadow-lg rounded-full items-center justify-center hover:shadow-xl transition-all duration-200 group z-10"
+                    aria-label="Scroll categories left"
                   >
                     <ChevronLeft className="w-5 h-5 text-gray-600 group-hover:scale-110 transition-transform" />
                   </button>
 
                   <button
                     onClick={() => scrollToCategory("right")}
-                    className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-4 w-10 h-10 bg-white shadow-lg rounded-full flex items-center justify-center hover:shadow-xl transition-all duration-200 group z-10"
+                    className="hidden sm:flex absolute right-0 top-1/2 -translate-y-1/2 translate-x-4 w-10 h-10 bg-white shadow-lg rounded-full items-center justify-center hover:shadow-xl transition-all duration-200 group z-10"
+                    aria-label="Scroll categories right"
                   >
                     <ChevronRight className="w-5 h-5 text-gray-600 group-hover:scale-110 transition-transform" />
                   </button>
@@ -644,7 +674,7 @@ export default function CourseCategoriesSection() {
 
               {/* Selected Category Courses */}
               {selectedCategory && (
-                <div ref={selectedCategoryRef} className="mt-16">
+                <div ref={selectedCategoryRef} className="mt-8 sm:mt-12 lg:mt-16 px-2 sm:px-0">
                   {(() => {
                     const category = courseCategories.find((cat) => cat.id === selectedCategory)
                     if (!category) return null
@@ -678,18 +708,18 @@ export default function CourseCategoriesSection() {
 
                     return (
                       <div
-                        className={`bg-gradient-to-br from-white to-${category.bgColor} rounded-2xl p-8 border-2 ${category.borderColor}`}
+                        className={`bg-gradient-to-br from-white to-${category.bgColor} rounded-xl sm:rounded-2xl p-4 sm:p-6 lg:p-8 border-2 ${category.borderColor}`}
                       >
-                        <div className="flex items-center justify-between mb-8">
-                          <div className="flex items-center">
-                            <div className={`p-4 rounded-xl ${category.bgColor} mr-4`}>
-                              <category.icon className={`w-10 h-10 ${category.textColor}`} />
+                        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-6 sm:mb-8 gap-4">
+                          <div className="flex items-center flex-1">
+                            <div className={`p-3 sm:p-4 rounded-xl ${category.bgColor} mr-3 sm:mr-4`}>
+                              <category.icon className={`w-8 h-8 sm:w-10 sm:h-10 ${category.textColor}`} />
                             </div>
                             <div>
-                              <h3 className={`text-3xl font-bold ${category.textColor} mb-2`}>
+                              <h3 className={`text-xl sm:text-2xl lg:text-3xl font-bold ${category.textColor} mb-1 sm:mb-2`}>
                                 {category.title} Courses
                               </h3>
-                              <p className="text-gray-600">
+                              <p className="text-sm sm:text-base text-gray-600">
                                 Explore our comprehensive {category.title.toLowerCase()} training programs
                               </p>
                             </div>
@@ -697,7 +727,7 @@ export default function CourseCategoriesSection() {
                           <Button
                             variant="outline"
                             onClick={() => setSelectedCategory(null)}
-                            className={`${category.borderColor} ${category.textColor} hover:bg-${category.bgColor}`}
+                            className={`${category.borderColor} ${category.textColor} hover:bg-${category.bgColor} w-full sm:w-auto`}
                           >
                             Close
                             <X className="w-4 h-4 ml-2" />
@@ -706,41 +736,41 @@ export default function CourseCategoriesSection() {
 
                         {/* Courses Slider */}
                         <div className="relative">
-                          <div className="flex space-x-6 overflow-x-auto scrollbar-hide pb-4">
+                          <div className="flex space-x-4 sm:space-x-6 overflow-x-auto scrollbar-hide pb-4 snap-x snap-mandatory">
                             {sampleCourses.map((course, index) => (
                               <Card
                                 key={course.id}
-                                className="flex-shrink-0 w-80 hover:shadow-xl transition-all duration-300 hover:-translate-y-1 border-2 border-gray-200 hover:border-gray-300"
+                                className="flex-shrink-0 w-[280px] sm:w-72 lg:w-80 hover:shadow-xl transition-all duration-300 hover:-translate-y-1 border-2 border-gray-200 hover:border-gray-300 snap-start"
                               >
-                                <CardContent className="p-6">
-                                  <div className="flex items-start justify-between mb-4">
-                                    <Badge className={`${category.bgColor} ${category.textColor}`}>
+                                <CardContent className="p-4 sm:p-5 lg:p-6">
+                                  <div className="flex items-start justify-between mb-3 sm:mb-4">
+                                    <Badge className={`${category.bgColor} ${category.textColor} text-xs`}>
                                       {course.level}
                                     </Badge>
                                     <div className="text-right">
-                                      <div className="text-xl font-bold text-gray-900">{course.price}</div>
-                                      <div className="text-xs text-gray-500">{course.seats} seats left</div>
+                                      <div className="text-lg sm:text-xl font-bold text-gray-900">{course.price}</div>
+                                      <div className="text-[10px] sm:text-xs text-gray-500">{course.seats} seats left</div>
                                     </div>
                                   </div>
 
                                   <Link href={`/courses/${course.slug}`}>
-                                    <h4 className="text-lg font-bold text-gray-900 mb-2 line-clamp-2 hover:text-blue-600 transition-colors cursor-pointer">{course.title}</h4>
+                                    <h4 className="text-base sm:text-lg font-bold text-gray-900 mb-2 line-clamp-2 hover:text-blue-600 transition-colors cursor-pointer">{course.title}</h4>
                                   </Link>
-                                  <p className="text-gray-600 mb-4 text-sm leading-relaxed line-clamp-3">
+                                  <p className="text-gray-600 mb-3 sm:mb-4 text-xs sm:text-sm leading-relaxed line-clamp-3">
                                     {course.description}
                                   </p>
 
-                                  <div className="space-y-2 text-sm text-gray-600 mb-4">
+                                  <div className="space-y-1.5 sm:space-y-2 text-xs sm:text-sm text-gray-600 mb-3 sm:mb-4">
                                     <div className="flex items-center">
-                                      <Clock className="w-4 h-4 mr-2" />
+                                      <Clock className="w-3 h-3 sm:w-4 sm:h-4 mr-1.5 sm:mr-2" />
                                       {course.duration}
                                     </div>
                                     <div className="flex items-center">
-                                      <MapPin className="w-4 h-4 mr-2" />
+                                      <MapPin className="w-3 h-3 sm:w-4 sm:h-4 mr-1.5 sm:mr-2" />
                                       {course.venue}
                                     </div>
                                     <div className="flex items-center">
-                                      <Star className="w-4 h-4 mr-2 text-yellow-400 fill-current" />
+                                      <Star className="w-3 h-3 sm:w-4 sm:h-4 mr-1.5 sm:mr-2 text-yellow-400 fill-current" />
                                       {course.rating} • {course.instructor}
                                     </div>
                                   </div>
@@ -749,14 +779,14 @@ export default function CourseCategoriesSection() {
                                     <Link href={`/courses/${course.slug}`} className="flex-1">
                                       <Button
                                         size="sm"
-                                        className={`w-full bg-gradient-to-r ${category.color} text-white hover:opacity-90`}
+                                        className={`w-full bg-gradient-to-r ${category.color} text-white hover:opacity-90 text-xs sm:text-sm`}
                                       >
                                         Book Now
                                       </Button>
                                     </Link>
                                     <Link href={`/courses/${course.slug}`}>
-                                      <Button variant="outline" size="sm" className="px-3">
-                                        <BookOpen className="w-4 h-4" />
+                                      <Button variant="outline" size="sm" className="px-2 sm:px-3">
+                                        <BookOpen className="w-3 h-3 sm:w-4 sm:h-4" />
                                       </Button>
                                     </Link>
                                   </div>
@@ -767,17 +797,17 @@ export default function CourseCategoriesSection() {
                         </div>
 
                         {/* View All Courses Button */}
-                        <div className="text-center mt-8">
+                        <div className="text-center mt-6 sm:mt-8">
                           <Button
                             size="lg"
-                            className={`bg-gradient-to-r ${category.color} text-white hover:opacity-90 px-8 py-3`}
+                            className={`bg-gradient-to-r ${category.color} text-white hover:opacity-90 px-6 sm:px-8 py-2 sm:py-3 text-sm sm:text-base w-full sm:w-auto`}
                             onClick={() => {
                               const categoryParam = encodeURIComponent(category.title)
                               router.push(`/courses?category=${categoryParam}`)
                             }}
                           >
                             View All {category.courseCount} {category.title} Courses
-                            <ArrowRight className="w-5 h-5 ml-2" />
+                            <ArrowRight className="w-4 h-4 sm:w-5 sm:h-5 ml-2" />
                           </Button>
                         </div>
                       </div>
@@ -787,30 +817,30 @@ export default function CourseCategoriesSection() {
               )}
 
               {/* Default State - Show Top Courses */}
-              {!selectedCategory && (
-                <div className="mt-16">
-                  <div className="text-center mb-10">
-                    <div className="flex items-center justify-center gap-2 mb-4">
-                      <TrendingUp className="w-6 h-6 text-purple-600" />
-                      <h3 className="text-3xl font-bold text-gray-900">Top Courses</h3>
+              {/* {!selectedCategory && (
+                <div className="mt-8 sm:mt-12 lg:mt-16">
+                  <div className="text-center mb-6 sm:mb-8 lg:mb-10 px-4">
+                    <div className="flex items-center justify-center gap-2 mb-3 sm:mb-4">
+                      <TrendingUp className="w-5 h-5 sm:w-6 sm:h-6 text-purple-600" />
+                      <h3 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900">Top Courses</h3>
                     </div>
-                    <p className="text-gray-600 text-lg">Discover our most popular and highly-rated training programs</p>
+                    <p className="text-gray-600 text-sm sm:text-base lg:text-lg">Discover our most popular and highly-rated training programs</p>
                   </div>
-                  <div className="relative overflow-hidden" onMouseEnter={() => setIsAutoPlaying(false)} onMouseLeave={() => setIsAutoPlaying(true)}>
+                  <div className="relative overflow-hidden px-2 sm:px-4" onMouseEnter={() => setIsAutoPlaying(false)} onMouseLeave={() => setIsAutoPlaying(true)}> */}
                     {/* Gradient overlays for fade effect */}
-                    <div className="absolute left-0 top-0 bottom-0 w-32 bg-gradient-to-r from-white via-white/80 to-transparent z-10 pointer-events-none" />
-                    <div className="absolute right-0 top-0 bottom-0 w-32 bg-gradient-to-l from-white via-white/80 to-transparent z-10 pointer-events-none" />
+                    {/* <div className="absolute left-0 top-0 bottom-0 w-16 sm:w-24 lg:w-32 bg-gradient-to-r from-white via-white/80 to-transparent z-10 pointer-events-none" />
+                    <div className="absolute right-0 top-0 bottom-0 w-16 sm:w-24 lg:w-32 bg-gradient-to-l from-white via-white/80 to-transparent z-10 pointer-events-none" /> */}
                     
                     {/* Infinite scrolling carousel */}
-                    <div 
-                      className="flex gap-6 course-carousel"
+                    {/* <div 
+                      className="flex gap-4 sm:gap-5 lg:gap-6 course-carousel"
                       style={{
                         animation: 'scroll 30s linear infinite',
                         animationPlayState: isAutoPlaying ? 'running' : 'paused',
                       }}
-                    >
+                    > */}
                       {/* First set of courses */}
-                      {[
+                      {/* {[
                       {
                         id: 'project-management-professional',
                         slug: 'project-management-professional',
@@ -946,76 +976,76 @@ export default function CourseCategoriesSection() {
                         return (
                           <Card
                             key={`course-1-${course.id}-${idx}`}
-                            className="group cursor-pointer hover:shadow-xl transition-all duration-300 hover:-translate-y-1 border-2 border-gray-200 hover:border-gray-300 overflow-hidden flex-shrink-0 w-[320px]"
+                            className="group cursor-pointer hover:shadow-xl transition-all duration-300 hover:-translate-y-1 border-2 border-gray-200 hover:border-gray-300 overflow-hidden flex-shrink-0 w-[280px] sm:w-[300px] lg:w-[320px]"
                           >
-                          <CardContent className="p-5">
-                            <div className="flex items-start justify-between mb-3">
-                              <div className="flex gap-2">
+                          <CardContent className="p-4 sm:p-5">
+                            <div className="flex items-start justify-between mb-2 sm:mb-3">
+                              <div className="flex gap-1.5 sm:gap-2">
                                 {course.trending && (
-                                  <Badge className="bg-green-100 text-green-800 text-xs px-2 py-0.5">
-                                    <TrendingUp className="w-3 h-3 mr-1 inline" />
+                                  <Badge className="bg-green-100 text-green-800 text-[10px] sm:text-xs px-1.5 sm:px-2 py-0.5">
+                                    <TrendingUp className="w-2.5 h-2.5 sm:w-3 sm:h-3 mr-0.5 sm:mr-1 inline" />
                                     Hot
                                   </Badge>
                                 )}
                                 {course.featured && (
-                                  <Badge className="bg-yellow-100 text-yellow-800 text-xs px-2 py-0.5">
-                                    <Star className="w-3 h-3 mr-1 inline fill-current" />
+                                  <Badge className="bg-yellow-100 text-yellow-800 text-[10px] sm:text-xs px-1.5 sm:px-2 py-0.5">
+                                    <Star className="w-2.5 h-2.5 sm:w-3 sm:h-3 mr-0.5 sm:mr-1 inline fill-current" />
                                     Featured
                                   </Badge>
                                 )}
                               </div>
-                              <Badge variant="secondary" className="text-xs">
+                              <Badge variant="secondary" className="text-[10px] sm:text-xs">
                                 {course.level}
                               </Badge>
                             </div>
 
                             <Link href={`/courses/${course.slug}`}>
-                              <h4 className="text-lg font-bold text-gray-900 mb-2 line-clamp-2 hover:text-blue-600 transition-colors">
+                              <h4 className="text-base sm:text-lg font-bold text-gray-900 mb-1.5 sm:mb-2 line-clamp-2 hover:text-blue-600 transition-colors">
                                 {course.title}
                               </h4>
                             </Link>
                             
-                            <p className="text-gray-600 mb-4 text-sm leading-relaxed line-clamp-2">
+                            <p className="text-gray-600 mb-3 sm:mb-4 text-xs sm:text-sm leading-relaxed line-clamp-2">
                               {course.description}
                             </p>
 
-                            <div className="space-y-2 mb-4 text-xs text-gray-600">
-                              <div className="flex items-center gap-2">
-                                <Clock className="w-3.5 h-3.5" />
+                            <div className="space-y-1.5 sm:space-y-2 mb-3 sm:mb-4 text-[11px] sm:text-xs text-gray-600">
+                              <div className="flex items-center gap-1.5 sm:gap-2">
+                                <Clock className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
                                 <span>{course.duration}</span>
                               </div>
-                              <div className="flex items-center gap-2">
-                                <MapPin className="w-3.5 h-3.5" />
+                              <div className="flex items-center gap-1.5 sm:gap-2">
+                                <MapPin className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
                                 <span className="line-clamp-1">{course.venue}</span>
                               </div>
-                              <div className="flex items-center gap-2">
-                                <Star className="w-3.5 h-3.5 text-yellow-400 fill-current" />
+                              <div className="flex items-center gap-1.5 sm:gap-2">
+                                <Star className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-yellow-400 fill-current" />
                                 <span>{course.rating} • {course.instructor}</span>
                               </div>
                             </div>
 
-                            <div className="flex items-center justify-between pt-3 border-t">
+                            <div className="flex items-center justify-between pt-2 sm:pt-3 border-t">
                               <div className="flex flex-col">
-                                <span className="text-xl font-bold text-gray-900">${course.price.toLocaleString()}</span>
-                                <span className="text-xs text-gray-500">{course.seats} seats left</span>
+                                <span className="text-lg sm:text-xl font-bold text-gray-900">${course.price.toLocaleString()}</span>
+                                <span className="text-[10px] sm:text-xs text-gray-500">{course.seats} seats left</span>
                               </div>
                               <Link href={`/courses/${course.slug}`}>
                                 <Button
                                   size="sm"
-                                  className="bg-gradient-to-r from-blue-600 to-blue-800 text-white hover:opacity-90 font-semibold"
+                                  className="bg-gradient-to-r from-blue-600 to-blue-800 text-white hover:opacity-90 font-semibold text-xs sm:text-sm px-3 sm:px-4"
                                 >
                                   View Details
-                                  <ArrowRight className="w-4 h-4 ml-1" />
+                                  <ArrowRight className="w-3 h-3 sm:w-4 sm:h-4 ml-1" />
                                 </Button>
                               </Link>
                             </div>
                           </CardContent>
                         </Card>
                       )
-                      })}
+                      })} */}
                       
                       {/* Duplicate set for seamless infinite loop */}
-                      {[
+                      {/* {[
                       {
                         id: 'project-management-professional',
                         slug: 'project-management-professional',
@@ -1151,66 +1181,66 @@ export default function CourseCategoriesSection() {
                         return (
                           <Card
                             key={`course-2-${course.id}-${idx}`}
-                            className="group cursor-pointer hover:shadow-xl transition-all duration-300 hover:-translate-y-1 border-2 border-gray-200 hover:border-gray-300 overflow-hidden flex-shrink-0 w-[320px]"
+                            className="group cursor-pointer hover:shadow-xl transition-all duration-300 hover:-translate-y-1 border-2 border-gray-200 hover:border-gray-300 overflow-hidden flex-shrink-0 w-[280px] sm:w-[300px] lg:w-[320px]"
                           >
-                            <CardContent className="p-5">
-                              <div className="flex items-start justify-between mb-3">
-                                <div className="flex gap-2">
+                            <CardContent className="p-4 sm:p-5">
+                              <div className="flex items-start justify-between mb-2 sm:mb-3">
+                                <div className="flex gap-1.5 sm:gap-2">
                                   {course.trending && (
-                                    <Badge className="bg-green-100 text-green-800 text-xs px-2 py-0.5">
-                                      <TrendingUp className="w-3 h-3 mr-1 inline" />
+                                    <Badge className="bg-green-100 text-green-800 text-[10px] sm:text-xs px-1.5 sm:px-2 py-0.5">
+                                      <TrendingUp className="w-2.5 h-2.5 sm:w-3 sm:h-3 mr-0.5 sm:mr-1 inline" />
                                       Hot
                                     </Badge>
                                   )}
                                   {course.featured && (
-                                    <Badge className="bg-yellow-100 text-yellow-800 text-xs px-2 py-0.5">
-                                      <Star className="w-3 h-3 mr-1 inline fill-current" />
+                                    <Badge className="bg-yellow-100 text-yellow-800 text-[10px] sm:text-xs px-1.5 sm:px-2 py-0.5">
+                                      <Star className="w-2.5 h-2.5 sm:w-3 sm:h-3 mr-0.5 sm:mr-1 inline fill-current" />
                                       Featured
                                     </Badge>
                                   )}
                                 </div>
-                                <Badge variant="secondary" className="text-xs">
+                                <Badge variant="secondary" className="text-[10px] sm:text-xs">
                                   {course.level}
                                 </Badge>
                               </div>
 
                               <Link href={`/courses/${course.slug}`}>
-                                <h4 className="text-lg font-bold text-gray-900 mb-2 line-clamp-2 hover:text-blue-600 transition-colors">
+                                <h4 className="text-base sm:text-lg font-bold text-gray-900 mb-1.5 sm:mb-2 line-clamp-2 hover:text-blue-600 transition-colors">
                                   {course.title}
                                 </h4>
                               </Link>
                               
-                              <p className="text-gray-600 mb-4 text-sm leading-relaxed line-clamp-2">
+                              <p className="text-gray-600 mb-3 sm:mb-4 text-xs sm:text-sm leading-relaxed line-clamp-2">
                                 {course.description}
                               </p>
 
-                              <div className="space-y-2 mb-4 text-xs text-gray-600">
-                                <div className="flex items-center gap-2">
-                                  <Clock className="w-3.5 h-3.5" />
+                              <div className="space-y-1.5 sm:space-y-2 mb-3 sm:mb-4 text-[11px] sm:text-xs text-gray-600">
+                                <div className="flex items-center gap-1.5 sm:gap-2">
+                                  <Clock className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
                                   <span>{course.duration}</span>
                                 </div>
-                                <div className="flex items-center gap-2">
-                                  <MapPin className="w-3.5 h-3.5" />
+                                <div className="flex items-center gap-1.5 sm:gap-2">
+                                  <MapPin className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
                                   <span className="line-clamp-1">{course.venue}</span>
                                 </div>
-                                <div className="flex items-center gap-2">
-                                  <Star className="w-3.5 h-3.5 text-yellow-400 fill-current" />
+                                <div className="flex items-center gap-1.5 sm:gap-2">
+                                  <Star className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-yellow-400 fill-current" />
                                   <span>{course.rating} • {course.instructor}</span>
                                 </div>
                               </div>
 
-                              <div className="flex items-center justify-between pt-3 border-t">
+                              <div className="flex items-center justify-between pt-2 sm:pt-3 border-t">
                                 <div className="flex flex-col">
-                                  <span className="text-xl font-bold text-gray-900">${course.price.toLocaleString()}</span>
-                                  <span className="text-xs text-gray-500">{course.seats} seats left</span>
+                                  <span className="text-lg sm:text-xl font-bold text-gray-900">${course.price.toLocaleString()}</span>
+                                  <span className="text-[10px] sm:text-xs text-gray-500">{course.seats} seats left</span>
                                 </div>
                                 <Link href={`/courses/${course.slug}`}>
                                   <Button
                                     size="sm"
-                                    className="bg-gradient-to-r from-blue-600 to-blue-800 text-white hover:opacity-90 font-semibold"
+                                    className="bg-gradient-to-r from-blue-600 to-blue-800 text-white hover:opacity-90 font-semibold text-xs sm:text-sm px-3 sm:px-4"
                                   >
                                     View Details
-                                    <ArrowRight className="w-4 h-4 ml-1" />
+                                    <ArrowRight className="w-3 h-3 sm:w-4 sm:h-4 ml-1" />
                                   </Button>
                                 </Link>
                               </div>
@@ -1221,7 +1251,7 @@ export default function CourseCategoriesSection() {
                     </div>
                   </div>
                 </div>
-              )}
+              )} */}
             </div>
           </div>
 

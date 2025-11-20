@@ -146,6 +146,52 @@ const getGradientDirection = (direction?: "tl" | "tr" | "bl" | "br") => {
   }
 }
 
+// Convert Tailwind color format to rgba
+const convertColorToRgba = (color: string | undefined, defaultOpacity: number = 0.8): string => {
+  if (!color) return `rgba(0,0,0,${defaultOpacity})`
+  
+  // Handle transparent
+  if (color === "transparent") return "rgba(0,0,0,0)"
+  
+  // Handle Tailwind format like "black/80", "blue-900/70", etc.
+  const match = color.match(/^([a-z]+(?:-[0-9]+)?)\/([0-9]+)$/)
+  if (match) {
+    const [, colorName, opacity] = match
+    const opacityNum = parseInt(opacity) / 100
+    
+    // Map common Tailwind colors to rgba
+    const colorMap: Record<string, string> = {
+      black: "0,0,0",
+      white: "255,255,255",
+      "blue-900": "30,58,138",
+      "blue-800": "30,64,175",
+      "blue-700": "29,78,216",
+      "blue-600": "37,99,235",
+      "purple-900": "88,28,135",
+      "purple-800": "107,33,168",
+      "purple-700": "126,34,206",
+      "purple-600": "147,51,234",
+      "slate-900": "15,23,42",
+      "slate-800": "30,41,59",
+    }
+    
+    const rgb = colorMap[colorName] || colorMap["black"]
+    return `rgba(${rgb},${opacityNum})`
+  }
+  
+  // Handle simple color names without opacity (default to high opacity for visibility)
+  if (color === "black") return `rgba(0,0,0,${defaultOpacity})`
+  if (color === "white") return `rgba(255,255,255,${defaultOpacity})`
+  
+  // If it's already rgba format, return as is
+  if (color.startsWith("rgba(") || color.startsWith("rgb(")) {
+    return color
+  }
+  
+  // Default fallback - use black with default opacity
+  return `rgba(0,0,0,${defaultOpacity})`
+}
+
 const splitText = (text: string): string[] => text.split(" ")
 const splitLetters = (text: string): string[] => text.split("")
 
@@ -538,7 +584,7 @@ const HeroSlider = forwardRef<HeroSliderHandle, HeroSliderProps>(
       maxWidth = "7xl",
       paddingX = "6",
       heightClass = "h-[80vh] min-h-[560px]",
-      gradientOverlay = { enabled: true, from: "black/80", via: "black/50", to: "transparent", direction: "br" },
+      gradientOverlay = { enabled: true, from: "blue-900/60", via: "purple-800/60", to: "transparent", direction: "br" },
       imageMode = "next-image",
       indicatorsVariant = "dots",
       arrowVariant = "solid",
@@ -797,7 +843,7 @@ const HeroSlider = forwardRef<HeroSliderHandle, HeroSliderProps>(
             transition={{ duration: animations.transition?.duration || 0.8 }}
           >
             {/* Background Image */}
-            <div className="absolute inset-0">
+            <div className="absolute inset-0 z-0">
               {imageMode === "next-image" ? (
                 <Image
                   src={slide.image.src || "/placeholder.svg"}
@@ -821,16 +867,16 @@ const HeroSlider = forwardRef<HeroSliderHandle, HeroSliderProps>(
             {/* Gradient Overlay */}
             {gradientOverlay?.enabled && (
               <div
-                className="absolute inset-0"
+                className="absolute inset-0 z-10"
                 style={{
-                  background: `linear-gradient(${getGradientDirection(gradientOverlay.direction)}, ${gradientOverlay.from || "rgba(0,0,0,0.7)"}, ${gradientOverlay.via || "rgba(0,0,0,0.4)"}, ${gradientOverlay.to || "transparent"})`,
+                  background: `linear-gradient(${getGradientDirection(gradientOverlay.direction)}, ${convertColorToRgba(gradientOverlay.from, 0.8)}, ${convertColorToRgba(gradientOverlay.via, 0.5)}, ${convertColorToRgba(gradientOverlay.to, 0)})`,
                 }}
               />
             )}
 
             {/* Content */}
             <div
-              className={`absolute inset-0 flex ${contentAlignClasses[contentAlign]} ${contentVAlignClasses[contentVAlign]}`}
+              className={`absolute inset-0 flex ${contentAlignClasses[contentAlign]} ${contentVAlignClasses[contentVAlign]} z-20`}
             >
               <div className={`w-full ${
                 contentAlign === "left" ? "ml-0 mr-auto" :
@@ -892,7 +938,7 @@ const HeroSlider = forwardRef<HeroSliderHandle, HeroSliderProps>(
                     letterStagger={animations.text?.heading?.letterStagger}
                     wordStagger={animations.text?.heading?.wordStagger}
                     typingSpeed={0.03}
-                    className={`text-4xl sm:text-5xl md:text-6xl lg:text-6xl font-bold leading-tight ${themeClasses[theme]} text-balance`}
+                    className={`text-3xl sm:text-5xl md:text-6xl lg:text-6xl font-bold leading-tight ${themeClasses[theme]} text-balance`}
                     prefersReducedMotion={prefersReducedMotion}
                   />
                 )}
@@ -913,7 +959,7 @@ const HeroSlider = forwardRef<HeroSliderHandle, HeroSliderProps>(
                   {/* KPIs */}
                   {slide.kpis && slide.kpis.length > 0 && (
                     <motion.div
-                      className="grid grid-cols-2 gap-4 lg:grid-cols-2 lg:flex-1 lg:max-w-[60%]"
+                      className="grid grid-cols-2 gap-2 lg:grid-cols-2 lg:flex-1 lg:max-w-[60%]"
                       initial={{ opacity: 0, y: 10 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ delay: 0.2, duration: 0.5 }}
@@ -973,7 +1019,7 @@ const HeroSlider = forwardRef<HeroSliderHandle, HeroSliderProps>(
               whileHover={{ x: -(animations.arrows?.hoverNudgePx || 4) }}
               whileTap={{ scale: animations.arrows?.pressScale || 0.96 }}
               aria-label="Previous slide"
-              className={`absolute left-4 lg:left-6 top-1/2 -translate-y-1/2 z-10 p-3 rounded-lg transition-all ${
+              className={`absolute hidden lg:block left-4 lg:left-6 top-1/2 -translate-y-1/2 z-10 p-3 rounded-lg transition-all ${
                 arrowVariant === "solid"
                   ? "bg-white/90 hover:bg-white text-slate-900 dark:text-slate-900"
                   : arrowVariant === "glass"
@@ -991,7 +1037,7 @@ const HeroSlider = forwardRef<HeroSliderHandle, HeroSliderProps>(
               whileHover={{ x: animations.arrows?.hoverNudgePx || 4 }}
               whileTap={{ scale: animations.arrows?.pressScale || 0.96 }}
               aria-label="Next slide"
-              className={`absolute right-4 lg:right-6 top-1/2 -translate-y-1/2 z-10 p-3 rounded-lg transition-all ${
+              className={`absolute hidden lg:block right-4 lg:right-6 top-1/2 -translate-y-1/2 z-10 p-3 rounded-lg transition-all ${
                 arrowVariant === "solid"
                   ? "bg-white/90 hover:bg-white text-slate-900 dark:text-slate-900"
                   : arrowVariant === "glass"

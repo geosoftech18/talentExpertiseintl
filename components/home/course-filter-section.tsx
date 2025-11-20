@@ -238,7 +238,7 @@ export default function CourseFilterSection() {
               Find Your Perfect Course
             </Badge>
           </div>
-          <h2 className="text-4xl lg:text-5xl font-bold text-gray-900 mb-4">Discover World-Class Training</h2>
+          <h2 className="text-3xl lg:text-5xl font-bold text-gray-900 mb-4">Discover World-Class Training</h2>
           <p className="text-xl text-gray-600 max-w-3xl mx-auto">
             Search through our comprehensive catalog of professional development courses, delivered by expert trainers
             in premium venues worldwide.
@@ -296,7 +296,7 @@ export default function CourseFilterSection() {
                   Category
                 </label>
                 <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-                  <SelectTrigger className="h-12 border-2 border-gray-200 focus:border-purple-500 rounded-xl bg-white/50">
+                  <SelectTrigger className="h-12 w-full border-2 border-gray-200 focus:border-purple-500 rounded-xl bg-white/50">
                     <SelectValue placeholder={loadingCategories ? "Loading categories..." : "Choose Category"} />
                   </SelectTrigger>
                   <SelectContent className="bg-white border border-gray-200 shadow-lg">
@@ -330,7 +330,7 @@ export default function CourseFilterSection() {
                   Venue
                 </label>
                 <Select value={selectedVenue} onValueChange={setSelectedVenue}>
-                  <SelectTrigger className="h-12 border-2 border-gray-200 focus:border-purple-500 rounded-xl bg-white/50">
+                  <SelectTrigger className="h-12 w-full border-2 border-gray-200 focus:border-purple-500 rounded-xl bg-white/50">
                     <SelectValue placeholder="Choose Venue" />
                   </SelectTrigger>
                   <SelectContent className="bg-white border border-gray-200 shadow-lg">
@@ -357,7 +357,7 @@ export default function CourseFilterSection() {
                   Month
                 </label>
                 <Select value={selectedMonth} onValueChange={setSelectedMonth}>
-                  <SelectTrigger className="h-12 border-2 border-gray-200 focus:border-purple-500 rounded-xl bg-white/50">
+                  <SelectTrigger className="h-12 w-full border-2 border-gray-200 focus:border-purple-500 rounded-xl bg-white/50">
                     <SelectValue placeholder="Choose Month" />
                   </SelectTrigger>
                   <SelectContent className="bg-white border border-gray-200 shadow-lg">

@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useMemo } from 'react'
-import { Calendar as CalendarIcon, Clock, MapPin, ChevronLeft, ChevronRight, Filter, Loader2 } from 'lucide-react'
+import { Calendar as CalendarIcon, Clock, MapPin, ChevronLeft, ChevronRight, Filter, Loader2, X } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -36,6 +36,7 @@ export default function CalendarPage() {
   const [selectedYear, setSelectedYear] = useState<string>(new Date().getFullYear().toString())
   const [courseEvents, setCourseEvents] = useState<CourseEvent[]>([])
   const [loading, setLoading] = useState(true)
+  const [showFilters, setShowFilters] = useState(false)
 
   // Cache key for sessionStorage
   const CACHE_KEY = 'calendar_cache'
@@ -230,29 +231,44 @@ export default function CalendarPage() {
       {/* Hero Section */}
       <div className="relative bg-gradient-to-r from-blue-900 via-blue-800 to-purple-900 text-white overflow-hidden">
         <div className="absolute inset-0 bg-grid-white/[0.05] bg-[size:30px_30px]" />
-        <div className="relative max-w-7xl mx-auto px-6 py-20">
+        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 py-12 sm:py-16 md:py-20">
           <div className="max-w-3xl">
-            <h1 className="text-5xl md:text-6xl font-bold mb-6 leading-tight">
+            <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold mb-4 sm:mb-6 leading-tight">
               Training Calendar
             </h1>
-            <p className="text-xl text-blue-100 leading-relaxed">
+            <p className="text-base sm:text-lg md:text-xl text-blue-100 leading-relaxed">
               Explore our comprehensive schedule of professional development courses across multiple locations worldwide.
             </p>
           </div>
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-6 py-16">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8 sm:py-12 md:py-16">
+        {/* Mobile Filter Toggle Button */}
+        <div className="lg:hidden mb-4">
+          <Button
+            onClick={() => setShowFilters(!showFilters)}
+            className="w-full flex items-center justify-between"
+            variant="outline"
+          >
+            <div className="flex items-center gap-2">
+              <Filter className="w-4 h-4" />
+              <span className="font-semibold">Filters</span>
+            </div>
+            <X className={`w-4 h-4 transition-transform ${showFilters ? 'rotate-90' : ''}`} />
+          </Button>
+        </div>
+
         {/* Filters */}
-        <Card className="mb-8 shadow-lg">
-          <CardContent className="pt-6">
-            <div className="flex flex-wrap items-center gap-4">
-              <div className="flex items-center gap-2">
-                <Filter className="w-5 h-5 text-slate-600" />
-                <span className="font-semibold text-slate-700">Filters:</span>
+        <Card className={`mb-6 sm:mb-8 shadow-lg ${showFilters ? 'block' : 'hidden lg:block'}`}>
+          <CardContent className="pt-4 sm:pt-6">
+            <div className="flex flex-col sm:flex-row sm:flex-wrap items-stretch sm:items-center gap-3 sm:gap-4">
+              <div className="flex items-center gap-2 mb-2 sm:mb-0">
+                <Filter className="w-4 h-4 sm:w-5 sm:h-5 text-slate-600" />
+                <span className="font-semibold text-sm sm:text-base text-slate-700">Filters:</span>
               </div>
               <Select value={selectedMonth} onValueChange={setSelectedMonth}>
-                <SelectTrigger className="w-48">
+                <SelectTrigger className="w-full sm:w-48 h-9 sm:h-10">
                   <SelectValue placeholder="Select Month" />
                 </SelectTrigger>
                 <SelectContent>
@@ -263,7 +279,7 @@ export default function CalendarPage() {
                 </SelectContent>
               </Select>
               <Select value={selectedYear} onValueChange={setSelectedYear}>
-                <SelectTrigger className="w-48">
+                <SelectTrigger className="w-full sm:w-48 h-9 sm:h-10">
                   <SelectValue placeholder="Select Year" />
                 </SelectTrigger>
                 <SelectContent>
@@ -274,7 +290,7 @@ export default function CalendarPage() {
                 </SelectContent>
               </Select>
               <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-                <SelectTrigger className="w-48">
+                <SelectTrigger className="w-full sm:w-48 h-9 sm:h-10">
                   <SelectValue placeholder="All Categories" />
                 </SelectTrigger>
                 <SelectContent>
@@ -285,7 +301,7 @@ export default function CalendarPage() {
                 </SelectContent>
               </Select>
               <Select value={selectedVenue} onValueChange={setSelectedVenue}>
-                <SelectTrigger className="w-48">
+                <SelectTrigger className="w-full sm:w-48 h-9 sm:h-10">
                   <SelectValue placeholder="All Venues" />
                 </SelectTrigger>
                 <SelectContent>
@@ -300,40 +316,42 @@ export default function CalendarPage() {
         </Card>
 
         {/* Calendar Header */}
-        <div className="flex items-center justify-between mb-8">
-          <Button variant="outline" onClick={prevMonth}>
-            <ChevronLeft className="w-4 h-4 mr-2" />
-            Previous
+        <div className="flex items-center justify-between mb-6 sm:mb-8 gap-2 sm:gap-4">
+          <Button variant="outline" onClick={prevMonth} className="text-xs sm:text-sm px-3 sm:px-4">
+            <ChevronLeft className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
+            <span className="hidden sm:inline">Previous</span>
+            <span className="sm:hidden">Prev</span>
           </Button>
-          <div className="text-center">
-            <h2 className="text-3xl font-bold text-slate-900">
+          <div className="text-center flex-1">
+            <h2 className="text-xl sm:text-2xl md:text-3xl font-bold text-slate-900">
               {months[currentMonth]} {currentYear}
             </h2>
           </div>
-          <Button variant="outline" onClick={nextMonth}>
-            Next
-            <ChevronRight className="w-4 h-4 ml-2" />
+          <Button variant="outline" onClick={nextMonth} className="text-xs sm:text-sm px-3 sm:px-4">
+            <span className="hidden sm:inline">Next</span>
+            <span className="sm:hidden">Next</span>
+            <ChevronRight className="w-3 h-3 sm:w-4 sm:h-4 ml-1 sm:ml-2" />
           </Button>
         </div>
 
         {/* Course Events List */}
         {loading ? (
-          <Card className="text-center py-12">
+          <Card className="text-center py-8 sm:py-12">
             <CardContent>
-              <Loader2 className="w-16 h-16 text-blue-600 mx-auto mb-4 animate-spin" />
-              <h3 className="text-xl font-semibold text-slate-900 mb-2">Loading courses...</h3>
-              <p className="text-slate-600">Please wait while we fetch the latest training schedules.</p>
+              <Loader2 className="w-12 h-12 sm:w-16 sm:h-16 text-blue-600 mx-auto mb-4 animate-spin" />
+              <h3 className="text-lg sm:text-xl font-semibold text-slate-900 mb-2">Loading courses...</h3>
+              <p className="text-sm sm:text-base text-slate-600">Please wait while we fetch the latest training schedules.</p>
             </CardContent>
           </Card>
         ) : filteredEvents.length > 0 ? (
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
             {filteredEvents.map((event) => (
               <Card key={event.id} className="hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
-                <CardContent className="pt-6">
-                  <div className="flex items-start justify-between mb-4">
-                    <Badge variant="secondary">{event.category}</Badge>
+                <CardContent className="pt-4 sm:pt-6">
+                  <div className="flex items-start justify-between mb-3 sm:mb-4 gap-2">
+                    <Badge variant="secondary" className="text-xs">{event.category}</Badge>
                     <div className="text-right">
-                      <div className="text-2xl font-bold text-slate-900">${event.price.toLocaleString()}</div>
+                      <div className="text-lg sm:text-xl md:text-2xl font-bold text-slate-900">${event.price.toLocaleString()}</div>
                       {event.seats !== undefined && (
                         <div className="text-xs text-slate-500">{event.seats} seats left</div>
                       )}
@@ -341,24 +359,24 @@ export default function CalendarPage() {
                   </div>
 
                   <Link href={`/courses/${event.slug}`}>
-                    <h3 className="text-lg font-bold text-slate-900 mb-2 line-clamp-2 hover:text-blue-600 transition-colors cursor-pointer">
+                    <h3 className="text-base sm:text-lg font-bold text-slate-900 mb-2 sm:mb-3 line-clamp-2 hover:text-blue-600 transition-colors cursor-pointer">
                       {event.title}
                     </h3>
                   </Link>
 
-                  <div className="space-y-2 mb-4 text-sm text-slate-600">
+                  <div className="space-y-2 mb-3 sm:mb-4 text-xs sm:text-sm text-slate-600">
                     <div className="flex items-center gap-2">
-                      <CalendarIcon className="w-4 h-4" />
-                      <span>{event.date.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}</span>
+                      <CalendarIcon className="w-3 h-3 sm:w-4 sm:h-4 shrink-0" />
+                      <span className="break-words">{event.date.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}</span>
                     </div>
                     <div className="flex items-center gap-2">
-                      <Clock className="w-4 h-4" />
+                      <Clock className="w-3 h-3 sm:w-4 sm:h-4 shrink-0" />
                       <span>{event.duration}</span>
                     </div>
                     {event.venue && (
                       <div className="flex items-center gap-2">
-                        <MapPin className="w-4 h-4" />
-                        <span>{event.venue}</span>
+                        <MapPin className="w-3 h-3 sm:w-4 sm:h-4 shrink-0" />
+                        <span className="break-words">{event.venue}</span>
                       </div>
                     )}
                   </div>
@@ -380,19 +398,22 @@ export default function CalendarPage() {
             ))}
           </div>
         ) : (
-          <Card className="text-center py-12">
+          <Card className="text-center py-8 sm:py-12">
             <CardContent>
-              <CalendarIcon className="w-16 h-16 text-slate-400 mx-auto mb-4" />
-              <h3 className="text-xl font-semibold text-slate-900 mb-2">No courses scheduled</h3>
-              <p className="text-slate-600 mb-6">
+              <CalendarIcon className="w-12 h-12 sm:w-16 sm:h-16 text-slate-400 mx-auto mb-4" />
+              <h3 className="text-lg sm:text-xl font-semibold text-slate-900 mb-2">No courses scheduled</h3>
+              <p className="text-sm sm:text-base text-slate-600 mb-4 sm:mb-6 px-4">
                 There are no courses scheduled for {months[currentMonth]} {currentYear} with the selected filters.
               </p>
-              <Button onClick={() => {
-                setSelectedCategory('all')
-                setSelectedVenue('all')
-                setSelectedMonth(new Date().getMonth().toString())
-                setSelectedYear(new Date().getFullYear().toString())
-              }}>
+              <Button 
+                onClick={() => {
+                  setSelectedCategory('all')
+                  setSelectedVenue('all')
+                  setSelectedMonth(new Date().getMonth().toString())
+                  setSelectedYear(new Date().getFullYear().toString())
+                }}
+                className="text-sm sm:text-base"
+              >
                 Clear Filters
               </Button>
             </CardContent>

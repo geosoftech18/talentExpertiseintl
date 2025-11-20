@@ -104,10 +104,10 @@ export default function CertificatesPage() {
             <Badge className="bg-blue-500/20 text-blue-300 border-blue-400/30 mb-6">
               Professional Certifications
             </Badge>
-            <h1 className="text-5xl md:text-6xl font-bold mb-6 leading-tight">
+            <h1 className="text-3xl md:text-6xl font-bold mb-6 leading-tight">
               Globally Recognized Certificates
             </h1>
-            <p className="text-xl text-blue-100 leading-relaxed">
+            <p className="text-lg md:text-xl text-blue-100 leading-relaxed">
               Earn internationally recognized certifications from leading professional bodies and enhance your career credentials.
             </p>
           </div>
@@ -160,8 +160,8 @@ export default function CertificatesPage() {
       <div className="bg-gradient-to-br from-blue-50 to-purple-50 py-16">
         <div className="max-w-7xl mx-auto px-6">
           <div className="text-center mb-12">
-            <h2 className="text-4xl font-bold text-slate-900 mb-4">Why Get Certified?</h2>
-            <p className="text-xl text-slate-600 max-w-3xl mx-auto">
+            <h2 className="text-2xl md:text-4xl font-bold text-slate-900 mb-4">Why Get Certified?</h2>
+            <p className="text-lg md:text-xl text-slate-600 max-w-3xl mx-auto">
               Professional certifications validate your expertise and open doors to new opportunities
             </p>
           </div>
@@ -205,8 +205,8 @@ export default function CertificatesPage() {
 
       {/* CTA Section */}
       <div className="bg-gradient-to-r from-blue-600 to-purple-600 text-white py-16">
-        <div className="max-w-4xl mx-auto px-6 text-center">
-          <h2 className="text-4xl font-bold mb-4">Ready to Get Certified?</h2>
+        <div className="max-w-7xl mx-auto px-6 text-center">
+          <h2 className="text-2xl md:text-4xl font-bold mb-4">Ready to Get Certified?</h2>
           <p className="text-xl text-blue-100 mb-8">
             Browse our certified training courses and take the next step in your professional journey.
           </p>

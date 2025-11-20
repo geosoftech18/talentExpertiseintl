@@ -147,12 +147,31 @@ export default function TestimonialsSection() {
   const [selectedCategory, setSelectedCategory] = useState("All Categories")
   const [isAutoPlaying, setIsAutoPlaying] = useState(true)
   const [viewMode, setViewMode] = useState<"carousel" | "grid">("carousel")
+  const [testimonialsPerSlide, setTestimonialsPerSlide] = useState(1)
 
   const filteredTestimonials = testimonials.filter(
     (testimonial) => selectedCategory === "All Categories" || testimonial.category === selectedCategory,
   )
 
-  const testimonialsPerSlide = viewMode === "carousel" ? 3 : filteredTestimonials.length
+  // Calculate testimonials per slide based on screen size
+  useEffect(() => {
+    const updateTestimonialsPerSlide = () => {
+      if (typeof window !== 'undefined') {
+        if (window.innerWidth < 640) {
+          setTestimonialsPerSlide(1) // Mobile: 1 testimonial
+        } else if (window.innerWidth < 1024) {
+          setTestimonialsPerSlide(2) // Tablet: 2 testimonials
+        } else {
+          setTestimonialsPerSlide(3) // Desktop: 3 testimonials
+        }
+      }
+    }
+
+    updateTestimonialsPerSlide()
+    window.addEventListener('resize', updateTestimonialsPerSlide)
+    return () => window.removeEventListener('resize', updateTestimonialsPerSlide)
+  }, [])
+
   const totalSlides = Math.ceil(filteredTestimonials.length / testimonialsPerSlide)
 
   useEffect(() => {
@@ -186,62 +205,64 @@ export default function TestimonialsSection() {
 
   const renderStars = (rating: number) => {
     return Array.from({ length: 5 }, (_, index) => (
-      <Star key={index} className={`w-4 h-4 ${index < rating ? "text-yellow-400 fill-current" : "text-gray-300"}`} />
+      <Star key={index} className={`w-3 h-3 sm:w-3.5 sm:h-3.5 lg:w-4 lg:h-4 ${index < rating ? "text-yellow-400 fill-current" : "text-gray-300"}`} />
     ))
   }
 
   const TestimonialCard = ({ testimonial, featured = false }: { testimonial: any; featured?: boolean }) => (
     <Card
-      className={`group hover:shadow-2xl transition-all duration-500 border-2 overflow-hidden ${
+      className={`group hover:shadow-2xl transition-all duration-500 border-2 overflow-hidden h-full ${
         featured
           ? "border-purple-200 bg-gradient-to-br from-white to-purple-50 shadow-xl scale-105"
           : "border-gray-200 hover:border-purple-200 hover:-translate-y-2"
       }`}
     >
-      <CardContent className="p-6 relative">
+      <CardContent className="p-4 sm:p-5 lg:p-6 relative">
         {/* Quote Icon */}
-        <div className="absolute top-4 right-4 opacity-10">
-          <Quote className="w-12 h-12 text-purple-600" />
+        <div className="absolute top-3 right-3 sm:top-4 sm:right-4 opacity-10">
+          <Quote className="w-8 h-8 sm:w-10 sm:h-10 lg:w-12 lg:h-12 text-purple-600" />
         </div>
 
         {/* Course Badge */}
-        <div className="mb-4">
-          <Badge variant="outline" className="bg-purple-50 text-purple-700 border-purple-200 text-xs font-medium mb-2">
+        <div className="mb-3 sm:mb-4">
+          <Badge variant="outline" className="bg-purple-50 text-purple-700 border-purple-200 text-[10px] sm:text-xs font-medium mb-2">
             {testimonial.category}
           </Badge>
-          <h4 className="font-semibold text-gray-900 text-sm leading-tight line-clamp-2">{testimonial.course}</h4>
+          <h4 className="font-semibold text-gray-900 text-xs sm:text-sm leading-tight line-clamp-2">{testimonial.course}</h4>
         </div>
 
         {/* Rating */}
-        <div className="flex items-center mb-4">
-          <div className="flex space-x-1 mr-2">{renderStars(testimonial.rating)}</div>
-          <span className="text-sm font-medium text-gray-600">({testimonial.rating}.0)</span>
+        <div className="flex items-center mb-3 sm:mb-4">
+          <div className="flex space-x-0.5 sm:space-x-1 mr-1.5 sm:mr-2">
+            {renderStars(testimonial.rating)}
+          </div>
+          <span className="text-xs sm:text-sm font-medium text-gray-600">({testimonial.rating}.0)</span>
         </div>
 
         {/* Review */}
-        <blockquote className="text-gray-700 mb-6 leading-relaxed line-clamp-4 relative z-10">
+        <blockquote className="text-gray-700 mb-4 sm:mb-6 leading-relaxed line-clamp-4 relative z-10 text-xs sm:text-sm">
           "{testimonial.review}"
         </blockquote>
 
         {/* Reviewer Info */}
-        <div className="flex items-start space-x-4">
-          <Avatar className="w-12 h-12 border-2 border-purple-200">
+        <div className="flex items-start space-x-3 sm:space-x-4">
+          <Avatar className="w-10 h-10 sm:w-12 sm:h-12 border-2 border-purple-200 flex-shrink-0">
             <AvatarImage src={testimonial.avatar || "/placeholder.svg"} alt={testimonial.name} />
-            <AvatarFallback className="bg-purple-100 text-purple-700 font-semibold">
+            <AvatarFallback className="bg-purple-100 text-purple-700 font-semibold text-xs sm:text-sm">
               {getInitials(testimonial.name)}
             </AvatarFallback>
           </Avatar>
           <div className="flex-1 min-w-0">
-            <div className="flex items-center space-x-2 mb-1">
-              <h5 className="font-semibold text-gray-900 text-sm">{testimonial.name}</h5>
-              {testimonial.verified && <CheckCircle className="w-4 h-4 text-green-500" />}
+            <div className="flex items-center space-x-1.5 sm:space-x-2 mb-0.5 sm:mb-1">
+              <h5 className="font-semibold text-gray-900 text-xs sm:text-sm truncate">{testimonial.name}</h5>
+              {testimonial.verified && <CheckCircle className="w-3 h-3 sm:w-4 sm:h-4 text-green-500 flex-shrink-0" />}
             </div>
-            <p className="text-xs text-gray-600 mb-1">{testimonial.position}</p>
-            <p className="text-xs text-gray-500 mb-2">{testimonial.company}</p>
-            <div className="flex items-center space-x-3 text-xs text-gray-400">
+            <p className="text-[10px] sm:text-xs text-gray-600 mb-0.5 sm:mb-1 truncate">{testimonial.position}</p>
+            <p className="text-[10px] sm:text-xs text-gray-500 mb-1.5 sm:mb-2 line-clamp-1">{testimonial.company}</p>
+            <div className="flex items-center space-x-2 sm:space-x-3 text-[10px] sm:text-xs text-gray-400 flex-wrap">
               <span>{testimonial.courseDate}</span>
               <span>•</span>
-              <span>{testimonial.location}</span>
+              <span className="truncate">{testimonial.location}</span>
             </div>
           </div>
         </div>
@@ -250,57 +271,57 @@ export default function TestimonialsSection() {
   )
 
   return (
-    <section className="py-20 bg-gradient-to-br from-purple-50 via-white to-blue-50 relative overflow-hidden">
+    <section className="py-10 sm:py-16 lg:py-20 bg-gradient-to-br from-purple-50 via-white to-blue-50 relative overflow-hidden">
       {/* Background Elements */}
-      <div className="absolute top-0 right-0 w-96 h-96 bg-purple-200 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-pulse"></div>
-      <div className="absolute bottom-0 left-0 w-96 h-96 bg-blue-200 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-pulse delay-1000"></div>
+      <div className="absolute top-0 right-0 w-64 h-64 sm:w-96 sm:h-96 bg-purple-200 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-pulse"></div>
+      <div className="absolute bottom-0 left-0 w-64 h-64 sm:w-96 sm:h-96 bg-blue-200 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-pulse delay-1000"></div>
 
-      <div className="container max-w-7xl mx-auto px-6 lg:px-8 relative z-10">
+      <div className="container max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
         {/* Section Header */}
-        <div className="text-center mb-16">
-          <div className="flex items-center justify-center mb-6">
-            <Quote className="w-8 h-8 text-purple-600 mr-3" />
-            <Badge variant="outline" className="border-purple-200 text-purple-700 bg-purple-50 px-4 py-2 text-lg">
+        <div className="text-center mb-8 sm:mb-12 lg:mb-16">
+          <div className="flex items-center justify-center mb-4 sm:mb-6">
+            <Quote className="w-6 h-6 sm:w-8 sm:h-8 text-purple-600 mr-2 sm:mr-3" />
+            <Badge variant="outline" className="border-purple-200 text-purple-700 bg-purple-50 px-3 py-1 sm:px-4 sm:py-2 text-sm sm:text-lg">
               Client Testimonials
             </Badge>
           </div>
-          <h2 className="text-5xl lg:text-6xl font-bold text-gray-900 mb-6">
+          <h2 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl xl:text-5xl font-bold text-gray-900 mb-4 sm:mb-6 px-4">
             What Our{" "}
             <span className="bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
               Clients Say
             </span>
           </h2>
-          <p className="text-xl text-gray-600 max-w-4xl mx-auto leading-relaxed">
+          <p className="text-sm sm:text-base md:text-lg lg:text-xl text-gray-600 max-w-4xl mx-auto leading-relaxed px-4">
             Discover why thousands of professionals trust us for their career development. Real stories from real people
             who transformed their careers with our training programs.
           </p>
         </div>
 
         {/* Stats Section */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-6 mb-16">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 lg:gap-6 mb-8 sm:mb-12 lg:mb-16">
           {stats.map((stat, index) => {
             const IconComponent = stat.icon
             return (
               <Card
                 key={index}
-                className="text-center p-6 border-2 border-purple-100 bg-gradient-to-br from-white to-purple-50 hover:shadow-lg transition-all duration-300"
+                className="text-center p-3 sm:p-4 lg:p-6 border-2 border-purple-100 bg-gradient-to-br from-white to-purple-50 hover:shadow-lg transition-all duration-300"
               >
-                <div className="flex justify-center mb-4">
-                  <div className="p-3 bg-purple-100 rounded-full">
-                    <IconComponent className="w-8 h-8 text-purple-600" />
+                <div className="flex justify-center mb-2 sm:mb-3 lg:mb-4">
+                  <div className="p-2 sm:p-2.5 lg:p-3 bg-purple-100 rounded-full">
+                    <IconComponent className="w-5 h-5 sm:w-6 sm:h-6 lg:w-8 lg:h-8 text-purple-600" />
                   </div>
                 </div>
-                <div className="text-3xl font-bold text-gray-900 mb-2">{stat.value}</div>
-                <div className="text-sm text-gray-600 font-medium">{stat.label}</div>
+                <div className="text-lg sm:text-xl lg:text-2xl xl:text-3xl font-bold text-gray-900 mb-1 sm:mb-2">{stat.value}</div>
+                <div className="text-xs sm:text-sm text-gray-600 font-medium">{stat.label}</div>
               </Card>
             )
           })}
         </div>
 
         {/* Controls */}
-        <div className="flex flex-col lg:flex-row items-center justify-between mb-12 gap-6">
+        <div className="flex flex-col lg:flex-row items-center justify-between mb-6 sm:mb-8 lg:mb-12 gap-4 sm:gap-6">
           {/* Category Filter */}
-          <div className="flex flex-wrap gap-2">
+          <div className="flex flex-wrap gap-2 justify-center lg:justify-start w-full lg:w-auto overflow-x-auto pb-2 scrollbar-hide">
             {categories.map((category) => (
               <Button
                 key={category}
@@ -310,7 +331,7 @@ export default function TestimonialsSection() {
                   setSelectedCategory(category)
                   setCurrentSlide(0)
                 }}
-                className={`transition-all duration-200 ${
+                className={`transition-all duration-200 text-xs sm:text-sm whitespace-nowrap ${
                   selectedCategory === category
                     ? "bg-purple-600 text-white shadow-lg"
                     : "border-purple-200 !text-purple-700 hover:bg-purple-50"
@@ -358,14 +379,18 @@ export default function TestimonialsSection() {
         {/* Testimonials Display */}
         {viewMode === "carousel" ? (
           <div className="relative">
-            <div className="overflow-hidden rounded-2xl">
+            <div className="overflow-hidden rounded-xl sm:rounded-2xl">
               <div
                 className="flex transition-transform duration-700 ease-in-out"
                 style={{ transform: `translateX(-${currentSlide * 100}%)` }}
               >
                 {Array.from({ length: totalSlides }, (_, slideIndex) => (
                   <div key={slideIndex} className="w-full flex-shrink-0">
-                    <div className="grid lg:grid-cols-3 gap-6 px-4">
+                    <div className={`grid gap-4 sm:gap-5 lg:gap-6 px-2 sm:px-4 ${
+                      testimonialsPerSlide === 1 ? 'grid-cols-1' : 
+                      testimonialsPerSlide === 2 ? 'grid-cols-1 sm:grid-cols-2' : 
+                      'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3'
+                    }`}>
                       {filteredTestimonials
                         .slice(slideIndex * testimonialsPerSlide, (slideIndex + 1) * testimonialsPerSlide)
                         .map((testimonial, index) => (
@@ -384,23 +409,25 @@ export default function TestimonialsSection() {
             {/* Navigation Controls */}
             <button
               onClick={prevSlide}
-              className="absolute left-4 top-1/2 -translate-y-1/2 w-12 h-12 bg-white/90 hover:bg-white backdrop-blur-sm rounded-full flex items-center justify-center shadow-lg hover:shadow-xl transition-all duration-200 group"
+              className="absolute left-1 sm:left-2 lg:left-4 top-1/2 -translate-y-1/2 w-8 h-8 sm:w-10 sm:h-10 lg:w-12 lg:h-12 bg-white/90 hover:bg-white backdrop-blur-sm rounded-full flex items-center justify-center shadow-lg hover:shadow-xl transition-all duration-200 group z-10"
               disabled={totalSlides <= 1}
+              aria-label="Previous testimonial"
             >
-              <ChevronLeft className="w-6 h-6 text-gray-700 group-hover:scale-110 transition-transform" />
+              <ChevronLeft className="w-4 h-4 sm:w-5 sm:h-5 lg:w-6 lg:h-6 text-gray-700 group-hover:scale-110 transition-transform" />
             </button>
 
             <button
               onClick={nextSlide}
-              className="absolute right-4 top-1/2 -translate-y-1/2 w-12 h-12 bg-white/90 hover:bg-white backdrop-blur-sm rounded-full flex items-center justify-center shadow-lg hover:shadow-xl transition-all duration-200 group"
+              className="absolute right-1 sm:right-2 lg:right-4 top-1/2 -translate-y-1/2 w-8 h-8 sm:w-10 sm:h-10 lg:w-12 lg:h-12 bg-white/90 hover:bg-white backdrop-blur-sm rounded-full flex items-center justify-center shadow-lg hover:shadow-xl transition-all duration-200 group z-10"
               disabled={totalSlides <= 1}
+              aria-label="Next testimonial"
             >
-              <ChevronRight className="w-6 h-6 text-gray-700 group-hover:scale-110 transition-transform" />
+              <ChevronRight className="w-4 h-4 sm:w-5 sm:h-5 lg:w-6 lg:h-6 text-gray-700 group-hover:scale-110 transition-transform" />
             </button>
 
             {/* Slide Indicators */}
             {totalSlides > 1 && (
-              <div className="flex justify-center mt-8 space-x-2">
+              <div className="flex justify-center mt-4 sm:mt-6 lg:mt-8 space-x-1.5 sm:space-x-2">
                 {Array.from({ length: totalSlides }, (_, index) => (
                   <button
                     key={index}
@@ -408,16 +435,17 @@ export default function TestimonialsSection() {
                       setCurrentSlide(index)
                       setIsAutoPlaying(false)
                     }}
-                    className={`w-3 h-3 rounded-full transition-all duration-300 ${
+                    className={`w-2 h-2 sm:w-2.5 sm:h-2.5 lg:w-3 lg:h-3 rounded-full transition-all duration-300 ${
                       index === currentSlide ? "bg-purple-600 scale-125" : "bg-gray-300 hover:bg-gray-400"
                     }`}
+                    aria-label={`Go to slide ${index + 1}`}
                   />
                 ))}
               </div>
             )}
           </div>
         ) : (
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5 lg:gap-6">
             {filteredTestimonials.map((testimonial) => (
               <TestimonialCard key={testimonial.id} testimonial={testimonial} />
             ))}
@@ -425,26 +453,26 @@ export default function TestimonialsSection() {
         )}
 
         {/* Call to Action */}
-        <div className="text-center mt-16">
-          <h3 className="text-3xl font-bold text-gray-900 mb-4">Ready to Join Our Success Stories?</h3>
-          <p className="text-xl text-gray-600 mb-8 max-w-2xl mx-auto">
+        <div className="text-center mt-8 sm:mt-12 lg:mt-16 px-4">
+          <h3 className="text-lg sm:text-2xl lg:text-3xl font-bold text-gray-900 mb-3 sm:mb-4">Ready to Join Our Success Stories?</h3>
+          <p className="text-sm sm:text-base lg:text-lg xl:text-xl text-gray-600 mb-6 sm:mb-8 max-w-2xl mx-auto">
             Transform your career with our world-class training programs and become our next success story.
           </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+          <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center">
             <Button
               size="lg"
-              className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white font-semibold px-8 py-4 text-lg rounded-xl shadow-lg hover:shadow-xl transition-all duration-200"
+              className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white font-semibold px-6 py-3 sm:px-8 sm:py-4 text-sm sm:text-base lg:text-lg rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 w-full sm:w-auto"
             >
               Browse Our Courses
-              <ArrowRight className="w-5 h-5 ml-2" />
+              <ArrowRight className="w-4 h-4 sm:w-5 sm:h-5 ml-2" />
             </Button>
             <Button
               size="lg"
               variant="outline"
-              className="border-2 border-purple-200 text-purple-700 hover:bg-purple-50 font-semibold px-8 py-4 text-lg rounded-xl"
+              className="border-2 border-purple-200 text-purple-700 hover:bg-purple-50 font-semibold px-6 py-3 sm:px-8 sm:py-4 text-sm sm:text-base lg:text-lg rounded-xl w-full sm:w-auto"
             >
               Read More Reviews
-              <Star className="w-5 h-5 ml-2" />
+              <Star className="w-4 h-4 sm:w-5 sm:h-5 ml-2" />
             </Button>
           </div>
         </div>

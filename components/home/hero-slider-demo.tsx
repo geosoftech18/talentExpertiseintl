@@ -19,7 +19,7 @@ const HERO_SLIDES: Slide[] = [
       { label: "Learn More", href: "#", variant: "secondary" },
     ],
     image: {
-      src: "/training-coaching-professionals-in-conference-room.jpg",
+      src: "/slider/1.jpg",
       alt: "Training professionals in a modern conference room",
       priority: true,
       placeholder: "empty",
@@ -46,7 +46,7 @@ const HERO_SLIDES: Slide[] = [
       { label: "Find Expert", href: "#", variant: "secondary" },
     ],
     image: {
-      src: "/world-map-global-network-connections.jpg",
+      src: "/slider/2.jpg",
       alt: "Global network visualization showing worldwide connections",
       placeholder: "empty",
     },

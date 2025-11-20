@@ -33,6 +33,8 @@ import {
   Lightbulb,
   HeadphonesIcon,
   ChevronRight,
+  ChevronLeft,
+  ArrowLeft,
   LogIn,
   User,
   LogOut,
@@ -74,6 +76,7 @@ export default function Header() {
   const { data: session } = useSession()
   const [isScrolled, setIsScrolled] = useState(false)
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
+  const [isTrainingSubjectsOpen, setIsTrainingSubjectsOpen] = useState(false)
   const [openDropdown, setOpenDropdown] = useState<string | null>(null)
   // Auth modal removed - using full page auth at /auth
 
@@ -84,6 +87,13 @@ export default function Header() {
     window.addEventListener('scroll', handleScroll)
     return () => window.removeEventListener('scroll', handleScroll)
   }, [])
+
+  // Reset training subjects state when mobile menu closes
+  useEffect(() => {
+    if (!isMobileMenuOpen) {
+      setIsTrainingSubjectsOpen(false)
+    }
+  }, [isMobileMenuOpen])
 
   const handleLogout = async () => {
     await signOut({ redirect: true, callbackUrl: '/' })
@@ -106,7 +116,7 @@ export default function Header() {
       <div className="bg-gradient-to-r from-slate-900 to-slate-800 text-white text-sm py-2 border-b border-slate-700">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-6">
+            <div className="flex items-center gap-4">
               <div className="flex items-center gap-2">
                 <Phone className="w-4 h-4" />
                 <span>+971 (04) 425 0700</span>
@@ -359,113 +369,156 @@ export default function Header() {
 
         {/* Mobile Menu */}
         {isMobileMenuOpen && (
-          <div className="lg:hidden border-t border-slate-200 bg-white animate-slide-down">
-            <div className="px-4 py-4 space-y-2 max-h-[calc(100vh-5rem)] overflow-y-auto">
-              <Link
-                href="/"
-                className="block px-4 py-2 rounded-lg hover:bg-blue-50 text-slate-700 font-medium"
-                onClick={() => setIsMobileMenuOpen(false)}
-              >
-                Home
-              </Link>
+          <div className="lg:hidden border-t border-slate-200 bg-white relative" style={{ minHeight: 'calc(100vh - 5rem)', maxHeight: 'calc(100vh - 5rem)' }}>
+            {/* Main Menu */}
+            {!isTrainingSubjectsOpen && (
+              <div className="px-4 py-4 space-y-2 overflow-y-auto h-full">
+                <Link
+                  href="/"
+                  className="block px-4 py-2 rounded-lg hover:bg-blue-50 text-slate-700 font-medium transition-colors"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                >
+                  Home
+                </Link>
+                
+                {/* Training Subjects Button */}
+                <button
+                  onClick={(e) => {
+                    e.preventDefault()
+                    setIsTrainingSubjectsOpen(true)
+                  }}
+                  className="w-full flex items-center justify-between px-4 py-2 rounded-lg hover:bg-blue-50 text-slate-700 font-medium transition-colors text-left"
+                >
+                  <span>Training Subjects</span>
+                  <ChevronRight className="w-5 h-5 text-slate-400 flex-shrink-0" />
+                </button>
+
+                <Link
+                  href="/calendar"
+                  className="block px-4 py-2 rounded-lg hover:bg-blue-50 text-slate-700 font-medium transition-colors"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                >
+                  Calendar
+                </Link>
+                <Link
+                  href="/certificates"
+                  className="block px-4 py-2 rounded-lg hover:bg-blue-50 text-slate-700 font-medium transition-colors"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                >
+                  Certificates
+                </Link>
+                <Link
+                  href="/venues"
+                  className="block px-4 py-2 rounded-lg hover:bg-blue-50 text-slate-700 font-medium transition-colors"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                >
+                  Venues
+                </Link>
+                <Link
+                  href="/about"
+                  className="block px-4 py-2 rounded-lg hover:bg-blue-50 text-slate-700 font-medium transition-colors"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                >
+                  About
+                </Link>
+                <Link
+                  href="/contact"
+                  className="block px-4 py-2 rounded-lg hover:bg-blue-50 text-slate-700 font-medium transition-colors"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                >
+                  Contact
+                </Link>
+                <Button
+                  asChild
+                  className="w-full mt-4 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white"
+                >
+                  <Link href="/courses" onClick={() => setIsMobileMenuOpen(false)}>
+                    Course Finder
+                  </Link>
+                </Button>
+                {session ? (
+                  <>
+                    <Link
+                      href="/profile"
+                      className="block px-4 py-2 rounded-lg hover:bg-blue-50 text-slate-700 font-medium transition-colors"
+                      onClick={() => setIsMobileMenuOpen(false)}
+                    >
+                      <div className="flex items-center gap-2">
+                        <Avatar className="w-8 h-8">
+                          <AvatarImage src={session.user?.image || ''} alt={session.user?.name || 'User'} />
+                          <AvatarFallback className="bg-blue-600 text-white text-xs font-semibold">
+                            {getInitials()}
+                          </AvatarFallback>
+                        </Avatar>
+                        <span>{session.user?.name || 'Profile'}</span>
+                      </div>
+                    </Link>
+                    <Button
+                      variant="outline"
+                      className="w-full mt-2 border-2 border-red-600 text-red-600 hover:bg-red-50 font-semibold"
+                      onClick={() => {
+                        handleLogout()
+                        setIsMobileMenuOpen(false)
+                      }}
+                    >
+                      <LogOut className="w-4 h-4 mr-2" />
+                      Logout
+                    </Button>
+                  </>
+                ) : (
+                  <Button
+                    variant="outline"
+                    className="w-full mt-2 border-2 border-blue-600 text-blue-600 hover:bg-blue-50 font-semibold"
+                    asChild
+                    onClick={() => setIsMobileMenuOpen(false)}
+                  >
+                    <Link href="/auth">
+                      <LogIn className="w-4 h-4 mr-2" />
+                      Login / Sign Up
+                    </Link>
+                  </Button>
+                )}
+              </div>
+            )}
+
+            {/* Training Subjects Submenu */}
+            <div 
+              className={`absolute inset-0 bg-white px-4 py-4 space-y-2 overflow-y-auto transition-transform duration-300 ease-in-out ${
+                isTrainingSubjectsOpen ? 'translate-x-0' : 'translate-x-full'
+              }`}
+            >
+              {/* Back Button Header */}
+              <div className="flex items-center gap-3 mb-4 pb-3 border-b border-slate-200 sticky top-0 bg-white z-10">
+                <button
+                  onClick={(e) => {
+                    e.preventDefault()
+                    setIsTrainingSubjectsOpen(false)
+                  }}
+                  className="flex items-center justify-center w-10 h-10 rounded-lg hover:bg-blue-50 text-slate-700 transition-colors"
+                  aria-label="Go back"
+                >
+                  <ArrowLeft className="w-5 h-5" />
+                </button>
+                <h3 className="text-lg font-semibold text-slate-900">Training Subjects</h3>
+              </div>
+
+              {/* Categories List */}
               <div className="space-y-1">
-                <div className="px-4 py-2 text-sm font-semibold text-slate-500">Training Subjects</div>
                 {courseCategories.map((category, index) => (
                   <Link
                     key={index}
                     href={`/courses?category=${encodeURIComponent(category)}`}
-                    className="block px-4 py-2 rounded-lg hover:bg-blue-50 text-slate-700 font-medium ml-4"
-                    onClick={() => setIsMobileMenuOpen(false)}
+                    className="flex items-center justify-between px-4 py-3 rounded-lg hover:bg-blue-50 text-slate-700 font-medium transition-colors group"
+                    onClick={() => {
+                      setIsMobileMenuOpen(false)
+                      setIsTrainingSubjectsOpen(false)
+                    }}
                   >
-                    {category}
+                    <span className="group-hover:text-blue-600 transition-colors">{category}</span>
+                    <ChevronRight className="w-4 h-4 text-slate-400 group-hover:text-blue-600 transition-colors flex-shrink-0" />
                   </Link>
                 ))}
               </div>
-              <Link
-                href="/calendar"
-                className="block px-4 py-2 rounded-lg hover:bg-blue-50 text-slate-700 font-medium"
-                onClick={() => setIsMobileMenuOpen(false)}
-              >
-                Calendar
-              </Link>
-              <Link
-                href="/certificates"
-                className="block px-4 py-2 rounded-lg hover:bg-blue-50 text-slate-700 font-medium"
-                onClick={() => setIsMobileMenuOpen(false)}
-              >
-                Certificates
-              </Link>
-              <Link
-                href="/venues"
-                className="block px-4 py-2 rounded-lg hover:bg-blue-50 text-slate-700 font-medium"
-                onClick={() => setIsMobileMenuOpen(false)}
-              >
-                Venues
-              </Link>
-              <Link
-                href="/about"
-                className="block px-4 py-2 rounded-lg hover:bg-blue-50 text-slate-700 font-medium"
-                onClick={() => setIsMobileMenuOpen(false)}
-              >
-                About
-              </Link>
-              <Link
-                href="/contact"
-                className="block px-4 py-2 rounded-lg hover:bg-blue-50 text-slate-700 font-medium"
-                onClick={() => setIsMobileMenuOpen(false)}
-              >
-                Contact
-              </Link>
-              <Button
-                asChild
-                className="w-full mt-4 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white"
-              >
-                <Link href="/courses" onClick={() => setIsMobileMenuOpen(false)}>
-                  Course Finder
-                </Link>
-              </Button>
-              {session ? (
-                <>
-                  <Link
-                    href="/profile"
-                    className="block px-4 py-2 rounded-lg hover:bg-blue-50 text-slate-700 font-medium"
-                    onClick={() => setIsMobileMenuOpen(false)}
-                  >
-                    <div className="flex items-center gap-2">
-                      <Avatar className="w-8 h-8">
-                        <AvatarImage src={session.user?.image || ''} alt={session.user?.name || 'User'} />
-                        <AvatarFallback className="bg-blue-600 text-white text-xs font-semibold">
-                          {getInitials()}
-                        </AvatarFallback>
-                      </Avatar>
-                      <span>{session.user?.name || 'Profile'}</span>
-                    </div>
-                  </Link>
-                  <Button
-                    variant="outline"
-                    className="w-full mt-2 border-2 border-red-600 text-red-600 hover:bg-red-50 font-semibold"
-                    onClick={() => {
-                      handleLogout()
-                      setIsMobileMenuOpen(false)
-                    }}
-                  >
-                    <LogOut className="w-4 h-4 mr-2" />
-                    Logout
-                  </Button>
-                </>
-              ) : (
-                <Button
-                  variant="outline"
-                  className="w-full mt-2 border-2 border-blue-600 text-blue-600 hover:bg-blue-50 font-semibold"
-                  asChild
-                  onClick={() => setIsMobileMenuOpen(false)}
-                >
-                  <Link href="/auth">
-                    <LogIn className="w-4 h-4 mr-2" />
-                    Login / Sign Up
-                  </Link>
-                </Button>
-              )}
             </div>
           </div>
         )}

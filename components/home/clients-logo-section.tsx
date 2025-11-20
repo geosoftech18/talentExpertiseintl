@@ -61,7 +61,7 @@ export default function ClientsLogoSection() {
         }
       }
       .clients-carousel {
-        animation: scroll 300s linear infinite;
+        animation: scroll 200s linear infinite;
       }
       .clients-carousel:hover {
         animation-play-state: paused;
@@ -78,33 +78,33 @@ export default function ClientsLogoSection() {
   const duplicatedLogos = [...clientLogos, ...clientLogos]
 
   return (
-    <section className="py-16 bg-gradient-to-br from-gray-50 via-white to-blue-50 relative overflow-hidden">
+    <section className="py-10 sm:py-12 md:py-16 bg-gradient-to-br from-gray-50 via-white to-blue-50 relative overflow-hidden">
       {/* Background Elements */}
-      <div className="absolute top-0 left-0 w-96 h-96 bg-blue-200 rounded-full mix-blend-multiply filter blur-xl opacity-10 animate-pulse"></div>
-      <div className="absolute bottom-0 right-0 w-96 h-96 bg-purple-200 rounded-full mix-blend-multiply filter blur-xl opacity-10 animate-pulse delay-1000"></div>
+      <div className="absolute top-0 left-0 w-64 h-64 sm:w-96 sm:h-96 bg-blue-200 rounded-full mix-blend-multiply filter blur-xl opacity-10 animate-pulse"></div>
+      <div className="absolute bottom-0 right-0 w-64 h-64 sm:w-96 sm:h-96 bg-purple-200 rounded-full mix-blend-multiply filter blur-xl opacity-10 animate-pulse delay-1000"></div>
 
-      <div className="container max-w-7xl mx-auto px-6 lg:px-8 relative z-10">
+      <div className="container max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
         {/* Section Header */}
-        <div className="text-center mb-12">
-          <div className="flex items-center justify-center mb-4">
-            <div className="p-2 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-full shadow-lg">
-              <Building2 className="w-6 h-6 text-white" />
+        <div className="text-center mb-8 sm:mb-10 md:mb-12">
+          <div className="flex items-center justify-center mb-3 sm:mb-4">
+            <div className="p-1.5 sm:p-2 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-full shadow-lg">
+              <Building2 className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6 text-white" />
             </div>
             <Badge 
               variant="outline" 
-              className="border-blue-200 text-blue-700 bg-blue-50 px-3 py-1 text-sm ml-3"
+              className="border-blue-200 text-blue-700 bg-blue-50 px-2 py-0.5 sm:px-3 sm:py-1 text-xs sm:text-sm ml-2 sm:ml-3"
             >
-              <Users className="w-3 h-3 mr-1" />
+              <Users className="w-2.5 h-2.5 sm:w-3 sm:h-3 mr-1" />
               Trusted Partners
             </Badge>
           </div>
-          <h2 className="text-3xl lg:text-5xl font-bold text-gray-900 mb-3">
+          <h2 className="text-xl sm:text-2xl md:text-3xl lg:text-5xl font-bold text-gray-900 mb-2 sm:mb-3 px-4">
             Our{" "}
             <span className="bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
               Valued Clients
             </span>
           </h2>
-          <p className="text-lg text-gray-600 max-w-2xl mx-auto">
+          <p className="text-sm sm:text-base md:text-lg text-gray-600 max-w-2xl mx-auto px-4">
             We're proud to work with leading organizations worldwide
           </p>
         </div>
@@ -112,12 +112,12 @@ export default function ClientsLogoSection() {
         {/* Infinite Scroll Carousel */}
         <div className="relative overflow-hidden">
           {/* Gradient overlays for fade effect */}
-          <div className="absolute left-0 top-0 bottom-0 w-32 bg-gradient-to-r from-gray-50 via-gray-50/80 to-transparent z-10 pointer-events-none" />
-          <div className="absolute right-0 top-0 bottom-0 w-32 bg-gradient-to-l from-gray-50 via-gray-50/80 to-transparent z-10 pointer-events-none" />
+          <div className="absolute left-0 hidden md:block top-0 bottom-0 w-32 bg-gradient-to-r from-gray-50 via-gray-50/80 to-transparent z-10 pointer-events-none" />
+          <div className="absolute right-0 hidden md:block top-0 bottom-0 w-32 bg-gradient-to-l from-gray-50 via-gray-50/80 to-transparent z-10 pointer-events-none" />
           
           <div 
             ref={carouselRef}
-            className="flex gap-8 clients-carousel"
+            className="flex gap-3 sm:gap-4 md:gap-8 clients-carousel"
             style={{
               width: 'fit-content',
             }}
@@ -125,15 +125,15 @@ export default function ClientsLogoSection() {
             {duplicatedLogos.map((client, index) => (
               <div
                 key={`${client.id}-${index}`}
-                className="flex-shrink-0 w-48 h-32 flex items-center justify-center bg-white rounded-xl shadow-md hover:shadow-xl transition-all duration-300 border border-gray-100 hover:border-blue-200 px-4"
+                className="flex-shrink-0 w-36 h-24 sm:w-40 sm:h-28 md:w-48 md:h-32 flex items-center justify-center bg-white rounded-lg sm:rounded-xl shadow-md hover:shadow-xl transition-all duration-300 border border-gray-100 hover:border-blue-200 px-2 sm:px-3 md:px-4"
               >
-                <div className="relative w-full h-26 transition-all duration-300 opacity-100">
+                <div className="relative w-full h-full transition-all duration-300 opacity-100">
                   <Image
                     src={client.logo}
                     alt={client.name}
                     fill
                     className="object-contain"
-                    sizes="(max-width: 192px) 100vw, 192px"
+                    sizes="(max-width: 640px) 144px, (max-width: 768px) 160px, 192px"
                   />
                 </div>
               </div>

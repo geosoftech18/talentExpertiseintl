@@ -180,10 +180,10 @@ export default function UpcomingProgramsCarousel() {
       <div className="container mx-auto px-6 lg:px-8 max-w-7xl">
         {/* Section Header */}
         <div className="text-center mb-12">
-          <h2 className="text-4xl lg:text-5xl font-bold text-blue-900 mb-4">
+          <h2 className="text-2xl lg:text-5xl font-bold text-blue-900 mb-4">
             Upcoming Programs
           </h2>
-          <p className="text-xl text-slate-600 max-w-3xl mx-auto">
+          <p className="md:text-xl text-lg text-slate-600 max-w-3xl mx-auto">
             Explore our scheduled training programs and secure your spot today
           </p>
         </div>
