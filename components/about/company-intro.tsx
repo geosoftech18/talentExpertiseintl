@@ -514,7 +514,7 @@ export const CompanyIntro: React.FC<CompanyIntroProps> = ({
                   <p className="text-xs font-semibold uppercase tracking-wider">{lead}</p>
                 </motion.div>
               )}
-              <h2 className="text-4xl md:text-5xl lg:text-6xl font-bold leading-tight text-balance mb-6 relative">
+              <h2 className="text-2xl md:text-5xl lg:text-6xl font-bold leading-tight text-balance mb-6 relative">
                 <motion.span
                   initial={{ opacity: 0 }}
                   whileInView={{ opacity: 1 }}
@@ -854,8 +854,8 @@ export const CompanyIntro: React.FC<CompanyIntroProps> = ({
         viewport={{ once: true }}
         className="mt-20 md:mt-28"
       >
-        <div className="max-w-7xl mx-auto px-4 md:px-6 lg:px-8">
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="max-w-7xl mx-auto px-2 md:px-6 lg:px-8">
+          <div className="grid grid-cols-2 lg:grid-cols-4 md:gap-6 gap-4">
             {highlights.map((highlight, i) => (
               <motion.div
                 key={i}
@@ -864,7 +864,7 @@ export const CompanyIntro: React.FC<CompanyIntroProps> = ({
                 transition={{ duration: 0.6, delay: i * 0.12 }}
                 viewport={{ once: true }}
                 whileHover={{ y: -8, scale: 1.02 }}
-                className={`group relative overflow-hidden rounded-xl p-6 md:p-8 transition-all duration-300 ${
+                className={`group relative overflow-hidden rounded-xl p-4 md:p-8 transition-all duration-300 ${
                   theme === "lightTextOnDark"
                     ? "bg-gradient-to-br from-slate-800/80 to-slate-700/50 border border-slate-600/30 hover:border-blue-500/50"
                     : "bg-gradient-to-br from-blue-50/40 to-white/30 border border-gray-200/50 hover:border-blue-400/50"
@@ -937,14 +937,14 @@ export const CompanyIntro: React.FC<CompanyIntroProps> = ({
         whileInView={{ opacity: 1 }}
         transition={{ duration: 0.8 }}
         viewport={{ once: true }}
-        className={`rounded-lg p-12 md:p-16 mt-20 md:mt-28 mx-4 md:mx-6 lg:mx-8 ${
+        className={`rounded-lg  p-8 md:p-16 mt-20 md:mt-28 mx-4 md:mx-6 lg:mx-8 ${
           theme === "lightTextOnDark"
             ? "bg-gradient-to-r from-slate-800 to-slate-700"
             : "bg-gradient-to-r from-gray-100 to-gray-50"
         }`}
       >
         <div className="max-w-7xl mx-auto">
-          <div className="grid md:grid-cols-4 gap-8">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-8">
             {stats.map((stat, i) => (
               <motion.div
                 key={i}
@@ -954,7 +954,7 @@ export const CompanyIntro: React.FC<CompanyIntroProps> = ({
                 viewport={{ once: true }}
                 className="text-center"
               >
-                <CountUpNumber value={stat.value} suffix={stat.suffix} />
+                <CountUpNumber value={stat.value} suffix={stat.suffix}  />
                 <p
                   className={`text-sm mt-2 font-medium ${
                     theme === "lightTextOnDark" ? "text-gray-400" : "text-gray-600"

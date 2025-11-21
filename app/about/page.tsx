@@ -67,10 +67,10 @@ export default function AboutPage() {
             <Badge className="bg-blue-500/20 text-blue-300 border-blue-400/30 mb-6">
               About Us
             </Badge>
-            <h1 className="text-5xl md:text-6xl font-bold mb-6 leading-tight">
+            <h1 className="text-2xl md:text-5xl font-bold mb-6 leading-tight">
               Empowering Professionals Worldwide
             </h1>
-            <p className="text-xl text-blue-100 mb-8 leading-relaxed">
+            <p className="text-lg md:text-xl text-blue-100 mb-8 leading-relaxed">
               For over 30 years, TEI Training has been at the forefront of professional development,
               delivering world-class training programs that transform careers and drive organizational success.
             </p>
@@ -151,7 +151,7 @@ export default function AboutPage() {
 
       {/* Stats Section */}
       <div className="max-w-7xl mx-auto px-6 py-16 -mt-12 relative z-10">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
           {stats.map((stat, index) => {
             const IconComponent = stat.icon
             return (
@@ -257,8 +257,8 @@ export default function AboutPage() {
       {/* CTA Section */}
       <div className="bg-gradient-to-r from-blue-600 to-purple-600 text-white py-16">
         <div className="max-w-4xl mx-auto px-6 text-center">
-          <h2 className="text-4xl font-bold mb-4">Ready to Transform Your Career?</h2>
-          <p className="text-xl text-blue-100 mb-8">
+          <h2 className="md:text-4xl text-3xl font-bold mb-4">Ready to Transform Your Career?</h2>
+          <p className="md:text-xl text-lg text-blue-100 mb-8">
             Join thousands of professionals who have advanced their careers with our world-class training programs.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">

@@ -15,8 +15,8 @@ const HERO_SLIDES: Slide[] = [
       { label: "Years Experience", value: "25+" },
     ],
     ctas: [
-      { label: "Get Started", href: "#", variant: "primary" },
-      { label: "Learn More", href: "#", variant: "secondary" },
+      { label: "Get Started", href: "/contact", variant: "primary" },
+      { label: "Learn More", href: "/about", variant: "secondary" },
     ],
     image: {
       src: "/slider/1.jpg",
@@ -42,8 +42,8 @@ const HERO_SLIDES: Slide[] = [
       { label: "Experts", value: "100+" },
     ],
     ctas: [
-      { label: "Explore Locations", href: "#", variant: "primary" },
-      { label: "Find Expert", href: "#", variant: "secondary" },
+      { label: "Explore Locations", href: "/venues", variant: "primary" },
+      { label: "Find Expert", href: "/contact", variant: "secondary" },
     ],
     image: {
       src: "/slider/2.jpg",
@@ -82,8 +82,8 @@ const HERO_SLIDES: Slide[] = [
       { label: "Clients", value: "1000+" },
     ],
     ctas: [
-      { label: "About Us", href: "#", variant: "primary" },
-      { label: "Contact", href: "#", variant: "secondary" },
+      { label: "About Us", href: "/about", variant: "primary" },
+      { label: "Contact", href: "/contact", variant: "secondary" },
     ],
     image: {
       src: "/team-collaboration-values-trust-integrity.jpg",

@@ -564,12 +564,12 @@ export default function CourseCategoriesSection() {
             {/* Interactive Categories and Courses Display */}
             <div>
               {/* Categories Slider */}
-              <div className="mb-8 sm:mb-10 lg:mb-12">
+              <div className="mb-8 max-w-7xl mx-auto sm:mb-10 lg:mb-12">
                 <h3 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900 mb-4 sm:mb-6 text-center px-4">Browse by Category</h3>
                 <div className="relative">
                   <div
                     ref={sliderRef}
-                    className="flex space-x-3 sm:space-x-4 overflow-x-auto scrollbar-hide pb-4 px-2 sm:px-4 snap-x snap-mandatory"
+                    className="flex space-x-3 md:gap-4 sm:space-x-4 overflow-x-auto scrollbar-hide pb-4 px-2 sm:px-4 snap-x snap-mandatory"
                     style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
                   >
                     {(searchTerm ? filteredCategories : courseCategories).map((category) => {

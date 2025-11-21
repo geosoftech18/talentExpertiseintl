@@ -148,6 +148,7 @@ export default function TestimonialsSection() {
   const [isAutoPlaying, setIsAutoPlaying] = useState(true)
   const [viewMode, setViewMode] = useState<"carousel" | "grid">("carousel")
   const [testimonialsPerSlide, setTestimonialsPerSlide] = useState(1)
+  const [isDesktop, setIsDesktop] = useState(false)
 
   const filteredTestimonials = testimonials.filter(
     (testimonial) => selectedCategory === "All Categories" || testimonial.category === selectedCategory,
@@ -159,10 +160,13 @@ export default function TestimonialsSection() {
       if (typeof window !== 'undefined') {
         if (window.innerWidth < 640) {
           setTestimonialsPerSlide(1) // Mobile: 1 testimonial
+          setIsDesktop(false)
         } else if (window.innerWidth < 1024) {
           setTestimonialsPerSlide(2) // Tablet: 2 testimonials
+          setIsDesktop(false)
         } else {
           setTestimonialsPerSlide(3) // Desktop: 3 testimonials
+          setIsDesktop(true)
         }
       }
     }
@@ -172,25 +176,47 @@ export default function TestimonialsSection() {
     return () => window.removeEventListener('resize', updateTestimonialsPerSlide)
   }, [])
 
-  const totalSlides = Math.ceil(filteredTestimonials.length / testimonialsPerSlide)
+  // For desktop: slides overlap (each slide moves by 1 card, shows 3 cards)
+  // For mobile/tablet: slides don't overlap (each slide shows all cards, moves by full slide)
+  const totalSlides = isDesktop 
+    ? Math.max(1, filteredTestimonials.length - 2) // Desktop: overlapping slides
+    : Math.ceil(filteredTestimonials.length / testimonialsPerSlide) // Mobile/Tablet: non-overlapping slides
 
   useEffect(() => {
     if (!isAutoPlaying || viewMode === "grid") return
 
     const interval = setInterval(() => {
-      setCurrentSlide((prev) => (prev + 1) % totalSlides)
+      if (isDesktop) {
+        const maxSlide = Math.max(0, filteredTestimonials.length - 3)
+        setCurrentSlide((prev) => {
+          if (prev >= maxSlide) return 0
+          return prev + 1
+        })
+      } else {
+        setCurrentSlide((prev) => (prev + 1) % totalSlides)
+      }
     }, 5000)
 
     return () => clearInterval(interval)
-  }, [isAutoPlaying, totalSlides, viewMode])
+  }, [isAutoPlaying, totalSlides, viewMode, isDesktop, filteredTestimonials.length])
 
   const nextSlide = () => {
-    setCurrentSlide((prev) => (prev + 1) % totalSlides)
+    if (isDesktop) {
+      // Desktop: move by 1, but don't go beyond the last valid position (showing 3 cards)
+      const maxSlide = Math.max(0, filteredTestimonials.length - 3)
+      setCurrentSlide((prev) => Math.min(prev + 1, maxSlide))
+    } else {
+      setCurrentSlide((prev) => (prev + 1) % totalSlides)
+    }
     setIsAutoPlaying(false)
   }
 
   const prevSlide = () => {
-    setCurrentSlide((prev) => (prev - 1 + totalSlides) % totalSlides)
+    if (isDesktop) {
+      setCurrentSlide((prev) => Math.max(prev - 1, 0))
+    } else {
+      setCurrentSlide((prev) => (prev - 1 + totalSlides) % totalSlides)
+    }
     setIsAutoPlaying(false)
   }
 
@@ -321,25 +347,27 @@ export default function TestimonialsSection() {
         {/* Controls */}
         <div className="flex flex-col lg:flex-row items-center justify-between mb-6 sm:mb-8 lg:mb-12 gap-4 sm:gap-6">
           {/* Category Filter */}
-          <div className="flex flex-wrap gap-2 justify-center lg:justify-start w-full lg:w-auto overflow-x-auto pb-2 scrollbar-hide">
-            {categories.map((category) => (
-              <Button
-                key={category}
-                variant={selectedCategory === category ? "default" : "outline"}
-                size="sm"
-                onClick={() => {
-                  setSelectedCategory(category)
-                  setCurrentSlide(0)
-                }}
-                className={`transition-all duration-200 text-xs sm:text-sm whitespace-nowrap ${
-                  selectedCategory === category
-                    ? "bg-purple-600 text-white shadow-lg"
-                    : "border-purple-200 !text-purple-700 hover:bg-purple-50"
-                }`}
-              >
-                {category}
-              </Button>
-            ))}
+          <div className="w-full lg:w-auto relative">
+            <div className="flex lg:flex-wrap gap-2 justify-start lg:justify-start overflow-x-auto lg:overflow-visible pb-2 scrollbar-hide scroll-smooth snap-x snap-mandatory lg:snap-none px-1 lg:px-0 -mx-1 lg:mx-0">
+              {categories.map((category) => (
+                <Button
+                  key={category}
+                  variant={selectedCategory === category ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => {
+                    setSelectedCategory(category)
+                    setCurrentSlide(0)
+                  }}
+                  className={`transition-all duration-200 text-xs sm:text-sm whitespace-nowrap flex-shrink-0 snap-start ${
+                    selectedCategory === category
+                      ? "bg-purple-600 text-white shadow-lg"
+                      : "border-purple-200 !text-purple-700 hover:bg-purple-50"
+                  }`}
+                >
+                  {category}
+                </Button>
+              ))}
+            </div>
           </div>
 
           {/* View Mode Toggle */}
@@ -380,30 +408,52 @@ export default function TestimonialsSection() {
         {viewMode === "carousel" ? (
           <div className="relative">
             <div className="overflow-hidden rounded-xl sm:rounded-2xl">
-              <div
-                className="flex transition-transform duration-700 ease-in-out"
-                style={{ transform: `translateX(-${currentSlide * 100}%)` }}
-              >
-                {Array.from({ length: totalSlides }, (_, slideIndex) => (
-                  <div key={slideIndex} className="w-full flex-shrink-0">
-                    <div className={`grid gap-4 sm:gap-5 lg:gap-6 px-2 sm:px-4 ${
-                      testimonialsPerSlide === 1 ? 'grid-cols-1' : 
-                      testimonialsPerSlide === 2 ? 'grid-cols-1 sm:grid-cols-2' : 
-                      'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3'
-                    }`}>
-                      {filteredTestimonials
-                        .slice(slideIndex * testimonialsPerSlide, (slideIndex + 1) * testimonialsPerSlide)
-                        .map((testimonial, index) => (
-                          <TestimonialCard
-                            key={testimonial.id}
-                            testimonial={testimonial}
-                            featured={index === 1 && testimonialsPerSlide === 3}
-                          />
-                        ))}
-                    </div>
+              {isDesktop ? (
+                // Desktop: Show all cards in a row, move by 1 card width (accounting for gap)
+                <div className="px-2 sm:px-4 overflow-hidden">
+                  <div
+                    className="flex gap-4 sm:gap-5 lg:gap-6 transition-transform duration-700 ease-in-out"
+                    style={{ 
+                      transform: `translateX(calc(-${currentSlide} * (100% / 3 + 0.5rem)))`
+                    }}
+                  >
+                    {filteredTestimonials.map((testimonial, index) => (
+                      <div key={testimonial.id} className="w-[calc(33.333%-0.75rem)] sm:w-[calc(33.333%-0.833rem)] lg:w-[calc(33.333%-1rem)] flex-shrink-0">
+                        <TestimonialCard
+                          testimonial={testimonial}
+                          featured={false}
+                        />
+                      </div>
+                    ))}
                   </div>
-                ))}
-              </div>
+                </div>
+              ) : (
+                // Mobile/Tablet: Traditional slide-based carousel
+                <div
+                  className="flex transition-transform duration-700 ease-in-out"
+                  style={{ transform: `translateX(-${currentSlide * 100}%)` }}
+                >
+                  {Array.from({ length: totalSlides }, (_, slideIndex) => (
+                    <div key={slideIndex} className="w-full flex-shrink-0">
+                      <div className={`grid gap-4 sm:gap-5 lg:gap-6 px-2 sm:px-4 ${
+                        testimonialsPerSlide === 1 ? 'grid-cols-1' : 
+                        testimonialsPerSlide === 2 ? 'grid-cols-1 sm:grid-cols-2' : 
+                        'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3'
+                      }`}>
+                        {filteredTestimonials
+                          .slice(slideIndex * testimonialsPerSlide, (slideIndex + 1) * testimonialsPerSlide)
+                          .map((testimonial, index) => (
+                            <TestimonialCard
+                              key={testimonial.id}
+                              testimonial={testimonial}
+                              featured={index === 1 && testimonialsPerSlide === 3}
+                            />
+                          ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
 
             {/* Navigation Controls */}

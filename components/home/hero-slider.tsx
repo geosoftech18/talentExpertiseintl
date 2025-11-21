@@ -584,7 +584,7 @@ const HeroSlider = forwardRef<HeroSliderHandle, HeroSliderProps>(
       maxWidth = "7xl",
       paddingX = "6",
       heightClass = "h-[80vh] min-h-[560px]",
-      gradientOverlay = { enabled: true, from: "blue-900/60", via: "purple-800/60", to: "transparent", direction: "br" },
+      gradientOverlay = { enabled: true, from: "blue-900/40", via: "purple-800/40", to: "transparent", direction: "br" },
       imageMode = "next-image",
       indicatorsVariant = "dots",
       arrowVariant = "solid",
@@ -770,8 +770,8 @@ const HeroSlider = forwardRef<HeroSliderHandle, HeroSliderProps>(
 
     const roundedClasses = {
       none: "",
-      "2xl": "rounded-2xl",
-      full: "rounded-full",
+      "2xl": "rounded-b-2xl",
+      full: "rounded-b-full",
     }
 
     const themeClasses = {
@@ -959,7 +959,7 @@ const HeroSlider = forwardRef<HeroSliderHandle, HeroSliderProps>(
                   {/* KPIs */}
                   {slide.kpis && slide.kpis.length > 0 && (
                     <motion.div
-                      className="grid grid-cols-2 gap-2 lg:grid-cols-2 lg:flex-1 lg:max-w-[60%]"
+                      className="grid grid-cols-2 ml-6 lg:grid-cols-2 lg:flex-1 lg:max-w-[60%]"
                       initial={{ opacity: 0, y: 10 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ delay: 0.2, duration: 0.5 }}

@@ -4,23 +4,18 @@ import Link from 'next/link'
 import { Mail, Phone, MapPin, GraduationCap, Facebook, Twitter, Linkedin, Youtube, Instagram } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import Image from 'next/image'
 
 export default function Footer() {
   return (
     <footer className="bg-gradient-to-b from-slate-900 via-slate-800 to-slate-900 text-white">
       {/* Main Footer Content */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 lg:gap-12">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 lg:gap-12">
           {/* Company Info */}
           <div className="space-y-4">
             <div className="flex items-center gap-2 mb-4">
-              <div className="bg-gradient-to-r from-blue-600 to-purple-600 p-2 rounded-lg">
-                <GraduationCap className="w-6 h-6 text-white" />
-              </div>
-              <div>
-                <div className="text-xl font-bold">TEI Training</div>
-                <div className="text-xs text-slate-400">Talent Expertise International</div>
-              </div>
+              <Image src="/talent-footer-logo.png" alt="TEI Training" width={250} height={200} />
             </div>
             <p className="text-slate-300 text-sm leading-relaxed">
               Empowering professionals worldwide with world-class training programs and cutting-edge expertise.
@@ -44,6 +39,8 @@ export default function Footer() {
             </div>
           </div>
 
+         
+          <div className="flex flex-row gap-12">
           {/* Quick Links */}
           <div>
             <h3 className="text-lg font-semibold mb-4">Quick Links</h3>
@@ -117,6 +114,7 @@ export default function Footer() {
               </li>
             </ul>
           </div>
+          </div>
 
           {/* Newsletter & Contact */}
           <div>
@@ -138,7 +136,7 @@ export default function Footer() {
               </Button>
             </form>
             <div className="space-y-3 pt-4 border-t border-slate-700">
-              <div className="flex items-start gap-3">
+              <div className="flex  items-start gap-3">
                 <Phone className="w-5 h-5 text-blue-400 mt-0.5 shrink-0" />
                 <div>
                   <p className="text-slate-400 text-xs">Phone</p>
@@ -169,7 +167,7 @@ export default function Footer() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
           <div className="flex flex-col md:flex-row items-center justify-between gap-4">
             <p className="text-slate-400 text-sm text-center md:text-left">
-              © {new Date().getFullYear()} TEI Training & Consultancy. All rights reserved.
+              © {new Date().getFullYear()} Talent Expertise International. All rights reserved. designed & develped by <Link href="https://www.geosoftech.com" className="text-slate-400 hover:text-blue-400 transition-colors underline" target="_blank">Geosoftech</Link>
             </p>
             <div className="flex items-center gap-6 text-sm">
               <Link href="/terms" className="text-slate-400 hover:text-blue-400 transition-colors">

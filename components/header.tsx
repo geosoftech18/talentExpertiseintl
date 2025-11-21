@@ -130,7 +130,7 @@ export default function Header() {
             
               <Link
                 href="/about"
-                className="px-4 py-2  hover:text-blue-600 font-medium transition-colors rounded-lg "
+                className="px-4 py-2  font-medium transition-colors rounded-lg "
               >
                 About
               </Link>
@@ -138,12 +138,12 @@ export default function Header() {
 
               <Link
                 href="/contact"
-                className="px-4 py-2  hover:text-blue-600 font-medium transition-colors rounded-lg "
+                className="px-4 py-2 font-medium transition-colors rounded-lg "
               >
                 Contact Us
               </Link>
               <span className="text-slate-500">|</span>
-              <Link href="/courses" className="hover:text-blue-400 transition-colors">
+              <Link href="/courses" className="font-medium transition-colors">
                 Course Finder
               </Link>
               {/* <span className="text-slate-500">|</span>
@@ -175,7 +175,13 @@ export default function Header() {
                 <div className="text-xl font-bold text-slate-900">TEI Training</div>
                 <div className="text-xs text-slate-600">Talent Expertise International</div>
               </div> */}
-              <Image src="/talent-logo.png" alt="TEI Training" width={250} height={200} />
+              <Image 
+                src="/talent-logo.png" 
+                alt="TEI Training" 
+                width={250} 
+                height={200}
+                className="w-48 h-auto md:w-48 lg:w-[250px]"
+              />
             
             </Link>
 
@@ -361,7 +367,7 @@ export default function Header() {
                 className="lg:hidden"
                 onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
               >
-                {isMobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+                {isMobileMenuOpen ? <X className="!w-6 !h-6" /> : <Menu className="!w-6 !h-6" />}
               </Button>
             </div>
           </div>

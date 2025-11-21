@@ -877,7 +877,7 @@ export default function CTASection() {
                 Call +971 4 123 4567
               </Button>
             </div>
-            <div className="flex flex-col sm:flex-row items-center justify-center mt-6 sm:mt-8 space-y-2 sm:space-y-0 sm:space-x-4 lg:space-x-6 text-xs sm:text-sm opacity-80 px-4">
+            <div className="flex flex-row items-center gap-4 justify-center mt-6 sm:mt-8 space-y-2 sm:space-y-0 sm:space-x-4 lg:space-x-6 text-xs sm:text-sm opacity-80 px-4">
               <div className="flex items-center">
                 <Shield className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
                 <span>100% Secure</span>

@@ -46,10 +46,10 @@ export function CEOMessage({
           <Badge className="bg-gradient-to-r from-blue-600 to-purple-600 text-white border-0 px-4 py-1.5 text-sm font-semibold mb-4">
             Leadership
           </Badge>
-          <h2 className="text-4xl md:text-5xl font-bold text-slate-900 mb-4">
+          <h2 className="md:text-4xl text-2xl font-bold text-slate-900 mb-4">
             A Message from Our CEO
           </h2>
-          <p className="text-xl text-slate-600 max-w-3xl mx-auto">
+          <p className="md:text-xl text-lg text-slate-600 max-w-3xl mx-auto">
             Hear directly from our leadership about our vision, values, and commitment to excellence
           </p>
         </div>

@@ -408,7 +408,7 @@ export default function CourseFilterSection() {
                   {showCalendar ? "Hide Calendar" : "View Calendar"}
                 </Button> */}
 
-                <Button
+                {/* <Button
                   variant="ghost"
                   onClick={() => setIsAdvancedOpen(!isAdvancedOpen)}
                   className="text-purple-600 hover:text-purple-700 hover:bg-purple-50"
@@ -416,12 +416,12 @@ export default function CourseFilterSection() {
                   <Filter className="w-4 h-4 mr-2" />
                   Advanced Filters
                   <ChevronDown className={`w-4 h-4 ml-2 transition-transform ${isAdvancedOpen ? "rotate-180" : ""}`} />
-                </Button>
+                </Button> */}
               </div>
             </div>
 
             {/* Advanced Filters */}
-            {isAdvancedOpen && (
+            {/* {isAdvancedOpen && (
               <div className="mt-6 p-6 bg-gray-50 rounded-xl border-2 border-gray-100">
                 <h3 className="text-lg font-semibold text-gray-900 mb-4">Advanced Search Options</h3>
                 <div className="grid md:grid-cols-2 gap-6">
@@ -456,7 +456,7 @@ export default function CourseFilterSection() {
                   </div>
                 </div>
               </div>
-            )}
+            )} */}
           </CardContent>
         </Card>
 
@@ -481,7 +481,7 @@ export default function CourseFilterSection() {
         )}
 
         {/* Popular Searches */}
-        <div className="max-w-6xl mx-auto mt-8">
+        {/* <div className="max-w-6xl mx-auto mt-8">
           <h3 className="text-lg font-semibold text-gray-900 mb-4 text-center">Popular Searches</h3>
           <div className="flex flex-wrap justify-center gap-3">
             {popularSearches.map((search, index) => (
@@ -502,7 +502,7 @@ export default function CourseFilterSection() {
               </Button>
             ))}
           </div>
-        </div>
+        </div> */}
       </div>
       {/* Conditional Calendar Section */}
       {/* {showCalendar && (
