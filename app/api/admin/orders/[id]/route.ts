@@ -258,35 +258,43 @@ export async function PATCH(
       }
     }
 
-    // Generate invoice when order status changes to Completed
+    // Generate invoice when order status changes to Completed (only for paid orders)
     if (statusChangedToCompleted) {
       try {
-        // Check if invoice already exists for this registration
-        const existingInvoice = await prisma.invoice.findFirst({
-          where: { courseRegistrationId: id },
-        })
-
-        // Only create invoice if it doesn't exist
-        if (!existingInvoice) {
-          const amount = schedule?.fee || 0
-
-          await createInvoice({
-            courseId: updatedRegistration.courseId || null,
-            scheduleId: updatedRegistration.scheduleId || null,
-            courseRegistrationId: id,
-            userId: null,
-            amount,
-            email: updatedRegistration.email,
-            name: updatedRegistration.name,
-            courseTitle: updatedRegistration.courseTitle || programName || null,
-            address: updatedRegistration.address || null,
-            city: updatedRegistration.city || null,
-            country: updatedRegistration.country || null,
+        // Only generate invoice for paid orders
+        const paymentStatus = updatedRegistration.paymentStatus || 'Unpaid'
+        if (paymentStatus.toUpperCase() !== 'PAID') {
+          console.log(`ℹ️ Invoice not generated for order ${id}: payment status is ${paymentStatus} (only paid orders generate invoices)`)
+        } else {
+          // Check if invoice already exists for this registration
+          const existingInvoice = await prisma.invoice.findFirst({
+            where: { courseRegistrationId: id },
           })
 
-          console.log(`✅ Invoice generated for order ${id} when status changed to Completed`)
-        } else {
-          console.log(`ℹ️ Invoice already exists for order ${id}, skipping generation`)
+          // Only create invoice if it doesn't exist
+          if (!existingInvoice) {
+            const amount = schedule?.fee || 0
+
+            await createInvoice({
+              courseId: updatedRegistration.courseId || null,
+              scheduleId: updatedRegistration.scheduleId || null,
+              courseRegistrationId: id,
+              userId: null,
+              amount,
+              email: updatedRegistration.email,
+              name: updatedRegistration.name,
+              courseTitle: updatedRegistration.courseTitle || programName || null,
+              address: updatedRegistration.address || null,
+              city: updatedRegistration.city || null,
+              country: updatedRegistration.country || null,
+              participants: updatedRegistration.participants || 1,
+              paymentStatus: paymentStatus,
+            })
+
+            console.log(`✅ Invoice generated for order ${id} when status changed to Completed`)
+          } else {
+            console.log(`ℹ️ Invoice already exists for order ${id}, skipping generation`)
+          }
         }
       } catch (invoiceError) {
         console.error('Error generating invoice when order status changed to Completed:', invoiceError)

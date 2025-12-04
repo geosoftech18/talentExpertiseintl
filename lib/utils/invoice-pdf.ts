@@ -6,7 +6,7 @@ import path from 'path'
 interface InvoiceData {
   invoiceNo: string
   issueDate: Date
-  dueDate: Date
+  dueDate?: Date // Optional now
   customerName: string
   customerEmail: string
   customerAddress?: string
@@ -15,6 +15,8 @@ interface InvoiceData {
   courseTitle: string
   amount: number
   status: string
+  participants?: number // Number of participants
+  unitPrice?: number // Price per participant
 }
 
 /**
@@ -62,16 +64,48 @@ export async function generateInvoicePDF(
     const companyAddress = process.env.COMPANY_ADDRESS || 'Dubai, UAE'
     const companyEmail = process.env.COMPANY_EMAIL || 'info@example.com'
     const companyPhone = process.env.COMPANY_PHONE || '+971 XX XXX XXXX'
+    const logoUrl = 'https://talentexpertiseintl.com/wp-content/uploads/2022/07/talent-expertise-logo.jpg'
 
-    // Draw company name
-    page.drawText(companyName, {
-      x: margin,
-      y: currentY,
-      size: 18,
-      font: helveticaBoldFont,
-      color: primaryBlue,
-    })
-    currentY -= 25
+    // Try to load and embed company logo
+    let logoImage = null
+    let logoHeight = 60 // Default height if logo loads
+    let logoWidth = 0
+    try {
+      const logoResponse = await fetch(logoUrl)
+      if (logoResponse.ok) {
+        const logoBytes = await logoResponse.arrayBuffer()
+        logoImage = await pdfDoc.embedJpg(logoBytes)
+        // Calculate dimensions - scale to fit max 60pt height
+        const originalWidth = logoImage.width
+        const originalHeight = logoImage.height
+        const scale = 60 / originalHeight // Scale to 60pt height
+        logoWidth = originalWidth * scale
+        logoHeight = 60
+      }
+    } catch (error) {
+      console.warn('Could not load company logo, using text fallback:', error)
+    }
+
+    // Draw company logo or name
+    if (logoImage) {
+      page.drawImage(logoImage, {
+        x: margin,
+        y: currentY - logoHeight,
+        width: logoWidth,
+        height: logoHeight,
+      })
+      currentY -= logoHeight + 15
+    } else {
+      // Fallback to text if logo fails
+      page.drawText(companyName, {
+        x: margin,
+        y: currentY,
+        size: 18,
+        font: helveticaBoldFont,
+        color: primaryBlue,
+      })
+      currentY -= 25
+    }
 
     // Company details
     const companyDetails = [companyAddress, companyEmail, companyPhone]
@@ -97,13 +131,13 @@ export async function generateInvoicePDF(
     })
     currentY -= 35
 
-    // Invoice details
+    // Invoice details (without due date)
     const invoiceDetails = [
       { label: 'Invoice No:', value: invoiceData.invoiceNo },
       { label: 'Issue Date:', value: formatDate(invoiceData.issueDate) },
-      { label: 'Due Date:', value: formatDate(invoiceData.dueDate) },
     ]
 
+    const invoiceDetailsStartY = currentY
     for (const detail of invoiceDetails) {
       // Label
       page.drawText(detail.label, {
@@ -124,21 +158,17 @@ export async function generateInvoicePDF(
       })
       currentY -= 16
     }
+    
+    const invoiceDetailsEndY = currentY
 
     // ==========================================
-    // BILLING INFORMATION SECTION
+    // PAY TO SECTION (Below Invoice Details)
     // ==========================================
     
-    currentY -= 30 // Space between header and billing info
-    
-    // Calculate the lowest Y position from company info
-    const companyInfoBottom = height - margin - 25 - (companyDetails.length * 14)
-    const billingStartY = Math.max(currentY, companyInfoBottom) - 20
-
-    // Bill To Section
-    currentY = billingStartY
-    page.drawText('Bill To:', {
-      x: width - margin - 200,
+    // Pay To Section - positioned directly below invoice details
+    currentY = invoiceDetailsEndY - 20 // Space after invoice details
+    page.drawText('Pay To:', {
+      x: width - margin - 100,
       y: currentY,
       size: 11,
       font: helveticaBoldFont,
@@ -161,7 +191,7 @@ export async function generateInvoicePDF(
 
     for (const detail of customerDetails) {
       page.drawText(detail, {
-        x: width - margin - 200,
+        x: width - margin - 100,
         y: currentY,
         size: 9,
         font: helveticaFont,
@@ -176,29 +206,44 @@ export async function generateInvoicePDF(
     
     currentY -= 30 // Space before table
     
+    // Calculate unit price and total
+    const participants = invoiceData.participants || 1
+    const unitPrice = invoiceData.unitPrice || invoiceData.amount
+    const totalAmount = unitPrice * participants
+    
     // Table header background
     const tableHeaderY = currentY + 5
+    const headerHeight = 25
     page.drawRectangle({
       x: margin,
-      y: tableHeaderY - 20,
+      y: tableHeaderY - headerHeight,
       width: contentWidth,
-      height: 25,
+      height: headerHeight,
       color: primaryBlue,
-      opacity: 0.1,
+      opacity: 0.15,
     })
 
-    // Table header text
-    page.drawText('Description', {
-      x: margin + 10,
-      y: tableHeaderY - 5,
+    // Table header text - centered in colored container
+    const descriptionHeader = 'Description'
+    const amountHeader = 'Amount'
+    const descriptionHeaderWidth = helveticaBoldFont.widthOfTextAtSize(descriptionHeader, 10)
+    const amountHeaderWidth = helveticaBoldFont.widthOfTextAtSize(amountHeader, 10)
+    
+    // Center Description in left half
+    const descriptionX = margin + (contentWidth * 0.5 - descriptionHeaderWidth) / 2
+    page.drawText(descriptionHeader, {
+      x: descriptionX,
+      y: tableHeaderY - 8,
       size: 10,
       font: helveticaBoldFont,
       color: black,
     })
 
-    page.drawText('Amount', {
-      x: width - margin - 120,
-      y: tableHeaderY - 5,
+    // Center Amount in right half
+    const amountX = margin + contentWidth * 0.5 + (contentWidth * 0.5 - amountHeaderWidth) / 2
+    page.drawText(amountHeader, {
+      x: amountX,
+      y: tableHeaderY - 8,
       size: 10,
       font: helveticaBoldFont,
       color: black,
@@ -206,27 +251,39 @@ export async function generateInvoicePDF(
 
     // Header underline
     page.drawLine({
-      start: { x: margin, y: tableHeaderY - 20 },
-      end: { x: width - margin, y: tableHeaderY - 20 },
+      start: { x: margin, y: tableHeaderY - headerHeight },
+      end: { x: width - margin, y: tableHeaderY - headerHeight },
       thickness: 1,
       color: lightGray,
     })
 
-    // Table row
-    currentY = tableHeaderY - 35
+    // Table row with colored background
+    currentY = tableHeaderY - headerHeight - 5
     const courseTitle = invoiceData.courseTitle || 'Course Registration'
     
     // Wrap long course titles
-    const maxTitleWidth = width - margin - 150
+    const maxTitleWidth = contentWidth * 0.5 - 20
     const titleLines = wrapText(courseTitle, maxTitleWidth, helveticaFont, 10)
     
-    let rowHeight = Math.max(20, titleLines.length * 15)
+    let rowHeight = Math.max(30, titleLines.length * 15 + 10)
     
-    // Draw course title (may be multiple lines)
-    let titleY = currentY + (rowHeight - 10)
+    // Row background (light blue)
+    page.drawRectangle({
+      x: margin,
+      y: currentY - rowHeight,
+      width: contentWidth,
+      height: rowHeight,
+      color: primaryBlue,
+      opacity: 0.05,
+    })
+    
+    // Draw course title (centered in left half)
+    let titleY = currentY - 10
     for (const line of titleLines) {
+      const lineWidth = helveticaFont.widthOfTextAtSize(line, 10)
+      const lineX = margin + (contentWidth * 0.5 - lineWidth) / 2
       page.drawText(line, {
-        x: margin + 10,
+        x: lineX,
         y: titleY,
         size: 10,
         font: helveticaFont,
@@ -235,14 +292,31 @@ export async function generateInvoicePDF(
       titleY -= 15
     }
 
-    // Amount (right aligned)
-    page.drawText(formatCurrency(invoiceData.amount), {
-      x: width - margin - 120,
-      y: currentY + (rowHeight - 10),
+    // Amount (centered in right half)
+    const amountText = formatCurrency(totalAmount)
+    const amountTextWidth = helveticaBoldFont.widthOfTextAtSize(amountText, 10)
+    const amountTextX = margin + contentWidth * 0.5 + (contentWidth * 0.5 - amountTextWidth) / 2
+    page.drawText(amountText, {
+      x: amountTextX,
+      y: currentY - 10,
       size: 10,
       font: helveticaBoldFont,
       color: darkGray,
     })
+    
+    // Show participants if more than 1
+    if (participants > 1) {
+      const participantsText = `${participants} × ${formatCurrency(unitPrice)}`
+      const participantsTextWidth = helveticaFont.widthOfTextAtSize(participantsText, 8)
+      const participantsTextX = margin + contentWidth * 0.5 + (contentWidth * 0.5 - participantsTextWidth) / 2
+      page.drawText(participantsText, {
+        x: participantsTextX,
+        y: currentY - 25,
+        size: 8,
+        font: helveticaFont,
+        color: mediumGray,
+      })
+    }
 
     // Row bottom line
     currentY -= rowHeight
@@ -259,9 +333,9 @@ export async function generateInvoicePDF(
     
     currentY -= 25
 
-    // Total label and amount
+    // Total label and amount (based on participants)
     const totalLabel = 'Total Amount:'
-    const totalAmount = formatCurrency(invoiceData.amount)
+    const totalAmountFormatted = formatCurrency(totalAmount)
     
     page.drawText(totalLabel, {
       x: width - margin - 200,
@@ -272,7 +346,7 @@ export async function generateInvoicePDF(
     })
 
     const totalLabelWidth = helveticaBoldFont.widthOfTextAtSize(totalLabel, 11)
-    page.drawText(totalAmount, {
+    page.drawText(totalAmountFormatted, {
       x: width - margin - 120,
       y: currentY,
       size: 12,
@@ -353,16 +427,18 @@ export async function generateInvoicePDF(
 
     currentY -= 18
 
-    // Payment instructions
-    const paymentText = 'Please make payment by the due date to avoid any late fees.'
-    const paymentWidth = helveticaFont.widthOfTextAtSize(paymentText, 8)
-    page.drawText(paymentText, {
-      x: (width - paymentWidth) / 2,
-      y: currentY,
-      size: 8,
-      font: helveticaFont,
-      color: mediumGray,
-    })
+    // Payment instructions (only for paid invoices)
+    if (invoiceData.status.toUpperCase() === 'PAID') {
+      const paymentText = 'Payment received.For any questions, please contact us at info@talentexpertiseintl.com or +971 56 179 2284'
+      const paymentWidth = helveticaFont.widthOfTextAtSize(paymentText, 8)
+      page.drawText(paymentText, {
+        x: (width - paymentWidth) / 2,
+        y: currentY,
+        size: 8,
+        font: helveticaFont,
+        color: mediumGray,
+      })
+    }
 
     // Payment info if provided
     if (process.env.COMPANY_PAYMENT_INFO) {

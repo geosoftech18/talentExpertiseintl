@@ -20,7 +20,16 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Create invoice using service
+    // Create invoice using service (only for paid orders)
+    const paymentStatus = body.paymentStatus || 'PAID' // Default to PAID for direct invoice creation
+    
+    if (paymentStatus.toUpperCase() !== 'PAID') {
+      return NextResponse.json(
+        { success: false, error: 'Invoices can only be generated for paid orders' },
+        { status: 400 }
+      )
+    }
+
     const result = await createInvoice({
       courseId: body.courseId || null,
       scheduleId: body.scheduleId || null,
@@ -33,6 +42,8 @@ export async function POST(request: NextRequest) {
       address: body.address || null,
       city: body.city || null,
       country: body.country || null,
+      participants: body.participants || 1,
+      paymentStatus: paymentStatus,
     })
 
     return NextResponse.json(result, { status: 201 })

@@ -282,7 +282,7 @@ export default function CourseDetailClient({
             </Badge>
           </div>
 
-          <h1 className="text-5xl md:text-6xl font-bold mb-6 leading-tight animate-slide-up">
+          <h1 className="text-2xl md:text-6xl font-bold mb-6 leading-tight animate-slide-up">
             {course.title}
           </h1>
 
@@ -346,8 +346,64 @@ export default function CourseDetailClient({
             width: `${leftColumnWidth}px`,
           }}
         >
-          <div className="px-4 sm:px-6 py-2 h-full">
-            <div className="grid w-full grid-cols-5 gap-1.5 bg-slate-100 p-0.5 rounded-md">
+          <div className="px-2 sm:px-4 md:px-6 py-2 h-full">
+            {/* Mobile: Horizontal scrollable tabs */}
+            <div className="md:hidden overflow-x-auto scrollbar-hide -mx-2 px-2">
+              <div className="flex gap-1.5 bg-slate-100 p-0.5 rounded-md min-w-max">
+                <button
+                  onClick={() => scrollToSection('schedule')}
+                  className={`px-3 py-1.5 rounded-md text-xs sm:text-sm font-medium transition-all whitespace-nowrap flex-shrink-0 ${
+                    activeTab === 'schedule'
+                      ? 'bg-white text-slate-900 shadow-sm'
+                      : 'text-slate-600 hover:text-slate-900'
+                  }`}
+                >
+                  Schedule
+                </button>
+                <button
+                  onClick={() => scrollToSection('overview')}
+                  className={`px-3 py-1.5 rounded-md text-xs sm:text-sm font-medium transition-all whitespace-nowrap flex-shrink-0 ${
+                    activeTab === 'overview'
+                      ? 'bg-white text-slate-900 shadow-sm'
+                      : 'text-slate-600 hover:text-slate-900'
+                  }`}
+                >
+                  Overview
+                </button>
+                <button
+                  onClick={() => scrollToSection('benefits')}
+                  className={`px-3 py-1.5 rounded-md text-xs sm:text-sm font-medium transition-all whitespace-nowrap flex-shrink-0 ${
+                    activeTab === 'benefits'
+                      ? 'bg-white text-slate-900 shadow-sm'
+                      : 'text-slate-600 hover:text-slate-900'
+                  }`}
+                >
+                  Benefits
+                </button>
+                <button
+                  onClick={() => scrollToSection('curriculum')}
+                  className={`px-3 py-1.5 rounded-md text-xs sm:text-sm font-medium transition-all whitespace-nowrap flex-shrink-0 ${
+                    activeTab === 'curriculum'
+                      ? 'bg-white text-slate-900 shadow-sm'
+                      : 'text-slate-600 hover:text-slate-900'
+                  }`}
+                >
+                  Outline
+                </button>
+                <button
+                  onClick={() => scrollToSection('faq')}
+                  className={`px-3 py-1.5 rounded-md text-xs sm:text-sm font-medium transition-all whitespace-nowrap flex-shrink-0 ${
+                    activeTab === 'faq'
+                      ? 'bg-white text-slate-900 shadow-sm'
+                      : 'text-slate-600 hover:text-slate-900'
+                  }`}
+                >
+                  FAQ
+                </button>
+              </div>
+            </div>
+            {/* Desktop: Grid layout */}
+            <div className="hidden md:grid w-full grid-cols-5 gap-1.5 bg-slate-100 p-0.5 rounded-md">
               <button
                 onClick={() => scrollToSection('schedule')}
                 className={`px-3 py-1.5 rounded-md text-sm font-medium transition-all ${
@@ -368,7 +424,6 @@ export default function CourseDetailClient({
               >
                 Overview
               </button>
-              
               <button
                 onClick={() => scrollToSection('benefits')}
                 className={`px-3 py-1.5 rounded-md text-sm font-medium transition-all ${
@@ -387,7 +442,7 @@ export default function CourseDetailClient({
                     : 'text-slate-600 hover:text-slate-900'
                 }`}
               >
-               Outline
+                Outline
               </button>
               <button
                 onClick={() => scrollToSection('faq')}
@@ -407,47 +462,95 @@ export default function CourseDetailClient({
       <div className="max-w-7xl mx-auto px-6 py-12">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           <div ref={leftColumnRef} className="lg:col-span-2 space-y-8">
-            <div ref={tabsRef} className="grid w-full grid-cols-5 mb-8 bg-slate-100 p-1 rounded-lg">
-              <button
-                onClick={() => scrollToSection('schedule')}
-                className={`px-4 py-2 rounded-md font-medium transition-all ${
-                  activeTab === 'schedule' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-600 hover:text-slate-900'
-                }`}
-              >
-                Schedule
-              </button>
-              <button
-                onClick={() => scrollToSection('overview')}
-                className={`px-4 py-2 rounded-md font-medium transition-all ${
-                  activeTab === 'overview' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-600 hover:text-slate-900'
-                }`}
-              >
-                Overview
-              </button>
-              <button
-                onClick={() => scrollToSection('benefits')}
-                className={`px-4 py-2 rounded-md font-medium transition-all ${
-                  activeTab === 'benefits' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-600 hover:text-slate-900'
-                }`}
-              >
-                Benefits
-              </button>
-              <button
-                onClick={() => scrollToSection('curriculum')}
-                className={`px-4 py-2 rounded-md font-medium transition-all ${
-                  activeTab === 'curriculum' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-600 hover:text-slate-900'
-                }`}
-              >
-               Outline
-              </button>
-              <button
-                onClick={() => scrollToSection('faq')}
-                className={`px-4 py-2 rounded-md font-medium transition-all ${
-                  activeTab === 'faq' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-600 hover:text-slate-900'
-                }`}
-              >
-                FAQ
-              </button>
+            <div ref={tabsRef} className="mb-8">
+              {/* Mobile: Horizontal scrollable tabs */}
+              <div className="md:hidden overflow-x-auto scrollbar-hide -mx-6 px-6">
+                <div className="flex gap-1.5 bg-slate-100 p-1 rounded-lg min-w-max">
+                  <button
+                    onClick={() => scrollToSection('schedule')}
+                    className={`px-3 py-2 rounded-md text-xs sm:text-sm font-medium transition-all whitespace-nowrap flex-shrink-0 ${
+                      activeTab === 'schedule' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-600 hover:text-slate-900'
+                    }`}
+                  >
+                    Schedule
+                  </button>
+                  <button
+                    onClick={() => scrollToSection('overview')}
+                    className={`px-3 py-2 rounded-md text-xs sm:text-sm font-medium transition-all whitespace-nowrap flex-shrink-0 ${
+                      activeTab === 'overview' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-600 hover:text-slate-900'
+                    }`}
+                  >
+                    Overview
+                  </button>
+                  <button
+                    onClick={() => scrollToSection('benefits')}
+                    className={`px-3 py-2 rounded-md text-xs sm:text-sm font-medium transition-all whitespace-nowrap flex-shrink-0 ${
+                      activeTab === 'benefits' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-600 hover:text-slate-900'
+                    }`}
+                  >
+                    Benefits
+                  </button>
+                  <button
+                    onClick={() => scrollToSection('curriculum')}
+                    className={`px-3 py-2 rounded-md text-xs sm:text-sm font-medium transition-all whitespace-nowrap flex-shrink-0 ${
+                      activeTab === 'curriculum' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-600 hover:text-slate-900'
+                    }`}
+                  >
+                    Outline
+                  </button>
+                  <button
+                    onClick={() => scrollToSection('faq')}
+                    className={`px-3 py-2 rounded-md text-xs sm:text-sm font-medium transition-all whitespace-nowrap flex-shrink-0 ${
+                      activeTab === 'faq' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-600 hover:text-slate-900'
+                    }`}
+                  >
+                    FAQ
+                  </button>
+                </div>
+              </div>
+              {/* Desktop: Grid layout */}
+              <div className="hidden md:grid w-full grid-cols-5 gap-1.5 bg-slate-100 p-1 rounded-lg">
+                <button
+                  onClick={() => scrollToSection('schedule')}
+                  className={`px-4 py-2 rounded-md font-medium transition-all ${
+                    activeTab === 'schedule' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-600 hover:text-slate-900'
+                  }`}
+                >
+                  Schedule
+                </button>
+                <button
+                  onClick={() => scrollToSection('overview')}
+                  className={`px-4 py-2 rounded-md font-medium transition-all ${
+                    activeTab === 'overview' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-600 hover:text-slate-900'
+                  }`}
+                >
+                  Overview
+                </button>
+                <button
+                  onClick={() => scrollToSection('benefits')}
+                  className={`px-4 py-2 rounded-md font-medium transition-all ${
+                    activeTab === 'benefits' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-600 hover:text-slate-900'
+                  }`}
+                >
+                  Benefits
+                </button>
+                <button
+                  onClick={() => scrollToSection('curriculum')}
+                  className={`px-4 py-2 rounded-md font-medium transition-all ${
+                    activeTab === 'curriculum' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-600 hover:text-slate-900'
+                  }`}
+                >
+                  Outline
+                </button>
+                <button
+                  onClick={() => scrollToSection('faq')}
+                  className={`px-4 py-2 rounded-md font-medium transition-all ${
+                    activeTab === 'faq' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-600 hover:text-slate-900'
+                  }`}
+                >
+                  FAQ
+                </button>
+              </div>
             </div>
 
             {/* Classroom Schedule Section */}

@@ -1,8 +1,8 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useSession, signOut } from "next-auth/react"
-import { useRouter } from "next/navigation"
+import { useRouter, useSearchParams } from "next/navigation"
 import {
   User,
   Mail,
@@ -38,22 +38,90 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 
+interface Course {
+  id: string
+  courseId: string | null
+  courseTitle: string
+  courseCode: string | null
+  category: string | null
+  imageUrl: string | null
+  schedule: {
+    id: string
+    startDate: Date
+    endDate: Date | null
+    venue: string
+    status: string
+  } | null
+  orderStatus: string | null
+  paymentStatus: string | null
+  enrolledDate: Date
+}
+
 export default function UserProfile() {
   const { data: session } = useSession()
   const router = useRouter()
+  const searchParams = useSearchParams()
   const [isEditing, setIsEditing] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
-  const [activeTab, setActiveTab] = useState("overview")
+  const [enrolledCourses, setEnrolledCourses] = useState<Course[]>([])
+  const [coursesLoading, setCoursesLoading] = useState(true)
+  
+  // Get tab from URL query parameter, default to "overview"
+  const tabFromUrl = searchParams.get('tab')
+  const [activeTab, setActiveTab] = useState(tabFromUrl || "overview")
+  
+  // Update active tab when URL parameter changes
+  useEffect(() => {
+    const tab = searchParams.get('tab')
+    if (tab && ['overview', 'courses', 'achievements', 'settings'].includes(tab)) {
+      setActiveTab(tab)
+    }
+  }, [searchParams])
+  
+  // Scroll to top when tab changes
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }, [activeTab])
 
   const [profileData, setProfileData] = useState({
-    firstName: session?.user?.firstName || session?.user?.name?.split(" ")[0] || "",
-    lastName: session?.user?.lastName || session?.user?.name?.split(" ").slice(1).join(" ") || "",
+    firstName: session?.user?.name?.split(" ")[0] || "",
+    lastName: session?.user?.name?.split(" ").slice(1).join(" ") || "",
     email: session?.user?.email || "",
     phone: "",
     bio: "Welcome to my profile! I'm passionate about professional development and continuous learning.",
     location: "",
     dateOfBirth: "",
   })
+
+  // Fetch user's enrolled courses
+  useEffect(() => {
+    const fetchCourses = async () => {
+      // Wait for session to be available
+      if (!session?.user) {
+        setCoursesLoading(false)
+        return
+      }
+
+      try {
+        setCoursesLoading(true)
+        const response = await fetch('/api/user/courses')
+        
+        if (response.ok) {
+          const data = await response.json()
+          if (data.success) {
+            const courses = data.data || []
+            setEnrolledCourses(courses)
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching courses:', error)
+      } finally {
+        setCoursesLoading(false)
+      }
+    }
+
+    fetchCourses()
+  }, [session])
 
   const handleSave = async () => {
     setIsLoading(true)
@@ -70,18 +138,10 @@ export default function UserProfile() {
   }
 
   const stats = [
-    { label: "Courses Enrolled", value: "12", icon: BookOpen, color: "text-blue-600" },
-    { label: "Certificates", value: "8", icon: Award, color: "text-purple-600" },
-    { label: "Hours Learned", value: "156", icon: Clock, color: "text-green-600" },
-    { label: "Achievements", value: "5", icon: Star, color: "text-yellow-600" },
-  ]
-
-  const recentCourses = [
-    { id: 1, name: "Project Management Professional", code: "PMP-101", enrolledDate: "2024-01-15", category: "Project Management" },
-    { id: 2, name: "Leadership & Management", code: "LDM-205", enrolledDate: "2024-02-10", category: "Management & Leadership" },
-    { id: 3, name: "Digital Marketing Fundamentals", code: "DMF-301", enrolledDate: "2024-03-05", category: "Marketing" },
-    { id: 4, name: "Financial Analysis & Reporting", code: "FAR-401", enrolledDate: "2024-03-20", category: "Finance & Accounting" },
-    { id: 5, name: "Risk Management Essentials", code: "RME-501", enrolledDate: "2024-04-01", category: "Risk Management" },
+    { label: "Courses Enrolled", value: enrolledCourses.length.toString(), icon: BookOpen, color: "text-blue-600" },
+    { label: "Certificates", value: "0", icon: Award, color: "text-purple-600" },
+    { label: "Hours Learned", value: "0", icon: Clock, color: "text-green-600" },
+    { label: "Achievements", value: "0", icon: Star, color: "text-yellow-600" },
   ]
 
   const achievements = [
@@ -207,7 +267,7 @@ export default function UserProfile() {
             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
               <TabsList className="grid w-full grid-cols-4">
                 <TabsTrigger value="overview">Overview</TabsTrigger>
-                <TabsTrigger value="courses">Courses</TabsTrigger>
+                <TabsTrigger value="courses">My Courses</TabsTrigger>
                 <TabsTrigger value="achievements">Achievements</TabsTrigger>
                 <TabsTrigger value="settings">Settings</TabsTrigger>
               </TabsList>
@@ -341,76 +401,104 @@ export default function UserProfile() {
                 <Card>
                   <CardHeader>
                     <CardTitle>My Courses</CardTitle>
-                    <CardDescription>Your enrolled courses</CardDescription>
+                    <CardDescription>Enrolled courses</CardDescription>
                   </CardHeader>
                   <CardContent>
-                    <div className="space-y-3">
-                      {recentCourses.length === 0 ? (
-                        <div className="text-center py-8 text-slate-500">
-                          <BookOpen className="w-12 h-12 mx-auto mb-4 text-slate-300" />
-                          <p className="text-lg font-medium mb-2">No courses enrolled yet</p>
-                          <p className="text-sm">Start your learning journey by enrolling in a course</p>
-                          <Button asChild className="mt-4">
-                            <a href="/courses">Browse Courses</a>
-                          </Button>
-                        </div>
-                      ) : (
-                        recentCourses.map((course) => (
-                          <div
-                            key={course.id}
-                            className="p-4 border rounded-lg hover:shadow-md transition-shadow hover:border-blue-300 group"
-                          >
-                            <div className="flex items-start justify-between">
-                              <div className="flex-1">
-                                <div className="flex items-start gap-3">
-                                  <div className="p-2 bg-blue-100 rounded-lg group-hover:bg-blue-200 transition-colors">
-                                    <BookOpen className="w-5 h-5 text-blue-600" />
-                                  </div>
-                                  <div className="flex-1">
-                                    <h3 className="font-semibold text-lg mb-1 text-slate-900 group-hover:text-blue-600 transition-colors">
-                                      {course.name}
-                                    </h3>
-                                    <div className="flex flex-wrap items-center gap-3 mt-2 text-sm text-slate-600">
-                                      {course.code && (
-                                        <div className="flex items-center gap-1">
-                                          <span className="font-medium">Code:</span>
-                                          <span className="text-slate-700">{course.code}</span>
-                                        </div>
-                                      )}
-                                      {course.category && (
-                                        <div className="flex items-center gap-1">
-                                          <span className="text-slate-400">•</span>
-                                          <Badge variant="outline" className="text-xs">
-                                            {course.category}
-                                          </Badge>
-                                        </div>
-                                      )}
-                                      {course.enrolledDate && (
-                                        <div className="flex items-center gap-1">
-                                          <span className="text-slate-400">•</span>
-                                          <Calendar className="w-3 h-3" />
-                                          <span>Enrolled: {new Date(course.enrolledDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</span>
-                                        </div>
-                                      )}
+                    {coursesLoading ? (
+                      <div className="text-center py-8">
+                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
+                        <p className="text-slate-500">Loading courses...</p>
+                      </div>
+                    ) : (
+                      <div className="space-y-3">
+                        {enrolledCourses.length === 0 ? (
+                          <div className="text-center py-8 text-slate-500">
+                            <BookOpen className="w-12 h-12 mx-auto mb-4 text-slate-300" />
+                            <p className="text-lg font-medium mb-2">No courses enrolled yet</p>
+                            <p className="text-sm">Start your learning journey by enrolling in a course</p>
+                            <Button asChild className="mt-4">
+                              <a href="/courses">Browse Courses</a>
+                            </Button>
+                          </div>
+                        ) : (
+                          enrolledCourses.map((course) => (
+                            <div
+                              key={course.id}
+                              className="p-4 border rounded-lg hover:shadow-md transition-shadow hover:border-blue-300 group"
+                            >
+                              <div className="flex items-start justify-between">
+                                <div className="flex-1">
+                                  <div className="flex items-start gap-3">
+                                    <div className="p-2 bg-blue-100 rounded-lg group-hover:bg-blue-200 transition-colors">
+                                      <BookOpen className="w-5 h-5 text-blue-600" />
+                                    </div>
+                                    <div className="flex-1">
+                                      <h3 className="font-semibold text-lg mb-1 text-slate-900 group-hover:text-blue-600 transition-colors">
+                                        {course.courseTitle}
+                                      </h3>
+                                      <div className="flex flex-wrap items-center gap-3 mt-2 text-sm text-slate-600">
+                                        {course.courseCode && (
+                                          <div className="flex items-center gap-1">
+                                            <span className="font-medium">Code:</span>
+                                            <span className="text-slate-700">{course.courseCode}</span>
+                                          </div>
+                                        )}
+                                        {course.category && (
+                                          <div className="flex items-center gap-1">
+                                            <span className="text-slate-400">•</span>
+                                            <Badge variant="outline" className="text-xs">
+                                              {course.category}
+                                            </Badge>
+                                          </div>
+                                        )}
+                                        {course.schedule && (
+                                          <div className="flex items-center gap-1">
+                                            <span className="text-slate-400">•</span>
+                                            <Calendar className="w-3 h-3" />
+                                            <span>
+                                              {new Date(course.schedule.startDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                                            </span>
+                                          </div>
+                                        )}
+                                        {course.enrolledDate && (
+                                          <div className="flex items-center gap-1">
+                                            <span className="text-slate-400">•</span>
+                                            <span>Enrolled: {new Date(course.enrolledDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</span>
+                                          </div>
+                                        )}
+                                        {course.orderStatus && (
+                                          <div className="flex items-center gap-1">
+                                            <span className="text-slate-400">•</span>
+                                            <Badge 
+                                              variant={course.orderStatus === 'Completed' ? 'default' : 'secondary'}
+                                              className="text-xs"
+                                            >
+                                              {course.orderStatus}
+                                            </Badge>
+                                          </div>
+                                        )}
+                                      </div>
                                     </div>
                                   </div>
                                 </div>
+                                {course.courseId && (
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    className="ml-4 opacity-0 group-hover:opacity-100 transition-opacity"
+                                    asChild
+                                  >
+                                    <a href={`/courses/${course.courseId}`}>
+                                      View Course
+                                    </a>
+                                  </Button>
+                                )}
                               </div>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                className="ml-4 opacity-0 group-hover:opacity-100 transition-opacity"
-                                asChild
-                              >
-                                <a href={`/courses/${course.code?.toLowerCase() || course.id}`}>
-                                  View Course
-                                </a>
-                              </Button>
                             </div>
-                          </div>
-                        ))
-                      )}
-                    </div>
+                          ))
+                        )}
+                      </div>
+                    )}
                   </CardContent>
                 </Card>
               </TabsContent>

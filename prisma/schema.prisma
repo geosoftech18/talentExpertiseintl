@@ -46,6 +46,8 @@ model CourseEnquiry {
 // Course Registration Form Submissions
 model CourseRegistration {
   id                    String   @id @default(auto()) @map("_id") @db.ObjectId
+  // User Account Link (optional for backward compatibility)
+  userId                String?  @db.ObjectId
   // Schedule Information
   scheduleId           String?   // Reference to schedule if applicable
   courseId             String?   // Reference to course
@@ -73,11 +75,15 @@ model CourseRegistration {
   // Terms and Verification
   acceptTerms          Boolean   @default(false)
   captcha              String?
+  // Relations
+  user                 User?     @relation(fields: [userId], references: [id], onDelete: SetNull)
   // Metadata
   submittedAt          DateTime @default(now())
   createdAt            DateTime @default(now())
   updatedAt            DateTime @updatedAt
 
+  @@index([userId])
+  @@index([email])
   @@map("course_registrations")
 }
 
@@ -343,6 +349,7 @@ model User {
   // Relations
   accounts              Account[]
   sessions              Session[]
+  courseRegistrations   CourseRegistration[]
   // Metadata
   createdAt             DateTime @default(now())
   updatedAt             DateTime @updatedAt

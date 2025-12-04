@@ -57,9 +57,32 @@ export async function PATCH(
         },
       })
 
+      // Try to find user by email to link the registration
+      let userId: string | null = null
+      try {
+        const user = await prisma.user.findUnique({
+          where: { email: invoiceRequest.email },
+          select: { id: true },
+        })
+        if (user) {
+          // Validate that userId is a valid MongoDB ObjectID
+          const objectIdPattern = /^[0-9a-fA-F]{24}$/
+          if (objectIdPattern.test(user.id)) {
+            userId = user.id
+          } else {
+            console.warn('Invalid userId format (not MongoDB ObjectID):', user.id)
+            userId = null
+          }
+        }
+      } catch (error) {
+        // If user lookup fails, continue without userId
+        console.log('Could not find user for email:', invoiceRequest.email)
+      }
+
       // Create course registration with "In Progress" status
       const courseRegistration = await prisma.courseRegistration.create({
         data: {
+          userId: userId || null, // Link to user account if found
           scheduleId: invoiceRequest.scheduleId || null,
           courseId: invoiceRequest.courseId || null,
           courseTitle: invoiceRequest.courseTitle || null,

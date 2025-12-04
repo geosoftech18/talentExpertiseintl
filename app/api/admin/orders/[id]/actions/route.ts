@@ -82,8 +82,15 @@ export async function POST(
           data: { orderStatus: 'Completed' },
         })
 
-        // Generate invoice when order is marked as completed
+        // Generate invoice when order is marked as completed (only for paid orders)
         try {
+          // Only generate invoice for paid orders
+          const paymentStatus = registration.paymentStatus || 'Unpaid'
+          if (paymentStatus.toUpperCase() !== 'PAID') {
+            console.log(`ℹ️ Invoice not generated for order ${id}: payment status is ${paymentStatus} (only paid orders generate invoices)`)
+            break
+          }
+
           // Check if invoice already exists for this registration
           const existingInvoice = await prisma.invoice.findFirst({
             where: { courseRegistrationId: id },
@@ -108,6 +115,8 @@ export async function POST(
                 address: registration.address || null,
                 city: registration.city || null,
                 country: registration.country || null,
+                participants: registration.participants || 1,
+                paymentStatus: paymentStatus,
               })
 
               console.log(`✅ Invoice generated for order ${id} when marked as completed: ${invoiceResult.invoiceNo}`)

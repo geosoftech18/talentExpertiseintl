@@ -1,4 +1,5 @@
 import { NextAuthOptions } from "next-auth"
+import NextAuth from "next-auth"
 import GoogleProvider from "next-auth/providers/google"
 import LinkedInProvider from "next-auth/providers/linkedin"
 import CredentialsProvider from "next-auth/providers/credentials"
@@ -224,4 +225,7 @@ export const authOptions: NextAuthOptions = {
   trustHost: true, // Required for NextAuth v5
   useSecureCookies: process.env.NODE_ENV === "production",
 }
+
+// Export auth function for use in API routes
+export const { auth } = NextAuth(authOptions)
 

@@ -13,6 +13,7 @@ import {
   FileCheck,
 } from "lucide-react"
 import { useState, useEffect } from "react"
+import { useRouter } from "next/navigation"
 
 interface SidebarProps {
   isOpen: boolean
@@ -21,8 +22,19 @@ interface SidebarProps {
 }
 
 export default function Sidebar({ isOpen, onNavigate, currentPage }: SidebarProps) {
+  const router = useRouter()
   const [expandedMenu, setExpandedMenu] = useState<string | null>(null)
   const [invoiceRequestCount, setInvoiceRequestCount] = useState<number>(0)
+
+  const handleLogout = async () => {
+    try {
+      await fetch('/api/admin/auth/logout', { method: 'POST' })
+      router.push('/admin/login')
+    } catch (error) {
+      console.error('Logout error:', error)
+      router.push('/admin/login')
+    }
+  }
 
   // Fetch pending invoice requests count
   useEffect(() => {
@@ -181,7 +193,10 @@ export default function Sidebar({ isOpen, onNavigate, currentPage }: SidebarProp
 
       {/* Logout */}
       <div className="p-3 border-t border-border">
-        <button className="w-full flex items-center gap-3 px-4 py-3 rounded-lg theme-muted hover:text-destructive transition-colors">
+        <button 
+          onClick={handleLogout}
+          className="w-full flex items-center gap-3 px-4 py-3 rounded-lg theme-muted hover:text-destructive transition-colors"
+        >
           <LogOut size={20} />
           {isOpen && <span className="text-sm font-medium">Logout</span>}
         </button>

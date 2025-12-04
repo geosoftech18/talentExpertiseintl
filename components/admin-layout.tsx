@@ -11,6 +11,11 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const router = useRouter()
   const searchParams = useSearchParams()
 
+  // Don't render layout for login page
+  if (pathname === '/admin/login') {
+    return <>{children}</>
+  }
+
   // Determine current page from pathname and query params
   const getCurrentPage = () => {
     if (!pathname) return "dashboard"

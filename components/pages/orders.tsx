@@ -2,7 +2,8 @@
 
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
-import { Search, RefreshCw, Calendar, ChevronUp, ChevronDown, Edit, Loader2 } from "lucide-react"
+import { Search, RefreshCw, Calendar, ChevronUp, ChevronDown, Edit, Loader2, Plus } from "lucide-react"
+import { Button } from "@/components/ui/button"
 
 interface Order {
   id: number
@@ -56,6 +57,7 @@ export default function Orders() {
 
     fetchOrders()
   }, [])
+
 
 
   // Dummy data matching the image (fallback if no data)
@@ -315,6 +317,7 @@ export default function Orders() {
   }
 
 
+
   if (loading) {
     return (
       <div className="p-8 space-y-6 theme-bg">
@@ -349,9 +352,16 @@ export default function Orders() {
 
   return (
     <div className="p-8 space-y-6 theme-bg">
-      {/* Title */}
-      <div>
+      {/* Title and Create Button */}
+      <div className="flex items-center justify-between">
         <h1 className="text-4xl font-bold theme-text mb-2">Orders</h1>
+        <Button
+          onClick={() => router.push("/admin/orders/create")}
+          className="bg-primary text-primary-foreground hover:bg-primary/90"
+        >
+          <Plus className="w-4 h-4 mr-2" />
+          Create Order
+        </Button>
       </div>
 
       {/* Tabs */}
@@ -598,6 +608,7 @@ export default function Orders() {
           </table>
         </div>
       </div>
+
     </div>
   )
 }

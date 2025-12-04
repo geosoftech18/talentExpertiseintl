@@ -321,13 +321,13 @@ export default function Header() {
                       </Link>
                     </DropdownMenuItem>
                     <DropdownMenuItem asChild>
-                      <Link href="/courses" className="cursor-pointer">
+                      <Link href="/profile?tab=courses" className="cursor-pointer">
                         <BookOpen className="mr-2 h-4 w-4" />
                         <span>My Courses</span>
                       </Link>
                     </DropdownMenuItem>
                     <DropdownMenuItem asChild>
-                      <Link href="/certificates" className="cursor-pointer">
+                      <Link href="/profile?tab=achievements" className="cursor-pointer">
                         <Award className="mr-2 h-4 w-4" />
                         <span>Certificates</span>
                       </Link>

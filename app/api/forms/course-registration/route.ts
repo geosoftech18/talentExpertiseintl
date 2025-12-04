@@ -1,10 +1,31 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { auth } from '@/lib/auth'
 // Invoice generation removed - invoices are now generated when order status changes to "Completed"
 
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
+    
+    // Get user session if logged in (optional - for backward compatibility)
+    let userId: string | null = null
+    try {
+      const session = await auth()
+      if (session?.user?.id) {
+        // Validate that userId is a valid MongoDB ObjectID (24 hex characters)
+        const objectIdPattern = /^[0-9a-fA-F]{24}$/
+        if (objectIdPattern.test(session.user.id)) {
+          userId = session.user.id
+        } else {
+          // If userId is not a valid ObjectID (e.g., UUID format), skip it
+          console.warn('Invalid userId format (not MongoDB ObjectID):', session.user.id)
+          userId = null
+        }
+      }
+    } catch (error) {
+      // If session check fails, continue without userId (anonymous registration)
+      console.log('No user session found, creating anonymous registration')
+    }
 
     // If payment method is "invoice", create an InvoiceRequest instead of direct registration
     if (body.paymentMethod === 'invoice') {
@@ -25,6 +46,7 @@ export async function POST(request: NextRequest) {
       const totalAmount = perParticipantAmount * participants
 
       // Create invoice request
+      // Note: InvoiceRequest doesn't have userId field, but when approved and converted to CourseRegistration, it will be linked
       const invoiceRequest = await prisma.invoiceRequest.create({
         data: {
           scheduleId: body.scheduleId || null,
@@ -63,6 +85,7 @@ export async function POST(request: NextRequest) {
     
     const courseRegistration = await prisma.courseRegistration.create({
       data: {
+        userId: userId || null, // Link to user account if logged in
         scheduleId: body.scheduleId || null,
         courseId: body.courseId || null,
         courseTitle: body.courseTitle || null,
