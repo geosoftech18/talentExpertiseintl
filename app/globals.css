@@ -11,7 +11,7 @@
   --card-foreground: #1e293b;
   --popover: #ffffff;
   --popover-foreground: #1e293b;
-  --primary: #0ea5e9;
+  --primary: #0A3049;
   --primary-foreground: #ffffff;
   --secondary: #f1f5f9;
   --secondary-foreground: #475569;
@@ -51,6 +51,10 @@
   --tei-magenta: #ec4899;
   --tei-purple: #8b5cf6;
   --tei-orange: #f59e0b;
+  
+  /* TEI Brand Colors */
+  --tei-brand-heading: #6F4E25;
+  --tei-brand-button: #0A3049;
 }
 
 .dark {

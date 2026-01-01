@@ -239,19 +239,19 @@ export default function TestimonialsSection() {
     <Card
       className={`group hover:shadow-2xl transition-all duration-500 border-2 overflow-hidden h-full ${
         featured
-          ? "border-purple-200 bg-gradient-to-br from-white to-purple-50 shadow-xl scale-105"
+          ? "border-[#6F4E25]/30 bg-gradient-to-br from-white to-[#6F4E25]/10 shadow-xl scale-105"
           : "border-gray-200 hover:border-purple-200 hover:-translate-y-2"
       }`}
     >
       <CardContent className="p-4 sm:p-5 lg:p-6 relative">
         {/* Quote Icon */}
         <div className="absolute top-3 right-3 sm:top-4 sm:right-4 opacity-10">
-          <Quote className="w-8 h-8 sm:w-10 sm:h-10 lg:w-12 lg:h-12 text-purple-600" />
+          <Quote className="w-8 h-8 sm:w-10 sm:h-10 lg:w-12 lg:h-12 text-[#6F4E25]" />
         </div>
 
         {/* Course Badge */}
         <div className="mb-3 sm:mb-4">
-          <Badge variant="outline" className="bg-purple-50 text-purple-700 border-purple-200 text-[10px] sm:text-xs font-medium mb-2">
+          <Badge variant="outline" className="bg-[#6F4E25]/10 text-[#6F4E25] border-[#6F4E25]/30 text-[10px] sm:text-xs font-medium mb-2">
             {testimonial.category}
           </Badge>
           <h4 className="font-semibold text-gray-900 text-xs sm:text-sm leading-tight line-clamp-2">{testimonial.course}</h4>
@@ -274,7 +274,7 @@ export default function TestimonialsSection() {
         <div className="flex items-start space-x-3 sm:space-x-4">
           <Avatar className="w-10 h-10 sm:w-12 sm:h-12 border-2 border-purple-200 flex-shrink-0">
             <AvatarImage src={testimonial.avatar || "/placeholder.svg"} alt={testimonial.name} />
-            <AvatarFallback className="bg-purple-100 text-purple-700 font-semibold text-xs sm:text-sm">
+            <AvatarFallback className="bg-[#6F4E25]/10 text-[#6F4E25] font-semibold text-xs sm:text-sm">
               {getInitials(testimonial.name)}
             </AvatarFallback>
           </Avatar>
@@ -297,23 +297,23 @@ export default function TestimonialsSection() {
   )
 
   return (
-    <section className="py-10 sm:py-16 lg:py-20 bg-gradient-to-br from-purple-50 via-white to-blue-50 relative overflow-hidden">
+    <section className="py-10 sm:py-16 lg:py-20 bg-gradient-to-br from-[#6F4E25]/5 via-white to-[#0A3049]/5 relative overflow-hidden">
       {/* Background Elements */}
-      <div className="absolute top-0 right-0 w-64 h-64 sm:w-96 sm:h-96 bg-purple-200 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-pulse"></div>
-      <div className="absolute bottom-0 left-0 w-64 h-64 sm:w-96 sm:h-96 bg-blue-200 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-pulse delay-1000"></div>
+      <div className="absolute top-0 right-0 w-64 h-64 sm:w-96 sm:h-96 bg-[#6F4E25]/10 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-pulse"></div>
+      <div className="absolute bottom-0 left-0 w-64 h-64 sm:w-96 sm:h-96 bg-[#0A3049]/10 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-pulse delay-1000"></div>
 
       <div className="container max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
         {/* Section Header */}
         <div className="text-center mb-8 sm:mb-12 lg:mb-16">
           <div className="flex items-center justify-center mb-4 sm:mb-6">
-            <Quote className="w-6 h-6 sm:w-8 sm:h-8 text-purple-600 mr-2 sm:mr-3" />
-            <Badge variant="outline" className="border-purple-200 text-purple-700 bg-purple-50 px-3 py-1 sm:px-4 sm:py-2 text-sm sm:text-lg">
+            <Quote className="w-6 h-6 sm:w-8 sm:h-8 text-[#0A3049] mr-2 sm:mr-3" />
+            <Badge variant="outline" className="border-[#0A3049]/30 text-[#0A3049] bg-[#0A3049]/10 px-3 py-1 sm:px-4 sm:py-2 text-sm sm:text-lg">
               Client Testimonials
             </Badge>
           </div>
-          <h2 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl xl:text-5xl font-bold text-gray-900 mb-4 sm:mb-6 px-4">
+          <h2 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl xl:text-5xl font-bold text-[#0A3049] mb-4 sm:mb-6 px-4">
             What Our{" "}
-            <span className="bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
+            <span className="bg-gradient-to-r from-[#0A3049] to-[#6F4E25] bg-clip-text text-transparent">
               Clients Say
             </span>
           </h2>
@@ -330,11 +330,11 @@ export default function TestimonialsSection() {
             return (
               <Card
                 key={index}
-                className="text-center p-3 sm:p-4 lg:p-6 border-2 border-purple-100 bg-gradient-to-br from-white to-purple-50 hover:shadow-lg transition-all duration-300"
+                className="text-center p-3 sm:p-4 lg:p-6 border-2 border-[#6F4E25]/20 bg-gradient-to-br from-white to-[#6F4E25]/5 hover:shadow-lg transition-all duration-300"
               >
                 <div className="flex justify-center mb-2 sm:mb-3 lg:mb-4">
-                  <div className="p-2 sm:p-2.5 lg:p-3 bg-purple-100 rounded-full">
-                    <IconComponent className="w-5 h-5 sm:w-6 sm:h-6 lg:w-8 lg:h-8 text-purple-600" />
+                  <div className="p-2 sm:p-2.5 lg:p-3 bg-[#6F4E25]/10 rounded-full">
+                    <IconComponent className="w-5 h-5 sm:w-6 sm:h-6 lg:w-8 lg:h-8 text-[#6F4E25]" />
                   </div>
                 </div>
                 <div className="text-lg sm:text-xl lg:text-2xl xl:text-3xl font-bold text-gray-900 mb-1 sm:mb-2">{stat.value}</div>
@@ -360,8 +360,8 @@ export default function TestimonialsSection() {
                   }}
                   className={`transition-all duration-200 text-xs sm:text-sm whitespace-nowrap flex-shrink-0 snap-start ${
                     selectedCategory === category
-                      ? "bg-purple-600 text-white shadow-lg"
-                      : "border-purple-200 !text-purple-700 hover:bg-purple-50"
+                      ? "bg-[#0A3049] text-white shadow-lg"
+                      : "border-[#6F4E25]/30 !text-[#6F4E25] hover:bg-[#6F4E25]/10"
                   }`}
                 >
                   {category}
@@ -396,7 +396,7 @@ export default function TestimonialsSection() {
                 variant="outline"
                 size="sm"
                 onClick={() => setIsAutoPlaying(!isAutoPlaying)}
-                className="border-purple-200 text-purple-700 hover:bg-purple-50"
+                className="border-[#6F4E25]/30 text-[#6F4E25] hover:bg-[#6F4E25]/10"
               >
                 {isAutoPlaying ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
               </Button>
@@ -486,7 +486,7 @@ export default function TestimonialsSection() {
                       setIsAutoPlaying(false)
                     }}
                     className={`w-2 h-2 sm:w-2.5 sm:h-2.5 lg:w-3 lg:h-3 rounded-full transition-all duration-300 ${
-                      index === currentSlide ? "bg-purple-600 scale-125" : "bg-gray-300 hover:bg-gray-400"
+                      index === currentSlide ? "bg-[#0A3049] scale-125" : "bg-gray-300 hover:bg-gray-400"
                     }`}
                     aria-label={`Go to slide ${index + 1}`}
                   />
@@ -511,7 +511,7 @@ export default function TestimonialsSection() {
           <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center">
             <Button
               size="lg"
-              className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white font-semibold px-6 py-3 sm:px-8 sm:py-4 text-sm sm:text-base lg:text-lg rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 w-full sm:w-auto"
+              className="bg-[#0A3049] hover:bg-[#0A3049]/90 text-white font-semibold px-6 py-3 sm:px-8 sm:py-4 text-sm sm:text-base lg:text-lg rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 w-full sm:w-auto"
             >
               Browse Our Courses
               <ArrowRight className="w-4 h-4 sm:w-5 sm:h-5 ml-2" />
@@ -519,7 +519,7 @@ export default function TestimonialsSection() {
             <Button
               size="lg"
               variant="outline"
-              className="border-2 border-purple-200 text-purple-700 hover:bg-purple-50 font-semibold px-6 py-3 sm:px-8 sm:py-4 text-sm sm:text-base lg:text-lg rounded-xl w-full sm:w-auto"
+              className="border-2 border-[#6F4E25]/30 text-[#6F4E25] hover:bg-[#6F4E25]/10 font-semibold px-6 py-3 sm:px-8 sm:py-4 text-sm sm:text-base lg:text-lg rounded-xl w-full sm:w-auto"
             >
               Read More Reviews
               <Star className="w-4 h-4 sm:w-5 sm:h-5 ml-2" />

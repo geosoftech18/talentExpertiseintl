@@ -13,10 +13,10 @@ const offices = [
   {
     title: 'TEI International',
     address: 'P. O. Box 74653, Dubai UAE',
-    phone: '+971 (04) 425 0700',
-    fax: '+971 (04) 425 0701',
-    email: 'info@teitraining.com',
-    hours: 'Sunday - Thursday: 8:00 AM - 6:00 PM',
+    phone: '+971-4-5473030',
+    
+    email: 'info@talenexpertiseintl.com',
+    hours: 'Monday - Friday: 10:00 AM - 6:00 PM',
   },
   {
     title: 'TEI Saudi',
@@ -47,7 +47,7 @@ export default function ContactPage() {
   return (
     <div className="min-h-screen bg-gradient-to-b from-slate-50 to-white">
       {/* Hero Section */}
-      <div className="relative bg-gradient-to-r from-blue-900 via-blue-800 to-purple-900 text-white overflow-hidden">
+      <div className="relative bg-gradient-to-r from-[#0A3049] via-[#0A3049] to-[#0A3049] text-white overflow-hidden">
         <div className="absolute inset-0 bg-grid-white/[0.05] bg-[size:30px_30px]" />
         <div className="relative max-w-7xl mx-auto px-6 py-20">
           <div className="max-w-3xl">
@@ -170,7 +170,7 @@ export default function ContactPage() {
                   <Button
                     type="submit"
                     size="lg"
-                    className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 font-semibold"
+                    className="w-full bg-gradient-to-r from-[#0A3049] to-[#0A3049] font-semibold"
                   >
                     <Send className="w-5 h-5 mr-2" />
                     Send Message
@@ -204,12 +204,12 @@ export default function ContactPage() {
                       {office.phone}
                     </a>
                   </div>
-                  {office.fax && (
+                  {/* {office.fax && (
                     <div className="flex items-center gap-3">
                       <Phone className="w-5 h-5 text-blue-600 shrink-0" />
                       <span className="text-slate-700 text-sm">Fax: {office.fax}</span>
                     </div>
-                  )}
+                  )} */}
                   <div className="flex items-center gap-3">
                     <Mail className="w-5 h-5 text-blue-600 shrink-0" />
                     <a href={`mailto:${office.email}`} className="text-slate-700 hover:text-blue-600 text-sm">

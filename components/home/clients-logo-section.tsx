@@ -80,7 +80,7 @@ export default function ClientsLogoSection() {
   return (
     <section className="py-10 sm:py-12 md:py-16 bg-gradient-to-br from-gray-50 via-white to-blue-50 relative overflow-hidden">
       {/* Background Elements */}
-      <div className="absolute top-0 left-0 w-64 h-64 sm:w-96 sm:h-96 bg-blue-200 rounded-full mix-blend-multiply filter blur-xl opacity-10 animate-pulse"></div>
+      <div className="absolute top-0 left-0 w-64 h-64 sm:w-96 sm:h-96 bg-[#0A3049]/10 rounded-full mix-blend-multiply filter blur-xl opacity-10 animate-pulse"></div>
       <div className="absolute bottom-0 right-0 w-64 h-64 sm:w-96 sm:h-96 bg-purple-200 rounded-full mix-blend-multiply filter blur-xl opacity-10 animate-pulse delay-1000"></div>
 
       <div className="container max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
@@ -92,15 +92,15 @@ export default function ClientsLogoSection() {
             </div>
             <Badge 
               variant="outline" 
-              className="border-blue-200 text-blue-700 bg-blue-50 px-2 py-0.5 sm:px-3 sm:py-1 text-xs sm:text-sm ml-2 sm:ml-3"
+              className="border-[#6F4E25]/30 text-[#6F4E25] bg-[#6F4E25]/10 px-2 py-0.5 sm:px-3 sm:py-1 text-xs sm:text-sm ml-2 sm:ml-3"
             >
               <Users className="w-2.5 h-2.5 sm:w-3 sm:h-3 mr-1" />
               Trusted Partners
             </Badge>
           </div>
-          <h2 className="text-xl sm:text-2xl md:text-3xl lg:text-5xl font-bold text-gray-900 mb-2 sm:mb-3 px-4">
+          <h2 className="text-xl sm:text-2xl md:text-3xl lg:text-5xl font-bold text-[#0A3049] mb-2 sm:mb-3 px-4">
             Our{" "}
-            <span className="bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
+            <span className="bg-gradient-to-r from-[#0A3049] to-[#6F4E25] bg-clip-text text-transparent">
               Valued Clients
             </span>
           </h2>
@@ -125,7 +125,7 @@ export default function ClientsLogoSection() {
             {duplicatedLogos.map((client, index) => (
               <div
                 key={`${client.id}-${index}`}
-                className="flex-shrink-0 w-36 h-24 sm:w-40 sm:h-28 md:w-48 md:h-32 flex items-center justify-center bg-white rounded-lg sm:rounded-xl shadow-md hover:shadow-xl transition-all duration-300 border border-gray-100 hover:border-blue-200 px-2 sm:px-3 md:px-4"
+                className="flex-shrink-0 w-36 h-24 sm:w-40 sm:h-28 md:w-48 md:h-32 flex items-center justify-center bg-white rounded-lg sm:rounded-xl shadow-md hover:shadow-xl transition-all duration-300 border border-gray-100 hover:border-[#0A3049]/30 px-2 sm:px-3 md:px-4"
               >
                 <div className="relative w-full h-full transition-all duration-300 opacity-100">
                   <Image

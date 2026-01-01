@@ -130,7 +130,7 @@ export default function Footer() {
               />
               <Button
                 type="submit"
-                className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
+                className="w-full bg-gradient-to-r from-[#5f482c] to-[#6F4E25] "
               >
                 Subscribe
               </Button>
@@ -140,14 +140,14 @@ export default function Footer() {
                 <Phone className="w-5 h-5 text-blue-400 mt-0.5 shrink-0" />
                 <div>
                   <p className="text-slate-400 text-xs">Phone</p>
-                  <p className="text-slate-200 text-sm">+971 (04) 425 0700</p>
+                  <p className="text-slate-200 text-sm">+971-4-5473030</p>
                 </div>
               </div>
               <div className="flex items-start gap-3">
                 <Mail className="w-5 h-5 text-blue-400 mt-0.5 shrink-0" />
                 <div>
                   <p className="text-slate-400 text-xs">Email</p>
-                  <p className="text-slate-200 text-sm">info@teitraining.com</p>
+                  <p className="text-slate-200 text-sm">info@talenexpertiseintl.com</p>
                 </div>
               </div>
               <div className="flex items-start gap-3">

@@ -47,6 +47,7 @@ import {
   MessageSquare,
   Download,
   PlayCircle,
+  MessageCircle,
 } from "lucide-react"
 
 const countries = [
@@ -140,28 +141,31 @@ const contactMethods = [
     icon: Phone,
     title: "Call Us",
     description: "Speak with our training consultants",
-    value: "+971 4 123 4567",
+    value: "+971-4-5473010",
     action: "Call Now",
     color: "text-green-600",
     bgColor: "bg-green-50",
+    link: "tel:+971-4-5473010",
   },
   {
     icon: Mail,
     title: "Email Us",
     description: "Get detailed course information",
-    value: "info@talentexpertise.com",
+    value: "info@talentexpertiseintl.com",
     action: "Send Email",
     color: "text-blue-600",
     bgColor: "bg-blue-50",
+    link: "mailto:info@talentexpertiseintl.com",
   },
   {
-    icon: MessageSquare,
-    title: "Live Chat",
+    icon: MessageCircle,
+    title: "WhatsApp",
     description: "Instant support available",
     value: "Chat with Expert",
     action: "Start Chat",
     color: "text-purple-600",
     bgColor: "bg-purple-50",
+    link: "https://wa.me/+971561792284",
   },
   {
     icon: Calendar,
@@ -171,6 +175,7 @@ const contactMethods = [
     action: "Book Now",
     color: "text-orange-600",
     bgColor: "bg-orange-50",
+    link: "/contact",
   },
 ]
 
@@ -275,7 +280,7 @@ export default function CTASection() {
         lastName: "",
         email: "",
         phone: "",
-        countryCode: "+971",
+        countryCode: "+1",
         message: "",
         interestedIn: "",
         company: "",
@@ -327,23 +332,23 @@ export default function CTASection() {
   const totalSteps = 3
 
   return (
-    <section className="py-10 sm:py-16 lg:py-20 bg-gradient-to-br from-gray-50 via-white to-purple-50 relative overflow-hidden">
+    <section className="py-10 sm:py-16 lg:py-20 bg-gradient-to-br from-gray-50 via-white to-[#6F4E25]/5 relative overflow-hidden">
       {/* Background Elements */}
-      <div className="absolute top-0 left-0 w-64 h-64 sm:w-96 sm:h-96 bg-purple-200 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-pulse"></div>
-      <div className="absolute bottom-0 right-0 w-64 h-64 sm:w-96 sm:h-96 bg-blue-200 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-pulse delay-1000"></div>
+      <div className="absolute top-0 left-0 w-64 h-64 sm:w-96 sm:h-96 bg-[#6F4E25]/10 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-pulse"></div>
+      <div className="absolute bottom-0 right-0 w-64 h-64 sm:w-96 sm:h-96 bg-[#0A3049]/10 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-pulse delay-1000"></div>
 
       <div className="container max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
         {/* Section Header */}
         <div className="text-center mb-8 sm:mb-12 lg:mb-16">
           <div className="flex items-center justify-center mb-4 sm:mb-6">
-            <Target className="w-6 h-6 sm:w-8 sm:h-8 text-purple-600 mr-2 sm:mr-3" />
-            <Badge variant="outline" className="border-purple-200 text-purple-700 bg-purple-50 px-3 py-1 sm:px-4 sm:py-2 text-sm sm:text-lg">
+            <Target className="w-6 h-6 sm:w-8 sm:h-8 text-[#0A3049] mr-2 sm:mr-3" />
+            <Badge variant="outline" className="border-[#0A3049]/30 text-[#0A3049] bg-[#0A3049]/10 px-3 py-1 sm:px-4 sm:py-2 text-sm sm:text-lg">
               Get Started Today
             </Badge>
           </div>
-          <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl xl:text-6xl font-bold text-gray-900 mb-4 sm:mb-6 px-4">
+          <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl xl:text-6xl font-bold text-[#0A3049] mb-4 sm:mb-6 px-4">
             Ready to{" "}
-            <span className="bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
+            <span className="bg-gradient-to-r from-[#0A3049] to-[#6F4E25] bg-clip-text text-transparent">
               Transform
             </span>{" "}
             Your Career?
@@ -379,9 +384,9 @@ export default function CTASection() {
             </div>
 
             {/* Benefits List */}
-            <Card className="border-2 border-purple-100 bg-gradient-to-br from-white to-purple-50">
+            <Card className="border-2 border-[#6F4E25]/20 bg-gradient-to-br from-white to-[#6F4E25]/5">
               <CardHeader className="p-4 sm:p-6">
-                <CardTitle className="flex items-center text-purple-900 text-base sm:text-lg lg:text-xl">
+                <CardTitle className="flex items-center text-[#0A3049] text-base sm:text-lg lg:text-xl">
                   <Award className="w-5 h-5 sm:w-6 sm:h-6 mr-2 sm:mr-3" />
                   Why Choose Talent Expertise International?
                 </CardTitle>
@@ -431,9 +436,9 @@ export default function CTASection() {
 
           {/* Right Side - Contact Form */}
           <div className="space-y-6 sm:space-y-8 order-1 lg:order-2">
-            <Card className="border-2 border-purple-200 shadow-2xl bg-white/80 backdrop-blur-sm">
+            <Card className="border-2 border-[#0A3049]/20 shadow-2xl bg-white/80 backdrop-blur-sm">
               <CardHeader className="text-center pb-4 sm:pb-6 p-4 sm:p-6">
-                <CardTitle className="text-xl sm:text-2xl font-bold text-gray-900 mb-2">Get Your Free Consultation</CardTitle>
+                <CardTitle className="text-xl sm:text-2xl font-bold text-[#0A3049] mb-2">Get Your Free Consultation</CardTitle>
                 <p className="text-sm sm:text-base text-gray-600">
                   Fill out the form below and our training experts will contact you within 24 hours
                 </p>
@@ -452,7 +457,7 @@ export default function CTASection() {
                                   currentStep > index + 1
                                     ? "bg-green-500 text-white"
                                     : currentStep === index + 1
-                                    ? "bg-purple-600 text-white"
+                                    ? "bg-[#0A3049] text-white"
                                     : "bg-gray-200 text-gray-600"
                                 }`}
                               >
@@ -473,9 +478,9 @@ export default function CTASection() {
                           ))}
                         </div>
                         <div className="flex justify-between text-xs text-gray-600">
-                          <span className={currentStep === 1 ? "font-semibold text-purple-600" : ""}>Personal Info</span>
-                          <span className={currentStep === 2 ? "font-semibold text-purple-600" : ""}>Professional</span>
-                          <span className={currentStep === 3 ? "font-semibold text-purple-600" : ""}>Message</span>
+                          <span className={currentStep === 1 ? "font-semibold text-[#0A3049]" : ""}>Personal Info</span>
+                          <span className={currentStep === 2 ? "font-semibold text-[#0A3049]" : ""}>Professional</span>
+                          <span className={currentStep === 3 ? "font-semibold text-[#0A3049]" : ""}>Message</span>
                         </div>
                       </div>
                     )}
@@ -493,7 +498,7 @@ export default function CTASection() {
                               value={formData.firstName}
                               onChange={(e) => handleInputChange("firstName", e.target.value)}
                               placeholder="Enter Your First Name"
-                              className="border-2 border-gray-200 focus:border-purple-500 text-sm sm:text-base h-10 sm:h-11"
+                              className="border-2 border-gray-200 focus:border-[#0A3049] text-sm sm:text-base h-10 sm:h-11"
                               required
                             />
                           </div>
@@ -506,7 +511,7 @@ export default function CTASection() {
                               value={formData.lastName}
                               onChange={(e) => handleInputChange("lastName", e.target.value)}
                               placeholder="Enter Your Last Name"
-                              className="border-2 border-gray-200 focus:border-purple-500 text-sm sm:text-base h-10 sm:h-11"
+                              className="border-2 border-gray-200 focus:border-[#0A3049] text-sm sm:text-base h-10 sm:h-11"
                               required
                             />
                           </div>
@@ -524,7 +529,7 @@ export default function CTASection() {
                               value={formData.email}
                               onChange={(e) => handleInputChange("email", e.target.value)}
                               placeholder="Enter Your Email"
-                              className="border-2 border-gray-200 focus:border-purple-500 text-sm sm:text-base h-10 sm:h-11"
+                              className="border-2 border-gray-200 focus:border-[#0A3049] text-sm sm:text-base h-10 sm:h-11"
                               required
                             />
                           </div>
@@ -532,7 +537,7 @@ export default function CTASection() {
                             <Label htmlFor="phone" className="text-xs sm:text-sm font-medium text-gray-700">
                               Phone *
                             </Label>
-                            <div className="flex border-2 border-gray-200 focus-within:border-purple-500 rounded-md overflow-hidden">
+                            <div className="flex border-2 border-gray-200 focus-within:border-[#0A3049] rounded-md overflow-hidden">
                               <Select
                                 value={formData.countryCode}
                                 onValueChange={(value) => handleInputChange("countryCode", value)}
@@ -600,7 +605,7 @@ export default function CTASection() {
                               value={formData.company}
                               onChange={(e) => handleInputChange("company", e.target.value)}
                               placeholder="Your Company"
-                              className="border-2 border-gray-200 focus:border-purple-500 text-sm sm:text-base h-10 sm:h-11"
+                              className="border-2 border-gray-200 focus:border-[#0A3049] text-sm sm:text-base h-10 sm:h-11"
                             />
                           </div>
                           <div className="space-y-2">
@@ -612,7 +617,7 @@ export default function CTASection() {
                               value={formData.jobTitle}
                               onChange={(e) => handleInputChange("jobTitle", e.target.value)}
                               placeholder="Your Job Title"
-                              className="border-2 border-gray-200 focus:border-purple-500 text-sm sm:text-base h-10 sm:h-11"
+                              className="border-2 border-gray-200 focus:border-[#0A3049] text-sm sm:text-base h-10 sm:h-11"
                             />
                           </div>
                         </div>
@@ -627,7 +632,7 @@ export default function CTASection() {
                               value={formData.interestedIn}
                               onValueChange={(value) => handleInputChange("interestedIn", value)}
                             >
-                              <SelectTrigger className="border-2 border-gray-200 focus:border-purple-500 text-sm sm:text-base h-10 sm:h-11">
+                              <SelectTrigger className="border-2 border-gray-200 focus:border-[#0A3049] text-sm sm:text-base h-10 sm:h-11">
                                 <SelectValue placeholder="Select Training Area" />
                               </SelectTrigger>
                               <SelectContent>
@@ -650,7 +655,7 @@ export default function CTASection() {
                               value={formData.trainingBudget}
                               onValueChange={(value) => handleInputChange("trainingBudget", value)}
                             >
-                              <SelectTrigger className="border-2 border-gray-200 focus:border-purple-500 text-sm sm:text-base h-10 sm:h-11">
+                              <SelectTrigger className="border-2 border-gray-200 focus:border-[#0A3049] text-sm sm:text-base h-10 sm:h-11">
                                 <SelectValue placeholder="Select Budget Range" />
                               </SelectTrigger>
                               <SelectContent>
@@ -680,7 +685,7 @@ export default function CTASection() {
                             onChange={(e) => handleInputChange("message", e.target.value)}
                             placeholder="Enter Your Message"
                             rows={4}
-                            className="border-2 border-gray-200 focus:border-purple-500 resize-none text-sm sm:text-base"
+                            className="border-2 border-gray-200 focus:border-[#0A3049] resize-none text-sm sm:text-base"
                             required
                           />
                         </div>
@@ -692,6 +697,7 @@ export default function CTASection() {
                               id="marketingConsent"
                               checked={formData.marketingConsent}
                               onCheckedChange={(checked) => handleInputChange("marketingConsent", checked as boolean)}
+                              className="border-2 border-gray-400 focus:border-[#0A3049]"
                             />
                             <Label htmlFor="marketingConsent" className="text-xs sm:text-sm text-gray-600 leading-relaxed">
                               I would like to receive updates about training programs, industry insights, and special offers
@@ -703,14 +709,15 @@ export default function CTASection() {
                               checked={formData.privacyConsent}
                               onCheckedChange={(checked) => handleInputChange("privacyConsent", checked as boolean)}
                               required
+                              className="border-2 border-gray-400 focus:border-[#0A3049]"
                             />
                             <Label htmlFor="privacyConsent" className="text-xs sm:text-sm text-gray-600 leading-relaxed">
                               I agree to the{" "}
-                              <a href="#" className="text-purple-600 hover:underline">
+                              <a href="#" className="text-[#0A3049] hover:underline">
                                 Privacy Policy
                               </a>{" "}
                               and{" "}
-                              <a href="#" className="text-purple-600 hover:underline">
+                              <a href="#" className="text-[#0A3049] hover:underline">
                                 Terms of Service
                               </a>{" "}
                               *
@@ -737,7 +744,7 @@ export default function CTASection() {
                             type="button"
                             onClick={nextStep}
                             disabled={!isStepValid(currentStep)}
-                            className="flex-1 bg-purple-600 text-white hover:bg-purple-700 disabled:opacity-50 text-sm"
+                            className="flex-1 bg-[#0A3049] text-white hover:bg-[#0A3049]/90 disabled:opacity-50 text-sm"
                           >
                             Next
                             <ArrowRight className="w-4 h-4 ml-2" />
@@ -746,7 +753,7 @@ export default function CTASection() {
                           <Button
                             type="submit"
                             disabled={!isFormValid() || isSubmitting}
-                            className="flex-1 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white disabled:opacity-50 text-sm"
+                            className="flex-1 bg-[#0A3049] hover:bg-[#0A3049]/90 text-white disabled:opacity-50 text-sm"
                           >
                             {isSubmitting ? (
                               <>
@@ -769,7 +776,7 @@ export default function CTASection() {
                       <Button
                         type="submit"
                         disabled={!isFormValid() || isSubmitting}
-                        className="w-full bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white font-semibold py-3 sm:py-4 text-sm sm:text-base lg:text-lg rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 disabled:opacity-50"
+                        className="w-full bg-[#0A3049] hover:bg-[#0A3049]/90 text-white font-semibold py-3 sm:py-4 text-sm sm:text-base lg:text-lg rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 disabled:opacity-50"
                       >
                         {isSubmitting ? (
                           <>
@@ -790,7 +797,7 @@ export default function CTASection() {
                     <div className="w-16 h-16 sm:w-20 sm:h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4 sm:mb-6">
                       <CheckCircle className="w-10 h-10 sm:w-12 sm:h-12 text-green-600" />
                     </div>
-                    <h3 className="text-xl sm:text-2xl font-bold text-gray-900 mb-3 sm:mb-4">Message Sent Successfully!</h3>
+                    <h3 className="text-xl sm:text-2xl font-bold text-[#0A3049] mb-3 sm:mb-4">Message Sent Successfully!</h3>
                     <p className="text-sm sm:text-base text-gray-600 mb-4 sm:mb-6 px-4">
                       Thank you for your interest. Our training consultants will contact you within 24 hours to discuss
                       your requirements.
@@ -810,7 +817,7 @@ export default function CTASection() {
 
         {/* Contact Methods */}
         <div className="mb-8 sm:mb-12 lg:mb-16">
-          <h3 className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900 text-center mb-6 sm:mb-8 px-4">Other Ways to Reach Us</h3>
+          <h3 className="text-xl sm:text-2xl md:text-3xl font-bold text-[#0A3049] text-center mb-6 sm:mb-8 px-4">Other Ways to Reach Us</h3>
           <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-2 md:gap-6">
             {contactMethods.map((method, index) => {
               const IconComponent = method.icon
@@ -831,7 +838,8 @@ export default function CTASection() {
                     <Button
                       variant="outline"
                       size="sm"
-                      className={`border-2  ${method.color.replace("text-", "border-").replace("600", "200")} ${method.color} hover:${method.bgColor} text-xs sm:text-sm w-full sm:w-auto`}
+                      className={`border-2  ${method.color.replace("text-", "border-").replace("600", "200")} ${method.color} hover:${method.bgColor} hover:text-${method.color} text-xs sm:text-sm w-full sm:w-auto`}
+                      onClick={() => window.open(method.link, '_blank')}
                     >
                       {method.action}
                       <ArrowRight className="w-3 h-3 sm:w-4 sm:h-4 ml-1 sm:ml-2" />
@@ -844,7 +852,7 @@ export default function CTASection() {
         </div>
 
         {/* Final CTA Banner */}
-        <div className="bg-gradient-to-r from-purple-600 via-blue-600 to-indigo-600 rounded-xl sm:rounded-2xl p-6 sm:p-8 lg:p-12 text-white relative overflow-hidden">
+        <div className="bg-gradient-to-r from-[#0A3049] via-[#0A3049] to-[#0A3049]/90 rounded-xl sm:rounded-2xl p-6 sm:p-8 lg:p-12 text-white relative overflow-hidden">
           <div className="absolute top-0 right-0 w-48 h-48 sm:w-64 sm:h-64 bg-white/10 rounded-full -translate-y-24 translate-x-24 sm:-translate-y-32 sm:translate-x-32"></div>
           <div className="absolute bottom-0 left-0 w-36 h-36 sm:w-48 sm:h-48 bg-white/10 rounded-full translate-y-18 -translate-x-18 sm:translate-y-24 sm:-translate-x-24"></div>
           <div className="absolute top-1/2 left-1/2 w-24 h-24 sm:w-32 sm:h-32 bg-white/5 rounded-full -translate-x-12 -translate-y-12 sm:-translate-x-16 sm:-translate-y-16"></div>
@@ -863,7 +871,7 @@ export default function CTASection() {
               <Button
                 onClick={() => router.push("/contact")}
                 size="lg"
-                className="bg-white text-purple-600 hover:bg-gray-100 font-semibold px-6 py-3 sm:px-8 sm:py-4 text-sm sm:text-base lg:text-lg rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 w-full sm:w-auto"
+                className="bg-white text-[#0A3049] hover:bg-gray-100 font-semibold px-6 py-3 sm:px-8 sm:py-4 text-sm sm:text-base lg:text-lg rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 w-full sm:w-auto"
               >
                 <Calendar className="w-4 h-4 sm:w-5 sm:h-5 mr-2" />
                 Book Free Consultation
@@ -874,7 +882,7 @@ export default function CTASection() {
                 className="border-2 border-white/30 bg-white/10 text-white hover:bg-white/10 backdrop-blur-sm font-semibold px-6 py-3 sm:px-8 sm:py-4 text-sm sm:text-base lg:text-lg rounded-xl w-full sm:w-auto"
               >
                 <Phone className="w-4 h-4 sm:w-5 sm:h-5 mr-2" />
-                Call +971 4 123 4567
+                Call +971-4-5473010
               </Button>
             </div>
             <div className="flex flex-row items-center gap-4 justify-center mt-6 sm:mt-8 space-y-2 sm:space-y-0 sm:space-x-4 lg:space-x-6 text-xs sm:text-sm opacity-80 px-4">

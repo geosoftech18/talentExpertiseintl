@@ -245,14 +245,14 @@ export default function VenuesPage() {
   return (
     <div className="min-h-screen bg-gradient-to-b from-slate-50 to-white">
       {/* Hero Section */}
-      <div className="relative bg-gradient-to-r from-blue-900 via-blue-800 to-purple-900 text-white overflow-hidden">
+      <div className="relative bg-gradient-to-r from-[#0A3049] via-[#0A3049] to-[#0A3049] text-white overflow-hidden">
         <div className="absolute inset-0 bg-grid-white/[0.05] bg-[size:30px_30px]" />
         <div className="relative max-w-7xl mx-auto px-6 py-20">
           <div className="max-w-3xl">
-            <Badge className="bg-blue-500/20 text-blue-300 border-blue-400/30 mb-6">
+            <Badge className="bg-blue-500/20 text-white border-blue-400/30 mb-6">
               Global Training Locations
             </Badge>
-            <h1 className="text-5xl md:text-6xl font-bold mb-6 leading-tight">
+            <h1 className="text-3xl md:text-5xl font-bold mb-6 leading-tight">
               Training Venues Worldwide
             </h1>
             <p className="text-xl text-blue-100 leading-relaxed">
@@ -271,7 +271,7 @@ export default function VenuesPage() {
               placeholder="Search for a city, country, or venue..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-12 pr-4 py-6 text-lg border-2 border-slate-200 focus:border-blue-500 rounded-xl"
+              className="pl-12 pr-4 py-6 text-lg border-2 border-slate-200 focus:border-[#0A3049] rounded-xl"
             />
           </div>
         </div>

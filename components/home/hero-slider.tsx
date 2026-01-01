@@ -802,7 +802,7 @@ const HeroSlider = forwardRef<HeroSliderHandle, HeroSliderProps>(
     return (
       <div
         ref={containerRef}
-        className={`relative w-full overflow-hidden bg-gradient-to-br from-blue-900 via-blue-800 to-purple-900 dark:from-slate-950 dark:via-blue-950 dark:to-purple-950 ${heightFinal} ${roundedClasses[rounded]} ${shadowClasses[shadow]} focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary ${className}`}
+        className={`relative w-full overflow-hidden bg-gradient-to-br from-[#0A3049] via-[#0A3049] to-[#0A3049] dark:from-slate-950 dark:via-[#0A3049] dark:to-[#0A3049] ${heightFinal} ${roundedClasses[rounded]} ${shadowClasses[shadow]} focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary ${className}`}
         role="region"
         aria-roledescription="carousel"
         aria-label={`Hero carousel showing slide ${currentIndex + 1} of ${slides.length}`}
@@ -938,7 +938,7 @@ const HeroSlider = forwardRef<HeroSliderHandle, HeroSliderProps>(
                     letterStagger={animations.text?.heading?.letterStagger}
                     wordStagger={animations.text?.heading?.wordStagger}
                     typingSpeed={0.03}
-                    className={`text-3xl sm:text-5xl md:text-6xl lg:text-6xl font-bold leading-tight ${themeClasses[theme]} text-balance`}
+                    className={`text-3xl sm:text-4xl  md:text-5xl font-bold leading-tight ${themeClasses[theme]} text-balance`}
                     prefersReducedMotion={prefersReducedMotion}
                   />
                 )}

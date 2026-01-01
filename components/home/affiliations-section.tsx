@@ -64,7 +64,7 @@ export default function AffiliationsSection() {
   return (
     <section className="py-10 sm:py-12 md:py-16 lg:py-20 bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 relative overflow-hidden">
       {/* Animated Background Elements */}
-      <div className="absolute top-0 left-0 w-64 h-64 sm:w-96 sm:h-96 bg-blue-200 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-pulse"></div>
+      <div className="absolute top-0 left-0 w-64 h-64 sm:w-96 sm:h-96 bg-[#0A3049]/10 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-pulse"></div>
       <div className="absolute bottom-0 right-0 w-64 h-64 sm:w-96 sm:h-96 bg-indigo-200 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-pulse delay-1000"></div>
       <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-64 h-64 sm:w-96 sm:h-96 bg-purple-200 rounded-full mix-blend-multiply filter blur-3xl opacity-10 animate-pulse delay-2000"></div>
 
@@ -77,15 +77,15 @@ export default function AffiliationsSection() {
             </div>
             <Badge 
               variant="outline" 
-              className="border-blue-200 text-blue-700 bg-blue-50 px-2 py-0.5 sm:px-3 sm:py-1 md:px-4 md:py-2 text-xs sm:text-sm md:text-base lg:text-lg ml-2 sm:ml-3 md:ml-4"
+              className="border-[#6F4E25]/30 text-[#6F4E25] bg-[#6F4E25]/10 px-2 py-0.5 sm:px-3 sm:py-1 md:px-4 md:py-2 text-xs sm:text-sm md:text-base lg:text-lg ml-2 sm:ml-3 md:ml-4"
             >
               <Shield className="w-2.5 h-2.5 sm:w-3 sm:h-3 md:w-4 md:h-4 mr-1 sm:mr-1.5 md:mr-2" />
               Trusted & Accredited
             </Badge>
           </div>
-          <h2 className="text-xl sm:text-2xl md:text-3xl lg:text-5xl font-bold text-gray-900 mb-2 sm:mb-3 md:mb-4 px-4">
+          <h2 className="text-xl sm:text-2xl md:text-3xl lg:text-5xl font-bold text-[#0A3049] mb-2 sm:mb-3 md:mb-4 px-4">
             Affiliations &{" "}
-            <span className="bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
+            <span className="bg-gradient-to-r from-[#0A3049] to-[#6F4E25] bg-clip-text text-transparent">
               Accreditations
             </span>
           </h2>
@@ -113,7 +113,7 @@ export default function AffiliationsSection() {
               {duplicatedAffiliations.map((affiliation, index) => (
                 <Card
                   key={`${affiliation.id}-${index}`}
-                  className="group flex-shrink-0 w-36 h-32 sm:w-40 sm:h-36 md:w-48 md:h-40 lg:w-56 lg:h-48 relative overflow-hidden border-2 border-gray-200 hover:border-blue-400 transition-all duration-300 bg-white shadow-md hover:shadow-2xl rounded-lg sm:rounded-xl p-3 sm:p-4 md:p-5 lg:p-6 cursor-pointer transform hover:scale-105"
+                  className="group flex-shrink-0 w-36 h-32 sm:w-40 sm:h-36 md:w-48 md:h-40 lg:w-56 lg:h-48 relative overflow-hidden border-2 border-gray-200 hover:border-[#0A3049]/40 transition-all duration-300 bg-white shadow-md hover:shadow-2xl rounded-lg sm:rounded-xl p-3 sm:p-4 md:p-5 lg:p-6 cursor-pointer transform hover:scale-105"
                 >
                   {/* Hover Overlay */}
                   <div className="absolute inset-0 bg-gradient-to-br from-blue-600/10 to-indigo-600/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-lg sm:rounded-xl"></div>
@@ -144,13 +144,13 @@ export default function AffiliationsSection() {
 
           {/* Trust Indicators */}
           <div className="mt-8 sm:mt-10 md:mt-12 grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-5 md:gap-6">
-            <Card className="bg-white/80 backdrop-blur-sm border border-blue-100 shadow-md hover:shadow-lg transition-shadow rounded-lg sm:rounded-xl p-4 sm:p-5 md:p-6">
+            <Card className="bg-white/80 backdrop-blur-sm border border-[#0A3049]/20 shadow-md hover:shadow-lg transition-shadow rounded-lg sm:rounded-xl p-4 sm:p-5 md:p-6">
               <div className="flex items-center space-x-3 sm:space-x-4">
-                <div className="p-2 sm:p-2.5 md:p-3 bg-blue-100 rounded-full">
-                  <Shield className="w-5 h-5 sm:w-5 sm:h-5 md:w-6 md:h-6 text-blue-600" />
+                <div className="p-2 sm:p-2.5 md:p-3 bg-[#0A3049]/10 rounded-full">
+                  <Shield className="w-5 h-5 sm:w-5 sm:h-5 md:w-6 md:h-6 text-[#0A3049]" />
                 </div>
                 <div>
-                  <h3 className="font-semibold text-gray-900 text-sm sm:text-base">Certified Programs</h3>
+                  <h3 className="font-semibold text-[#0A3049] text-sm sm:text-base">Certified Programs</h3>
                   <p className="text-xs sm:text-sm text-gray-600">Internationally recognized</p>
                 </div>
               </div>
@@ -162,7 +162,7 @@ export default function AffiliationsSection() {
                   <Award className="w-5 h-5 sm:w-5 sm:h-5 md:w-6 md:h-6 text-indigo-600" />
                 </div>
                 <div>
-                  <h3 className="font-semibold text-gray-900 text-sm sm:text-base">Quality Assured</h3>
+                  <h3 className="font-semibold text-[#0A3049] text-sm sm:text-base">Quality Assured</h3>
                   <p className="text-xs sm:text-sm text-gray-600">Rigorous standards</p>
                 </div>
               </div>
@@ -174,7 +174,7 @@ export default function AffiliationsSection() {
                   <Sparkles className="w-5 h-5 sm:w-5 sm:h-5 md:w-6 md:h-6 text-purple-600" />
                 </div>
                 <div>
-                  <h3 className="font-semibold text-gray-900 text-sm sm:text-base">Global Recognition</h3>
+                  <h3 className="font-semibold text-[#0A3049] text-sm sm:text-base">Global Recognition</h3>
                   <p className="text-xs sm:text-sm text-gray-600">Worldwide acceptance</p>
                 </div>
               </div>

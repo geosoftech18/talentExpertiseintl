@@ -382,7 +382,7 @@ export default function CourseFilterSection() {
                 <Button
                   onClick={handleSearch}
                   size="lg"
-                  className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white px-8 py-3 rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all duration-200"
+                  className="bg-gradient-to-r from-[#0A3049] to-[#0A3049] hover:from-[#0A3049] hover:to-[#0A3049] text-white px-8 py-3 rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all duration-200"
                 >
                   <Search className="w-5 h-5 mr-2" />
                   Search Courses

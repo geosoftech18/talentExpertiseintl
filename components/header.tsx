@@ -54,22 +54,23 @@ import Image from 'next/image'
 
 // Categories from courses data - dynamically imported or matched from courses
 const courseCategories = [
-  'Project Management',
-  'Management & Leadership',
-  'Marketing',
+  'Admin & Secretarial',
+  'Contracts Management',
+  'Customer Service',
+  'Electrical Engineering',
   'Finance & Accounting',
-  'Risk Management',
+  'Health & Safety',
+  'HR Management',
   'Information Technology',
+  'Maintenance Management',
+  'Management & Leadership',
+  'Mechanical Engineering',
+  'Oil & Gas',
+  'Project Management',
+  'Public Relations',
   'Purchasing Management',
-  'Business & Management',
-  'Procurement & Supply Chain',
-  'Engineering & Technical',
-  'HSE & Security',
-  'Human Resources',
-  'Quality Management',
-  'Sales & Customer Service',
-  'Operations Management',
-  'Strategy & Planning',
+  'Urban Planning & Development',
+  
 ]
 
 export default function Header() {
@@ -119,15 +120,22 @@ export default function Header() {
             <div className="flex items-center gap-4">
               <div className="flex items-center gap-2">
                 <Phone className="w-4 h-4" />
-                <span>+971 (04) 425 0700</span>
+                <span>+971-4-5473030 </span>
               </div>
               <div className="flex items-center gap-2">
                 <Mail className="w-4 h-4" />
-                <span>info@teitraining.com</span>
+                <span>info@talenexpertiseintl.com</span>
               </div>
             </div>
             <div className="hidden md:flex items-center gap-4">
             
+              <Link
+                href="/"
+                className="px-4 py-2  font-medium transition-colors rounded-lg "
+              >
+                Home
+              </Link>
+              <span className="text-slate-500">|</span>
               <Link
                 href="/about"
                 className="px-4 py-2  font-medium transition-colors rounded-lg "
@@ -187,12 +195,12 @@ export default function Header() {
 
             {/* Desktop Navigation */}
             <nav className="hidden lg:flex items-center gap-1">
-              <Link
+              {/* <Link
                 href="/"
                 className="px-4 py-2 text-slate-700 hover:text-blue-600 font-medium transition-colors rounded-lg hover:bg-blue-50"
               >
                 Home
-              </Link>
+              </Link> */}
 
               {/* Training Subjects Dropdown */}
               <div
@@ -200,8 +208,8 @@ export default function Header() {
                 onMouseEnter={() => setOpenDropdown('subjects')}
                 onMouseLeave={() => setOpenDropdown(null)}
               >
-                <button className="flex items-center gap-1 px-4 py-2 text-slate-700 hover:text-blue-600 font-medium transition-colors rounded-lg hover:bg-blue-50">
-                  Training Subjects
+                <button className="flex items-center gap-1 px-4 py-2 text-slate-700 hover:text-[#0A3049] font-medium transition-colors rounded-lg hover:bg-[#0A3049]/5">
+                  Training Programs
                   <ChevronDown className="w-4 h-4" />
                 </button>
                 {openDropdown === 'subjects' && (
@@ -211,11 +219,11 @@ export default function Header() {
                         <Link
                           key={index}
                           href={`/courses?category=${encodeURIComponent(category)}`}
-                          className="block px-4 py-3 text-slate-700 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors group"
+                          className="block px-4 py-3 text-slate-700 hover:text-[#0A3049] hover:bg-[#0A3049]/5 rounded-lg transition-colors group"
                           onClick={() => setOpenDropdown(null)}
                         >
                           <div className="flex items-center justify-between">
-                            <span className="font-medium group-hover:text-blue-600 text-sm">{category}</span>
+                            <span className="font-medium group-hover:text-[#0A3049] text-sm">{category}</span>
                             <ChevronRight className="w-4 h-4 opacity-0 group-hover:opacity-100 transition-opacity" />
                           </div>
                         </Link>
@@ -227,7 +235,7 @@ export default function Header() {
 
               <Link
                 href="/calendar"
-                className="flex items-center gap-1 px-4 py-2 text-slate-700 hover:text-blue-600 font-medium transition-colors rounded-lg hover:bg-blue-50"
+                className="flex items-center gap-1 px-4 py-2 text-slate-700 hover:text-[#0A3049] font-medium transition-colors rounded-lg hover:bg-[#0A3049]/5"
               >
                 <Calendar className="w-4 h-4" />
                 Calendar
@@ -235,7 +243,7 @@ export default function Header() {
 
               <Link
                 href="/certificates"
-                className="flex items-center gap-1 px-4 py-2 text-slate-700 hover:text-blue-600 font-medium transition-colors rounded-lg hover:bg-blue-50"
+                className="flex items-center gap-1 px-4 py-2 text-slate-700 hover:text-[#0A3049] font-medium transition-colors rounded-lg hover:bg-[#0A3049]/5"
               >
                 <Award className="w-4 h-4" />
                 Certificates
@@ -243,7 +251,7 @@ export default function Header() {
 
               <Link
                 href="/venues"
-                className="px-4 py-2 text-slate-700 hover:text-blue-600 font-medium transition-colors rounded-lg hover:bg-blue-50"
+                className="px-4 py-2 text-slate-700 hover:text-[#0A3049] font-medium transition-colors rounded-lg hover:bg-[#0A3049]/5"
               >
                 Venues
               </Link>
@@ -261,24 +269,24 @@ export default function Header() {
                   <div className="absolute top-full right-0 mt-2 w-64 bg-white rounded-xl shadow-2xl border border-slate-200 p-4 animate-slide-down">
                     <Link
                       href="/resources/articles"
-                      className="flex items-center gap-3 p-3 rounded-lg hover:bg-blue-50 transition-colors group"
+                      className="flex items-center gap-3 p-3 rounded-lg hover:bg-[#0A3049]/5 transition-colors group"
                     >
-                      <FileText className="w-5 h-5 text-blue-600" />
-                      <span className="group-hover:text-blue-600">Articles</span>
+                      <FileText className="w-5 h-5 text-[#0A3049]" />
+                      <span className="group-hover:text-[#0A3049]">Articles</span>
                     </Link>
                     <Link
                       href="/resources/testimonials"
-                      className="flex items-center gap-3 p-3 rounded-lg hover:bg-blue-50 transition-colors group"
+                      className="flex items-center gap-3 p-3 rounded-lg hover:bg-[#0A3049]/5 transition-colors group"
                     >
-                      <MessageSquare className="w-5 h-5 text-blue-600" />
-                      <span className="group-hover:text-blue-600">Testimonials</span>
+                      <MessageSquare className="w-5 h-5 text-[#0A3049]" />
+                      <span className="group-hover:text-[#0A3049]">Testimonials</span>
                     </Link>
                     <Link
                       href="/resources/videos"
-                      className="flex items-center gap-3 p-3 rounded-lg hover:bg-blue-50 transition-colors group"
+                      className="flex items-center gap-3 p-3 rounded-lg hover:bg-[#0A3049]/5 transition-colors group"
                     >
-                      <Users className="w-5 h-5 text-blue-600" />
-                      <span className="group-hover:text-blue-600">Videos</span>
+                      <Users className="w-5 h-5 text-[#0A3049]" />
+                      <span className="group-hover:text-[#0A3049]">Videos</span>
                     </Link>
                   </div>
                 )}
@@ -294,11 +302,11 @@ export default function Header() {
                   <DropdownMenuTrigger asChild>
                     <Button
                       variant="ghost"
-                      className="hidden md:flex items-center gap-2 hover:bg-blue-50 transition-all duration-300"
+                      className="hidden md:flex items-center gap-2 hover:bg-[#0A3049]/5 transition-all duration-300"
                     >
                       <Avatar className="w-8 h-8 border-2 border-blue-600">
                         <AvatarImage src={session.user?.image || ''} alt={session.user?.name || 'User'} />
-                        <AvatarFallback className="bg-blue-600 text-white text-sm font-semibold">
+                        <AvatarFallback className="bg-[#0A3049] text-white text-sm font-semibold">
                           {getInitials()}
                         </AvatarFallback>
                       </Avatar>
@@ -342,7 +350,7 @@ export default function Header() {
               ) : (
                 <Button
                   variant="outline"
-                  className="hidden md:flex items-center gap-2 border-2 border-blue-600 text-blue-600 hover:bg-blue-50 hover:text-blue-600 font-semibold transition-all duration-300 hover:scale-105"
+                  className="hidden md:flex items-center gap-2 border-2 border-[#0A3049] text-[#0A3049] hover:bg-[#0A3049]/5 hover:text-[#0A3049] font-semibold transition-all duration-300 hover:scale-105"
                   asChild
                 >
                   <Link href="/auth">
@@ -353,7 +361,7 @@ export default function Header() {
               )}
               <Button
                 asChild
-                className="hidden sm:flex bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white"
+                className="hidden sm:flex bg-[#0A3049] hover:bg-[#0A3049]/90 text-white"
               >
                 <Link href="/courses">
                   Course Finder
@@ -381,7 +389,7 @@ export default function Header() {
               <div className="px-4 py-4 space-y-2 overflow-y-auto h-full">
                 <Link
                   href="/"
-                  className="block px-4 py-2 rounded-lg hover:bg-blue-50 text-slate-700 font-medium transition-colors"
+                  className="block px-4 py-2 rounded-lg hover:bg-[#0A3049]/5 text-slate-700 font-medium transition-colors"
                   onClick={() => setIsMobileMenuOpen(false)}
                 >
                   Home
@@ -393,50 +401,50 @@ export default function Header() {
                     e.preventDefault()
                     setIsTrainingSubjectsOpen(true)
                   }}
-                  className="w-full flex items-center justify-between px-4 py-2 rounded-lg hover:bg-blue-50 text-slate-700 font-medium transition-colors text-left"
+                  className="w-full flex items-center justify-between px-4 py-2 rounded-lg hover:bg-[#0A3049]/5 text-slate-700 font-medium transition-colors text-left"
                 >
-                  <span>Training Subjects</span>
+                  <span>Training Programs</span>
                   <ChevronRight className="w-5 h-5 text-slate-400 flex-shrink-0" />
                 </button>
 
                 <Link
                   href="/calendar"
-                  className="block px-4 py-2 rounded-lg hover:bg-blue-50 text-slate-700 font-medium transition-colors"
+                  className="block px-4 py-2 rounded-lg hover:bg-[#0A3049]/5 text-slate-700 font-medium transition-colors"
                   onClick={() => setIsMobileMenuOpen(false)}
                 >
                   Calendar
                 </Link>
                 <Link
                   href="/certificates"
-                  className="block px-4 py-2 rounded-lg hover:bg-blue-50 text-slate-700 font-medium transition-colors"
+                  className="block px-4 py-2 rounded-lg hover:bg-[#0A3049]/5 text-slate-700 font-medium transition-colors"
                   onClick={() => setIsMobileMenuOpen(false)}
                 >
                   Certificates
                 </Link>
                 <Link
                   href="/venues"
-                  className="block px-4 py-2 rounded-lg hover:bg-blue-50 text-slate-700 font-medium transition-colors"
+                  className="block px-4 py-2 rounded-lg hover:bg-[#0A3049]/5 text-slate-700 font-medium transition-colors"
                   onClick={() => setIsMobileMenuOpen(false)}
                 >
                   Venues
                 </Link>
                 <Link
                   href="/about"
-                  className="block px-4 py-2 rounded-lg hover:bg-blue-50 text-slate-700 font-medium transition-colors"
+                  className="block px-4 py-2 rounded-lg hover:bg-[#0A3049]/5 text-slate-700 font-medium transition-colors"
                   onClick={() => setIsMobileMenuOpen(false)}
                 >
                   About
                 </Link>
                 <Link
                   href="/contact"
-                  className="block px-4 py-2 rounded-lg hover:bg-blue-50 text-slate-700 font-medium transition-colors"
+                  className="block px-4 py-2 rounded-lg hover:bg-[#0A3049]/5 text-slate-700 font-medium transition-colors"
                   onClick={() => setIsMobileMenuOpen(false)}
                 >
                   Contact
                 </Link>
                 <Button
                   asChild
-                  className="w-full mt-4 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white"
+                  className="w-full mt-4 bg-[#0A3049] hover:bg-[#0A3049]/90 text-white"
                 >
                   <Link href="/courses" onClick={() => setIsMobileMenuOpen(false)}>
                     Course Finder
@@ -446,7 +454,7 @@ export default function Header() {
                   <>
                     <Link
                       href="/profile"
-                      className="block px-4 py-2 rounded-lg hover:bg-blue-50 text-slate-700 font-medium transition-colors"
+                      className="block px-4 py-2 rounded-lg hover:bg-[#0A3049]/5 text-slate-700 font-medium transition-colors"
                       onClick={() => setIsMobileMenuOpen(false)}
                     >
                       <div className="flex items-center gap-2">
@@ -474,7 +482,7 @@ export default function Header() {
                 ) : (
                   <Button
                     variant="outline"
-                    className="w-full mt-2 border-2 border-blue-600 text-blue-600 hover:bg-blue-50 font-semibold"
+                    className="w-full mt-2 border-2 border-[#0A3049] text-[#0A3049] hover:bg-[#0A3049]/5 font-semibold"
                     asChild
                     onClick={() => setIsMobileMenuOpen(false)}
                   >
@@ -500,7 +508,7 @@ export default function Header() {
                     e.preventDefault()
                     setIsTrainingSubjectsOpen(false)
                   }}
-                  className="flex items-center justify-center w-10 h-10 rounded-lg hover:bg-blue-50 text-slate-700 transition-colors"
+                  className="flex items-center justify-center w-10 h-10 rounded-lg hover:bg-[#0A3049]/5 text-slate-700 transition-colors"
                   aria-label="Go back"
                 >
                   <ArrowLeft className="w-5 h-5" />
@@ -514,14 +522,14 @@ export default function Header() {
                   <Link
                     key={index}
                     href={`/courses?category=${encodeURIComponent(category)}`}
-                    className="flex items-center justify-between px-4 py-3 rounded-lg hover:bg-blue-50 text-slate-700 font-medium transition-colors group"
+                    className="flex items-center justify-between px-4 py-3 rounded-lg hover:bg-[#0A3049]/5 text-slate-700 font-medium transition-colors group"
                     onClick={() => {
                       setIsMobileMenuOpen(false)
                       setIsTrainingSubjectsOpen(false)
                     }}
                   >
-                    <span className="group-hover:text-blue-600 transition-colors">{category}</span>
-                    <ChevronRight className="w-4 h-4 text-slate-400 group-hover:text-blue-600 transition-colors flex-shrink-0" />
+                    <span className="group-hover:text-[#0A3049] transition-colors">{category}</span>
+                    <ChevronRight className="w-4 h-4 text-slate-400 group-hover:text-[#0A3049] transition-colors flex-shrink-0" />
                   </Link>
                 ))}
               </div>

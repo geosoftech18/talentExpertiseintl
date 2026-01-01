@@ -180,7 +180,7 @@ export default function UpcomingProgramsCarousel() {
       <div className="container mx-auto px-6 lg:px-8 max-w-7xl">
         {/* Section Header */}
         <div className="text-center mb-12">
-          <h2 className="text-2xl lg:text-5xl font-bold text-blue-900 mb-4">
+          <h2 className="text-2xl lg:text-5xl font-bold text-[#0A3049] mb-4">
             Upcoming Programs
           </h2>
           <p className="md:text-xl text-lg text-slate-600 max-w-3xl mx-auto">
@@ -228,7 +228,7 @@ export default function UpcomingProgramsCarousel() {
                         </div>
 
                         {/* Program Title */}
-                        <h3 className="text-lg font-bold text-slate-900 mb-4 line-clamp-2 min-h-[3.5rem]">
+                        <h3 className="text-lg font-bold text-[#0A3049] mb-4 line-clamp-2 min-h-[3.5rem]">
                           {program.title}
                         </h3>
 
@@ -279,7 +279,7 @@ export default function UpcomingProgramsCarousel() {
                         {/* Register Button */}
                         <Button
                           onClick={() => handleRegister(program)}
-                          className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-semibold"
+                          className="w-full bg-[#0A3049] hover:bg-[#0A3049]/90 text-white font-semibold"
                         >
                           Register Now
                           <ArrowRight className="w-4 h-4 ml-2" />
@@ -308,7 +308,7 @@ export default function UpcomingProgramsCarousel() {
           <Button
             onClick={() => router.push('/courses')}
             size="lg"
-            className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white px-8 py-3 rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all duration-200"
+            className="bg-[#0A3049] hover:bg-[#0A3049]/90 text-white px-8 py-3 rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all duration-200"
           >
             All Programs
           </Button>

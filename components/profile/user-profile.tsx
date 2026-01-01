@@ -161,7 +161,7 @@ export default function UserProfile() {
       <div className="max-w-7xl mx-auto">
         {/* Header Section */}
         <div className="relative mb-8">
-          <div className="bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 rounded-2xl p-8 sm:p-12 shadow-2xl">
+          <div className="bg-gradient-to-r from-[#0A3049] via-[#0A3049] to-[#0A3049] rounded-2xl p-8 sm:p-12 shadow-2xl">
             <div className="flex flex-col sm:flex-row items-start sm:items-center gap-6">
               <div className="relative">
                 <Avatar className="w-24 h-24 sm:w-32 sm:h-32 border-4 border-white shadow-lg">

@@ -4,6 +4,8 @@ import { usePathname } from 'next/navigation'
 import { SessionProvider } from 'next-auth/react'
 import Header from '@/components/header'
 import Footer from '@/components/footer'
+import ChatwootWidget from '@/components/chatwoot-widget'
+import WhatsAppWidget from '@/components/whatsapp-widget'
 
 export default function PublicLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
@@ -19,6 +21,8 @@ export default function PublicLayout({ children }: { children: React.ReactNode }
         <Header />
         <main className="flex-1">{children}</main>
         <Footer />
+        <WhatsAppWidget />
+        <ChatwootWidget />
       </div>
     </SessionProvider>
   )

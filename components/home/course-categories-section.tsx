@@ -491,14 +491,14 @@ export default function CourseCategoriesSection() {
         {/* Section Header */}
         <div className="text-center mb-10 sm:mb-16 lg:mb-20">
           <div className="flex items-center justify-center mb-4 sm:mb-6">
-            <BookOpen className="w-6 h-6 sm:w-8 sm:h-8 text-purple-600 mr-2 sm:mr-3" />
-            <Badge variant="outline" className="border-purple-200 text-purple-700 bg-purple-50 px-3 py-1 sm:px-4 sm:py-2 text-sm sm:text-lg">
+            <BookOpen className="w-6 h-6 sm:w-8 sm:h-8 text-[#0A3049] mr-2 sm:mr-3" />
+            <Badge variant="outline" className="border-[#0A3049]/30 text-[#0A3049] bg-[#0A3049]/10 px-3 py-1 sm:px-4 sm:py-2 text-sm sm:text-lg">
               Course Categories
             </Badge>
           </div>
-          <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl xl:text-6xl font-bold text-gray-900 mb-4 sm:mb-6 px-4">
+          <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl xl:text-6xl font-bold text-[#0A3049] mb-4 sm:mb-6 px-4">
             Explore Our{" "}
-            <span className="bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
+            <span className="bg-gradient-to-r from-[#0A3049] to-[#6F4E25] bg-clip-text text-transparent">
               Training Universe
             </span>
           </h2>
@@ -628,7 +628,7 @@ export default function CourseCategoriesSection() {
             <div>
               {/* Categories Slider */}
               <div className="mb-8 max-w-7xl mx-auto sm:mb-10 lg:mb-12">
-                <h3 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900 mb-4 sm:mb-6 text-center px-4">Browse by Category</h3>
+                <h3 className="text-xl sm:text-2xl lg:text-3xl font-bold text-[#0A3049] mb-4 sm:mb-6 text-center px-4">Browse by Category</h3>
                 <div className="relative">
                   <div
                     ref={sliderRef}
@@ -946,7 +946,7 @@ export default function CourseCategoriesSection() {
                   <div className="text-center mb-6 sm:mb-8 lg:mb-10 px-4">
                     <div className="flex items-center justify-center gap-2 mb-3 sm:mb-4">
                       <TrendingUp className="w-5 h-5 sm:w-6 sm:h-6 text-purple-600" />
-                      <h3 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900">Top Courses</h3>
+                      <h3 className="text-xl sm:text-2xl lg:text-3xl font-bold text-[#0A3049]">Top Courses</h3>
                     </div>
                     <p className="text-gray-600 text-sm sm:text-base lg:text-lg">Discover our most popular and highly-rated training programs</p>
                   </div>
@@ -1386,7 +1386,7 @@ export default function CourseCategoriesSection() {
               <div className="absolute bottom-0 left-0 w-32 h-32 bg-white/10 rounded-full translate-y-16 -translate-x-16"></div>
 
               <div className="relative z-10">
-                <h3 className="text-2xl lg:text-3xl font-bold mb-4">Ready to Transform Your Career?</h3>
+                <h3 className="text-2xl lg:text-3xl font-bold text-[#0A3049] mb-4">Ready to Transform Your Career?</h3>
                 <p className="text-lg mb-6 opacity-90 max-w-2xl mx-auto">
                   Join thousands of professionals who have advanced their careers with our world-class training
                   programs.

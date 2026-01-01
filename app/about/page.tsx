@@ -60,7 +60,7 @@ export default function AboutPage() {
   return (
     <div className="min-h-screen bg-gradient-to-b from-slate-50 to-white">
       {/* Hero Section */}
-      <div className="relative bg-gradient-to-r from-blue-900 via-blue-800 to-purple-900 text-white overflow-hidden">
+      <div className="relative bg-gradient-to-r from-[#0A3049] via-[#0A3049] to-[#0A3049] text-white overflow-hidden">
         <div className="absolute inset-0 bg-grid-white/[0.05] bg-[size:30px_30px]" />
         <div className="relative max-w-7xl mx-auto px-6 py-24">
           <div className="max-w-3xl">
@@ -255,7 +255,7 @@ export default function AboutPage() {
       </div> */}
 
       {/* CTA Section */}
-      <div className="bg-gradient-to-r from-blue-600 to-purple-600 text-white py-16">
+      <div className="bg-gradient-to-r from-[#0A3049] to-[#0A3049] text-white py-16">
         <div className="max-w-4xl mx-auto px-6 text-center">
           <h2 className="md:text-4xl text-3xl font-bold mb-4">Ready to Transform Your Career?</h2>
           <p className="md:text-xl text-lg text-blue-100 mb-8">
