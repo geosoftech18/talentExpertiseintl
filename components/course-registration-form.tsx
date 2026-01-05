@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { X, ChevronLeft, ChevronRight, BookOpen } from 'lucide-react'
+import { X, ChevronLeft, ChevronRight, BookOpen, Loader2 } from 'lucide-react'
 import { useRequireAuth } from '@/hooks/use-require-auth'
 import Image from 'next/image'
 import { Button } from '@/components/ui/button'
@@ -14,6 +14,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import type { Course, CourseSchedule } from '@/lib/supabase'
 import { format } from 'date-fns'
+import { StripePaymentPage } from '@/components/stripe-payment-page'
 
 // Map phone country codes to ISO country codes for flags
 const getCountryISO = (phoneCode: string): string => {
@@ -140,6 +141,9 @@ export function CourseRegistrationForm({ course, schedules, selectedScheduleId, 
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [submitError, setSubmitError] = useState<string | null>(null)
+  const [stripeClientSecret, setStripeClientSecret] = useState<string | null>(null)
+  const [showStripeForm, setShowStripeForm] = useState(false)
+  const [paymentAmount, setPaymentAmount] = useState(0)
   
   // Show loading state while checking authentication
   if (isLoading) {
@@ -253,7 +257,59 @@ export function CourseRegistrationForm({ course, schedules, selectedScheduleId, 
       return
     }
 
-    // All validations passed - submit to API
+    // If Stripe payment method, create payment intent first
+    if (formData.paymentMethod === 'stripe') {
+      setIsSubmitting(true)
+      setSubmitError(null)
+
+      try {
+        const selectedSchedule = schedules.find(s => s.id === formData.scheduleId)
+        const participants = 1 // Default to 1 participant
+        
+        // Calculate payment amount
+        let amount = 0
+        if (selectedSchedule?.fees) {
+          amount = selectedSchedule.fees * participants
+        } else if (selectedSchedule?.price) {
+          amount = selectedSchedule.price * participants
+        } else {
+          amount = 100 * participants // Default minimum
+        }
+        
+        const response = await fetch('/api/stripe/create-payment-intent', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            scheduleId: formData.scheduleId,
+            courseId: course.id,
+            courseTitle: course.title,
+            participants: participants,
+            registrationData: formData,
+          }),
+        })
+
+        const result = await response.json()
+
+        if (!response.ok) {
+          throw new Error(result.error || 'Failed to create payment intent')
+        }
+        
+        // Set client secret, amount, and show Stripe payment page
+        setStripeClientSecret(result.clientSecret)
+        setPaymentAmount(amount)
+        setShowStripeForm(true)
+      } catch (error) {
+        console.error('Error creating payment intent:', error)
+        setSubmitError(error instanceof Error ? error.message : 'Failed to initialize payment. Please try again.')
+      } finally {
+        setIsSubmitting(false)
+      }
+      return
+    }
+
+    // For other payment methods, submit normally
     setIsSubmitting(true)
     setSubmitError(null)
 
@@ -336,8 +392,29 @@ export function CourseRegistrationForm({ course, schedules, selectedScheduleId, 
   }
 
   return (
-    <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4 backdrop-blur-sm">
-      <Card className="w-full max-w-2xl max-h-[95vh] flex flex-col animate-slide-up shadow-2xl overflow-hidden">
+    <>
+      {/* Full-Screen Stripe Payment Page */}
+      {formData.paymentMethod === 'stripe' && showStripeForm && stripeClientSecret && (
+        <StripePaymentPage
+          clientSecret={stripeClientSecret}
+          amount={paymentAmount}
+          courseTitle={course.title}
+          onSuccess={() => {
+            alert('✅ Payment successful! Your registration has been completed.')
+            setShowStripeForm(false)
+            setStripeClientSecret(null)
+            onClose()
+          }}
+          onCancel={() => {
+            setShowStripeForm(false)
+            setStripeClientSecret(null)
+          }}
+        />
+      )}
+
+      {/* Registration Form */}
+      <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4 backdrop-blur-sm">
+        <Card className="w-full max-w-2xl max-h-[95vh] flex flex-col animate-slide-up shadow-2xl overflow-hidden">
         <CardHeader className="relative border-b bg-gradient-to-r from-blue-50 to-white pb-3 pt-4 flex-shrink-0">
           <Button
             variant="ghost"
@@ -638,12 +715,16 @@ export function CourseRegistrationForm({ course, schedules, selectedScheduleId, 
 
                 <div className="space-y-1.5">
                   <Label htmlFor="payment" className="text-xs font-semibold text-slate-700">Payment Method *</Label>
-                  <Select value={formData.paymentMethod} onValueChange={(value) => handleFieldChange('paymentMethod', value)}>
+                  <Select value={formData.paymentMethod} onValueChange={(value) => {
+                    handleFieldChange('paymentMethod', value)
+                    setShowStripeForm(false)
+                    setStripeClientSecret(null)
+                  }}>
                     <SelectTrigger className={`h-9 text-sm ${errors.paymentMethod ? 'border-red-500' : ''}`}>
                       <SelectValue placeholder="Select Payment Method" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="credit">Credit Card</SelectItem>
+                      <SelectItem value="stripe">Stripe</SelectItem>
                       <SelectItem value="bank">Bank Transfer</SelectItem>
                       <SelectItem value="invoice">Pay via Invoice</SelectItem>
                       <SelectItem value="purchase">Purchase Order</SelectItem>
@@ -651,6 +732,7 @@ export function CourseRegistrationForm({ course, schedules, selectedScheduleId, 
                     </Select>
                     {errors.paymentMethod && <p className="text-xs text-red-600 mt-1">{errors.paymentMethod}</p>}
                   </div>
+
 
                   <div className="flex items-center space-x-2 pt-1">
                     <Checkbox
@@ -755,6 +837,7 @@ export function CourseRegistrationForm({ course, schedules, selectedScheduleId, 
           </form>
         </CardContent>
       </Card>
-    </div>
+      </div>
+    </>
   )
 }
