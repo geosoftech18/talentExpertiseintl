@@ -843,7 +843,7 @@ const HeroSlider = forwardRef<HeroSliderHandle, HeroSliderProps>(
             transition={{ duration: animations.transition?.duration || 0.8 }}
           >
             {/* Background Image */}
-            <div className="absolute inset-0 z-0">
+            {/* <div className="absolute inset-0 z-0">
               {imageMode === "next-image" ? (
                 <Image
                   src={slide.image.src || "/placeholder.svg"}
@@ -862,7 +862,7 @@ const HeroSlider = forwardRef<HeroSliderHandle, HeroSliderProps>(
                   loading={slide.image.priority ? "eager" : "lazy"}
                 />
               )}
-            </div>
+            </div> */}
 
             {/* Gradient Overlay */}
             {gradientOverlay?.enabled && (

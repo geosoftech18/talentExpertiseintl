@@ -12,8 +12,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 const offices = [
   {
     title: 'TEI International',
-    address: 'P. O. Box 74653, Dubai UAE',
-    phone: '+971-4-5473030',
+    address: 'P. O. Box 213984, Dubai UAE',
+    phone: '+971-4-5473010',
     
     email: 'info@talenexpertiseintl.com',
     hours: 'Monday - Friday: 10:00 AM - 6:00 PM',

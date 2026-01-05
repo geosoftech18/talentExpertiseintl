@@ -238,7 +238,7 @@ export default function CourseFilterSection() {
               Find Your Perfect Course
             </Badge>
           </div>
-          <h2 className="text-3xl lg:text-5xl font-bold text-gray-900 mb-4">Discover World-Class Training</h2>
+          <h2 className="text-2xl lg:text-5xl font-bold text-gray-900 mb-4">Discover World-Class Training</h2>
           <p className="text-xl text-gray-600 max-w-3xl mx-auto">
             Search through our comprehensive catalog of professional development courses, delivered by expert trainers
             in premium venues worldwide.

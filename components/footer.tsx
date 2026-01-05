@@ -140,7 +140,7 @@ export default function Footer() {
                 <Phone className="w-5 h-5 text-blue-400 mt-0.5 shrink-0" />
                 <div>
                   <p className="text-slate-400 text-xs">Phone</p>
-                  <p className="text-slate-200 text-sm">+971-4-5473030</p>
+                  <p className="text-slate-200 text-sm">+971-4-5473010</p>
                 </div>
               </div>
               <div className="flex items-start gap-3">

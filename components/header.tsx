@@ -115,12 +115,12 @@ export default function Header() {
     <>
       {/* Top Bar */}
       <div className="bg-gradient-to-r from-slate-900 to-slate-800 text-white text-sm py-2 border-b border-slate-700">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="max-w-7xl mx-auto px-2 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
               <div className="flex items-center gap-2">
                 <Phone className="w-4 h-4" />
-                <span>+971-4-5473030 </span>
+                <span>+971-4-5473010</span>
               </div>
               <div className="flex items-center gap-2">
                 <Mail className="w-4 h-4" />
