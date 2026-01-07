@@ -508,7 +508,7 @@ export default function CourseCategoriesSection() {
           </p>
 
           {/* Unified Search and Stats */}
-          <div className="max-w-4xl mx-auto px-4">
+          {/* <div className="max-w-4xl mx-auto px-4">
             <div className="relative mb-6 sm:mb-8">
               <Search className="absolute left-3 sm:left-4 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4 sm:w-5 sm:h-5" />
               <Input
@@ -539,7 +539,7 @@ export default function CourseCategoriesSection() {
                 <span className="font-medium">{trendingCategories.length} Trending</span>
               </div>
             </div>
-          </div>
+          </div> */}
         </div>
 
         {/* Main Content Area */}
@@ -628,7 +628,7 @@ export default function CourseCategoriesSection() {
             <div>
               {/* Categories Slider */}
               <div className="mb-8 max-w-7xl mx-auto sm:mb-10 lg:mb-12">
-                <h3 className="text-xl sm:text-2xl lg:text-3xl font-bold text-[#0A3049] mb-4 sm:mb-6 text-center px-4">Browse by Category</h3>
+                {/* <h3 className="text-xl sm:text-2xl lg:text-3xl font-bold text-[#0A3049] mb-4 sm:mb-6 text-center px-4">Browse by Category</h3> */}
                 <div className="relative">
                   <div
                     ref={sliderRef}

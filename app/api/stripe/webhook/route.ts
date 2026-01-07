@@ -37,34 +37,63 @@ export async function POST(request: NextRequest) {
         const paymentIntent = event.data.object as Stripe.PaymentIntent
         const metadata = paymentIntent.metadata
 
-        // Find registration by payment intent ID or metadata
-        const registration = await prisma.courseRegistration.findFirst({
+        // Check if registration already exists (to prevent duplicates)
+        const existingRegistration = await prisma.courseRegistration.findFirst({
           where: {
-            OR: [
-              { email: metadata.email || '' },
-              { name: metadata.name || '' },
-            ],
+            email: metadata.email || '',
             paymentMethod: 'stripe',
-            paymentStatus: 'Unpaid',
+            paymentStatus: 'Paid',
+            orderStatus: 'Completed',
           },
           orderBy: { createdAt: 'desc' },
         })
 
-        if (registration) {
-          // Update payment status
-          await prisma.courseRegistration.update({
-            where: { id: registration.id },
+        // Only create registration if it doesn't exist
+        if (!existingRegistration) {
+          // Create course registration only after successful payment
+          await prisma.courseRegistration.create({
             data: {
+              userId: null,
+              scheduleId: metadata.scheduleId || null,
+              courseId: metadata.courseId || null,
+              courseTitle: metadata.courseTitle || null,
+              title: metadata.title || null,
+              name: metadata.name || '',
+              email: metadata.email || '',
+              designation: metadata.designation || null,
+              company: metadata.company || null,
+              address: metadata.address || '',
+              city: metadata.city || '',
+              country: metadata.country || '',
+              telephone: metadata.telephone || '',
+              telephoneCountryCode: metadata.telephoneCountryCode || '+971',
+              mobile: metadata.mobile || null,
+              mobileCountryCode: metadata.mobileCountryCode || null,
+              paymentMethod: 'stripe',
               paymentStatus: 'Paid',
               orderStatus: 'Completed',
+              participants: parseInt(metadata.participants || '1'),
+              differentBilling: metadata.differentBilling === 'true',
+              acceptTerms: metadata.acceptTerms === 'true',
+              captcha: metadata.captcha || null,
             },
           })
+          console.log('Registration created from webhook for payment:', paymentIntent.id)
+        } else {
+          console.log('Registration already exists for payment:', paymentIntent.id)
         }
         break
 
       case 'payment_intent.payment_failed':
         const failedPayment = event.data.object as Stripe.PaymentIntent
         console.error('Payment failed:', failedPayment.id)
+        // No registration is created for failed payments - this is correct behavior
+        break
+
+      case 'payment_intent.canceled':
+        const canceledPayment = event.data.object as Stripe.PaymentIntent
+        console.log('Payment canceled:', canceledPayment.id)
+        // No registration is created for canceled payments - this is correct behavior
         break
 
       default:

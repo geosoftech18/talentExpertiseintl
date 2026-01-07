@@ -1,162 +1,192 @@
 'use client'
 
+import { useState } from 'react'
 import Link from 'next/link'
-import { Mail, Phone, MapPin, GraduationCap, Facebook, Twitter, Linkedin, Youtube, Instagram } from 'lucide-react'
+import { Mail, Phone, MapPin, GraduationCap, Facebook, Twitter, Linkedin, Youtube, Instagram, Plus, Minus } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import Image from 'next/image'
 
 export default function Footer() {
+  const [expandedLocation, setExpandedLocation] = useState<string | null>(null)
+
+  const locations = [
+    {
+      id: 'dubai',
+      name: 'Dubai, UAE',
+      description: 'Creative Tower, P.O Box 213984, Dubai, UAE'
+    },
+    {
+      id: 'abuja',
+      name: 'Abuja, Nigeria',
+      description: '6 Ekket Close, Area 8, Abuja Nigeria'
+    },
+    {
+      id: 'london',
+      name: 'London, UK',
+      description: '4 Cleveleys Road, Great Sankey, Warrington.'
+    },
+    {
+      id: 'kuala-lumpur',
+      name: 'Kuala Lumpur, Malaysia',
+      description: 'A-3-6, Carlton Court, Jalan 17, Sri Hartamas, Kuala Lumpur, Malaysia'
+    }
+  ]
+
+  const toggleLocation = (locationId: string) => {
+    setExpandedLocation(expandedLocation === locationId ? null : locationId)
+  }
   return (
     <footer className="bg-gradient-to-b from-slate-900 via-slate-800 to-slate-900 text-white">
-      {/* Main Footer Content */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 lg:gap-12">
-          {/* Company Info */}
-          <div className="space-y-4">
-            <div className="flex items-center gap-2 mb-4">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        {/* Top Section: Logo and Social Media */}
+        <div className="py-8 border-b border-slate-700">
+          <div className="flex flex-col md:flex-row items-center justify-between gap-6">
+            {/* Logo */}
+            <div className="flex items-center">
               <Image src="/talent-footer-logo.png" alt="TEI Training" width={250} height={200} />
             </div>
-            <p className="text-slate-300 text-sm leading-relaxed">
-              Empowering professionals worldwide with world-class training programs and cutting-edge expertise.
-            </p>
-            <div className="flex gap-4 pt-4">
-              <a href="#" className="p-2 bg-slate-800 rounded-lg hover:bg-blue-600 transition-colors">
-                <Facebook className="w-5 h-5" />
-              </a>
-              <a href="#" className="p-2 bg-slate-800 rounded-lg hover:bg-blue-600 transition-colors">
-                <Twitter className="w-5 h-5" />
-              </a>
-              <a href="#" className="p-2 bg-slate-800 rounded-lg hover:bg-blue-600 transition-colors">
-                <Linkedin className="w-5 h-5" />
-              </a>
-              <a href="#" className="p-2 bg-slate-800 rounded-lg hover:bg-blue-600 transition-colors">
-                <Youtube className="w-5 h-5" />
-              </a>
-              <a href="#" className="p-2 bg-slate-800 rounded-lg hover:bg-blue-600 transition-colors">
-                <Instagram className="w-5 h-5" />
-              </a>
+            
+            {/* Social Media */}
+            <div className="flex flex-col items-center md:items-end gap-4">
+              <p className="text-white text-sm font-medium">Follow Us On Social Media</p>
+              <div className="flex gap-3">
+                <a href="#" className="w-10 h-10 rounded-full bg-blue-600 flex items-center justify-center hover:bg-blue-700 transition-colors">
+                  <Facebook className="w-5 h-5 text-white" />
+                </a>
+                <a href="#" className="w-10 h-10 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center hover:opacity-90 transition-opacity">
+                  <Instagram className="w-5 h-5 text-white" />
+                </a>
+                <a href="#" className="w-10 h-10 rounded-full bg-blue-700 flex items-center justify-center hover:bg-blue-800 transition-colors">
+                  <Linkedin className="w-5 h-5 text-white" />
+                </a>
+                <a href="#" className="w-10 h-10 rounded-full bg-slate-800 flex items-center justify-center hover:bg-slate-700 transition-colors">
+                  <Twitter className="w-5 h-5 text-white" />
+                </a>
+              </div>
             </div>
           </div>
+        </div>
 
-         
-          <div className="flex flex-row gap-12">
-          {/* Quick Links */}
-          <div>
-            <h3 className="text-lg font-semibold mb-4">Quick Links</h3>
-            <ul className="space-y-2">
-              <li>
-                <Link href="/about" className="text-slate-300 hover:text-blue-400 transition-colors text-sm">
-                  About Us
-                </Link>
-              </li>
-              <li>
-                <Link href="/courses" className="text-slate-300 hover:text-blue-400 transition-colors text-sm">
-                  All Courses
-                </Link>
-              </li>
-              <li>
-                <Link href="/calendar" className="text-slate-300 hover:text-blue-400 transition-colors text-sm">
-                  Training Calendar
-                </Link>
-              </li>
-              <li>
-                <Link href="/certificates" className="text-slate-300 hover:text-blue-400 transition-colors text-sm">
-                  Certificates
-                </Link>
-              </li>
-              <li>
-                <Link href="/venues" className="text-slate-300 hover:text-blue-400 transition-colors text-sm">
-                  Training Venues
-                </Link>
-              </li>
-              <li>
-                <Link href="/contact" className="text-slate-300 hover:text-blue-400 transition-colors text-sm">
-                  Contact Us
-                </Link>
-              </li>
-            </ul>
-          </div>
+        {/* Bottom Section: Three Columns */}
+        <div className="py-12">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 lg:gap-12">
+            {/* Quick Links Column */}
+            <div>
+              <h3 className="text-lg font-semibold mb-6">Quick Links</h3>
+              <div className="grid grid-cols-2 gap-6">
+                {/* Left Sub-column */}
+                <ul className="space-y-3">
+                  <li>
+                    <Link href="/about" className="text-slate-300 hover:text-blue-400 transition-colors text-sm">
+                      About Us
+                    </Link>
+                  </li>
+                  <li>
+                    <Link href="/courses" className="text-slate-300 hover:text-blue-400 transition-colors text-sm">
+                      All Courses
+                    </Link>
+                  </li>
+                  <li>
+                    <Link href="/calendar" className="text-slate-300 hover:text-blue-400 transition-colors text-sm">
+                      Training Calendar
+                    </Link>
+                  </li>
+                  <li>
+                    <Link href="/certificates" className="text-slate-300 hover:text-blue-400 transition-colors text-sm">
+                      Certificates
+                    </Link>
+                  </li>
+                  <li>
+                    <Link href="/venues" className="text-slate-300 hover:text-blue-400 transition-colors text-sm">
+                      Training Venues
+                    </Link>
+                  </li>
+                  
+                </ul>
+                
+                {/* Right Sub-column */}
+                <ul className="space-y-3">
+                  <li>
+                    <Link href="/why-choose-tei" className="text-slate-300 hover:text-blue-400 transition-colors text-sm">
+                      Why Choose TEI
+                    </Link>
+                  </li>
+                  <li>
+                    <Link href="/consulting" className="text-slate-300 hover:text-blue-400 transition-colors text-sm">
+                      Consulting 
+                    </Link>
+                  </li>
+                  <li>
+                    <Link href="/services" className="text-slate-300 hover:text-blue-400 transition-colors text-sm">
+                      Services
+                    </Link>
+                  </li>
+                  <li>
+                    <Link href="/coaching" className="text-slate-300 hover:text-blue-400 transition-colors text-sm">
+                      Coaching
+                    </Link>
+                  </li>
+                  <li>
+                    <Link href="/contact" className="text-slate-300 hover:text-blue-400 transition-colors text-sm">
+                      Contact Us
+                    </Link>
+                  </li>
+                </ul>
+              </div>
+            </div>
 
-          {/* Training Programs */}
-          <div>
-            <h3 className="text-lg font-semibold mb-4">Training Programs</h3>
-            <ul className="space-y-2">
-              <li>
-                <Link href="/subjects/business-management" className="text-slate-300 hover:text-blue-400 transition-colors text-sm">
-                  Business & Management
-                </Link>
-              </li>
-              <li>
-                <Link href="/subjects/engineering" className="text-slate-300 hover:text-blue-400 transition-colors text-sm">
-                  Engineering & Technical
-                </Link>
-              </li>
-              <li>
-                <Link href="/subjects/finance" className="text-slate-300 hover:text-blue-400 transition-colors text-sm">
-                  Finance & Investment
-                </Link>
-              </li>
-              <li>
-                <Link href="/subjects/project-management" className="text-slate-300 hover:text-blue-400 transition-colors text-sm">
-                  Project Management
-                </Link>
-              </li>
-              <li>
-                <Link href="/subjects/technology" className="text-slate-300 hover:text-blue-400 transition-colors text-sm">
-                  Emerging Technology
-                </Link>
-              </li>
-              <li>
-                <Link href="/subjects/hse" className="text-slate-300 hover:text-blue-400 transition-colors text-sm">
-                  HSE & Security
-                </Link>
-              </li>
-            </ul>
-          </div>
-          </div>
-
-          {/* Newsletter & Contact */}
-          <div>
-            <h3 className="text-lg font-semibold mb-4">Stay Updated</h3>
-            <p className="text-slate-300 text-sm mb-4">
-              Subscribe to receive the latest training insights, course updates, and exclusive offers.
-            </p>
-            <form className="space-y-2 mb-6">
-              <Input
-                type="email"
-                placeholder="Enter your email"
-                className="bg-slate-800 border-slate-700 text-white placeholder:text-slate-400"
-              />
-              <Button
-                type="submit"
-                className="w-full bg-gradient-to-r from-[#5f482c] to-[#6F4E25] "
-              >
-                Subscribe
-              </Button>
-            </form>
-            <div className="space-y-3 pt-4 border-t border-slate-700">
-              <div className="flex  items-start gap-3">
-                <Phone className="w-5 h-5 text-blue-400 mt-0.5 shrink-0" />
+            {/* Contact Info Column */}
+            <div>
+              <h3 className="text-lg font-semibold mb-6">Contact Info</h3>
+              <div className="space-y-4">
                 <div>
-                  <p className="text-slate-400 text-xs">Phone</p>
-                  <p className="text-slate-200 text-sm">+971-4-5473010</p>
+                  <p className="text-slate-300 text-sm leading-relaxed">
+                    Head Office: Dubai, United Arab Emirates
+                  </p>
+                </div>
+                <div>
+                  <p className="text-slate-300 text-sm">
+                    Phone : <a href="tel:+97145473010" className="text-blue-400 hover:text-blue-300">+971-4-5473010</a>
+                  </p>
+                </div>
+                <div>
+                  <p className="text-slate-300 text-sm">
+                    Mail : <a href="mailto:info@talentexpertiseintl.com" className="text-blue-400 hover:text-blue-300">training@talentexpertiseintl.com</a>
+                  </p>
                 </div>
               </div>
-              <div className="flex items-start gap-3">
-                <Mail className="w-5 h-5 text-blue-400 mt-0.5 shrink-0" />
-                <div>
-                  <p className="text-slate-400 text-xs">Email</p>
-                  <p className="text-slate-200 text-sm">info@talenexpertiseintl.com</p>
-                </div>
-              </div>
-              <div className="flex items-start gap-3">
-                <MapPin className="w-5 h-5 text-blue-400 mt-0.5 shrink-0" />
-                <div>
-                  <p className="text-slate-400 text-xs">Address</p>
-                  <p className="text-slate-200 text-sm">Dubai, UAE</p>
-                </div>
-              </div>
+            </div>
+
+            {/* Locations Column */}
+            <div>
+              <h3 className="text-lg font-semibold mb-6">Locations</h3>
+              <ul className="space-y-0">
+                {locations.map((location, index) => (
+                  <li key={location.id} className={index !== locations.length - 1 ? 'border-b border-slate-700 pb-3 mb-3' : ''}>
+                    <button
+                      onClick={() => toggleLocation(location.id)}
+                      className="w-full flex items-center justify-between text-left text-slate-300 hover:text-blue-400 transition-colors group"
+                    >
+                      <span className="flex items-center gap-2">
+                        {expandedLocation === location.id ? (
+                          <Minus className="w-4 h-4 text-blue-400" />
+                        ) : (
+                          <Plus className="w-4 h-4 group-hover:text-blue-400 transition-colors" />
+                        )}
+                        <span className="text-sm font-medium">{location.name}</span>
+                      </span>
+                    </button>
+                    {expandedLocation === location.id && (
+                      <div className="mt-3 ml-6 pr-4">
+                        <p className="text-slate-400 text-xs leading-relaxed">
+                          {location.description}
+                        </p>
+                      </div>
+                    )}
+                  </li>
+                ))}
+              </ul>
             </div>
           </div>
         </div>

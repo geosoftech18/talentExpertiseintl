@@ -150,7 +150,7 @@ export default function AboutPage() {
       />
 
       {/* Stats Section */}
-      <div className="max-w-7xl mx-auto px-6 py-16 -mt-12 relative z-10">
+      {/* <div className="max-w-7xl mx-auto px-6 py-16 -mt-12 relative z-10">
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
           {stats.map((stat, index) => {
             const IconComponent = stat.icon
@@ -169,7 +169,7 @@ export default function AboutPage() {
             )
           })}
         </div>
-      </div>
+      </div> */}
 
       {/* Mission & Vision */}
       {/* <div className="max-w-7xl mx-auto px-6 py-16">

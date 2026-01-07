@@ -142,6 +142,7 @@ export function CourseRegistrationForm({ course, schedules, selectedScheduleId, 
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [submitError, setSubmitError] = useState<string | null>(null)
   const [stripeClientSecret, setStripeClientSecret] = useState<string | null>(null)
+  const [stripePaymentIntentId, setStripePaymentIntentId] = useState<string | null>(null)
   const [showStripeForm, setShowStripeForm] = useState(false)
   const [paymentAmount, setPaymentAmount] = useState(0)
   
@@ -296,8 +297,9 @@ export function CourseRegistrationForm({ course, schedules, selectedScheduleId, 
           throw new Error(result.error || 'Failed to create payment intent')
         }
         
-        // Set client secret, amount, and show Stripe payment page
+        // Set client secret, payment intent ID, amount, and show Stripe payment page
         setStripeClientSecret(result.clientSecret)
+        setStripePaymentIntentId(result.paymentIntentId)
         setPaymentAmount(amount)
         setShowStripeForm(true)
       } catch (error) {
@@ -399,15 +401,61 @@ export function CourseRegistrationForm({ course, schedules, selectedScheduleId, 
           clientSecret={stripeClientSecret}
           amount={paymentAmount}
           courseTitle={course.title}
-          onSuccess={() => {
-            alert('✅ Payment successful! Your registration has been completed.')
-            setShowStripeForm(false)
-            setStripeClientSecret(null)
-            onClose()
+          onSuccess={async () => {
+            // Create registration after successful payment
+            if (stripePaymentIntentId) {
+              try {
+                const response = await fetch('/api/stripe/create-registration', {
+                  method: 'POST',
+                  headers: {
+                    'Content-Type': 'application/json',
+                  },
+                  body: JSON.stringify({
+                    paymentIntentId: stripePaymentIntentId,
+                  }),
+                })
+
+                const result = await response.json()
+
+                if (result.success) {
+                  alert('✅ Payment successful! Your registration has been completed.')
+                  setShowStripeForm(false)
+                  setStripeClientSecret(null)
+                  setStripePaymentIntentId(null)
+                  setStripePaymentIntentId(null)
+                  onClose()
+                } else {
+                  // Payment succeeded but registration creation failed
+                  // This should be rare - webhook will handle it, but show message
+                  alert('✅ Payment successful! Your registration is being processed. You will receive a confirmation email shortly.')
+                  setShowStripeForm(false)
+                  setStripeClientSecret(null)
+                  setStripePaymentIntentId(null)
+                  setStripePaymentIntentId(null)
+                  onClose()
+                }
+              } catch (error) {
+                console.error('Error creating registration:', error)
+                // Payment succeeded but registration creation failed
+                // Webhook will handle it, but show message
+                alert('✅ Payment successful! Your registration is being processed. You will receive a confirmation email shortly.')
+                setShowStripeForm(false)
+                setStripeClientSecret(null)
+                setStripePaymentIntentId(null)
+                onClose()
+              }
+            } else {
+              alert('✅ Payment successful! Your registration is being processed.')
+              setShowStripeForm(false)
+              setStripeClientSecret(null)
+              setStripePaymentIntentId(null)
+              onClose()
+            }
           }}
           onCancel={() => {
             setShowStripeForm(false)
             setStripeClientSecret(null)
+            setStripePaymentIntentId(null)
           }}
         />
       )}
@@ -724,31 +772,15 @@ export function CourseRegistrationForm({ course, schedules, selectedScheduleId, 
                       <SelectValue placeholder="Select Payment Method" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="stripe">Stripe</SelectItem>
-                      <SelectItem value="bank">Bank Transfer</SelectItem>
-                      <SelectItem value="invoice">Pay via Invoice</SelectItem>
-                      <SelectItem value="purchase">Purchase Order</SelectItem>
+                      <SelectItem value="stripe">Stripe</SelectItem>                      <SelectItem value="invoice">Pay via Invoice</SelectItem>
+                      <SelectItem value="purchase">Invoice to Company</SelectItem>
                     </SelectContent>
                     </Select>
                     {errors.paymentMethod && <p className="text-xs text-red-600 mt-1">{errors.paymentMethod}</p>}
                   </div>
 
 
-                  <div className="flex items-center space-x-2 pt-1">
-                    <Checkbox
-                      id="billing"
-                      className='border border-blue-600'
-                      checked={formData.differentBilling}
-                      onCheckedChange={(checked) => handleFieldChange('differentBilling', checked as boolean)}
-                    />
-                    <label
-                      htmlFor="billing"
-                      className="text-xs font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
-                    >
-                      Different Billing Details
-                    </label>
-                  </div>
-
+                
                   <div className="flex items-start space-x-2">
                     <Checkbox
                       id="terms"

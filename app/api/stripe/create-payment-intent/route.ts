@@ -32,6 +32,7 @@ export async function POST(request: NextRequest) {
     const amountInCents = Math.round(amount * 100)
 
     // Create payment intent with all payment methods enabled
+    // Store all registration data in metadata - registration will be created only after successful payment
     const paymentIntent = await stripe.paymentIntents.create({
       amount: amountInCents,
       currency: 'usd',
@@ -40,8 +41,22 @@ export async function POST(request: NextRequest) {
         courseId: courseId || '',
         courseTitle: courseTitle || '',
         participants: participants.toString(),
+        // Registration data - will be used to create registration after payment succeeds
         email: registrationData?.email || '',
         name: registrationData?.name || '',
+        title: registrationData?.title || '',
+        designation: registrationData?.designation || '',
+        company: registrationData?.company || '',
+        address: registrationData?.address || '',
+        city: registrationData?.city || '',
+        country: registrationData?.country || '',
+        telephone: registrationData?.telephone || '',
+        telephoneCountryCode: registrationData?.telephoneCountryCode || '+971',
+        mobile: registrationData?.mobile || '',
+        mobileCountryCode: registrationData?.mobileCountryCode || '',
+        differentBilling: registrationData?.differentBilling ? 'true' : 'false',
+        acceptTerms: registrationData?.acceptTerms ? 'true' : 'false',
+        captcha: registrationData?.captcha || '',
       },
       automatic_payment_methods: {
         enabled: true,
@@ -49,40 +64,13 @@ export async function POST(request: NextRequest) {
       },
     })
 
-    // Create course registration with payment intent ID
-    const courseRegistration = await prisma.courseRegistration.create({
-      data: {
-        userId: null, // Will be updated after payment
-        scheduleId: scheduleId || null,
-        courseId: courseId || null,
-        courseTitle: courseTitle || null,
-        title: registrationData?.title || null,
-        name: registrationData?.name || '',
-        email: registrationData?.email || '',
-        designation: registrationData?.designation || null,
-        company: registrationData?.company || null,
-        address: registrationData?.address || '',
-        city: registrationData?.city || '',
-        country: registrationData?.country || '',
-        telephone: registrationData?.telephone || '',
-        telephoneCountryCode: registrationData?.telephoneCountryCode || '+971',
-        mobile: registrationData?.mobile || null,
-        mobileCountryCode: registrationData?.mobileCountryCode || null,
-        paymentMethod: 'stripe',
-        paymentStatus: 'Unpaid',
-        orderStatus: 'Incomplete',
-        participants: participants,
-        differentBilling: registrationData?.differentBilling || false,
-        acceptTerms: registrationData?.acceptTerms || false,
-        captcha: registrationData?.captcha || null,
-      },
-    })
+    // DO NOT create registration here - it will be created only after successful payment
+    // This prevents incomplete/failed payment registrations from being saved
 
     return NextResponse.json({
       success: true,
       clientSecret: paymentIntent.client_secret,
       paymentIntentId: paymentIntent.id,
-      registrationId: courseRegistration.id,
     })
   } catch (error) {
     console.error('Error creating payment intent:', error)

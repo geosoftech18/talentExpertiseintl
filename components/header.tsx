@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
 import { useSession, signOut } from 'next-auth/react'
 import { Button } from '@/components/ui/button'
@@ -79,6 +79,8 @@ export default function Header() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const [isTrainingSubjectsOpen, setIsTrainingSubjectsOpen] = useState(false)
   const [openDropdown, setOpenDropdown] = useState<string | null>(null)
+  const dropdownTimeoutRef = useRef<NodeJS.Timeout | null>(null)
+  const subjectsTimeoutRef = useRef<NodeJS.Timeout | null>(null)
   // Auth modal removed - using full page auth at /auth
 
   useEffect(() => {
@@ -95,6 +97,18 @@ export default function Header() {
       setIsTrainingSubjectsOpen(false)
     }
   }, [isMobileMenuOpen])
+
+  // Cleanup timeouts on unmount
+  useEffect(() => {
+    return () => {
+      if (dropdownTimeoutRef.current) {
+        clearTimeout(dropdownTimeoutRef.current)
+      }
+      if (subjectsTimeoutRef.current) {
+        clearTimeout(subjectsTimeoutRef.current)
+      }
+    }
+  }, [])
 
   const handleLogout = async () => {
     await signOut({ redirect: true, callbackUrl: '/' })
@@ -114,7 +128,7 @@ export default function Header() {
   return (
     <>
       {/* Top Bar */}
-      <div className="bg-gradient-to-r from-slate-900 to-slate-800 text-white text-sm py-2 border-b border-slate-700">
+      <div className="bg-gradient-to-r from-slate-900 to-slate-800 text-white text-sm py-2 border-b border-slate-700 relative z-[100]">
         <div className="max-w-7xl mx-auto px-2 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
@@ -136,12 +150,86 @@ export default function Header() {
                 Home
               </Link>
               <span className="text-slate-500">|</span>
-              <Link
-                href="/about"
-                className="px-4 py-2  font-medium transition-colors rounded-lg "
+              {/* About Us Dropdown */}
+              <div
+                className="relative"
+                onMouseEnter={() => {
+                  if (dropdownTimeoutRef.current) {
+                    clearTimeout(dropdownTimeoutRef.current)
+                    dropdownTimeoutRef.current = null
+                  }
+                  setOpenDropdown('about')
+                }}
+                onMouseLeave={() => {
+                  dropdownTimeoutRef.current = setTimeout(() => {
+                    setOpenDropdown(null)
+                  }, 300)
+                }}
               >
-                About
-              </Link>
+                <Link
+                  href="/about"
+                  className="flex items-center gap-1 px-4 py-2 font-medium transition-colors rounded-lg "
+                >
+                  About Us
+                  <ChevronDown className="w-4 h-4" />
+                </Link>
+                {openDropdown === 'about' && (
+                  <>
+                    {/* Invisible bridge to cover the gap */}
+                    <div 
+                      className="absolute top-full left-0 w-56 h-2"
+                      style={{ zIndex: 10000 }}
+                      onMouseEnter={() => {
+                        if (dropdownTimeoutRef.current) {
+                          clearTimeout(dropdownTimeoutRef.current)
+                          dropdownTimeoutRef.current = null
+                        }
+                        setOpenDropdown('about')
+                      }}
+                    />
+                    <div 
+                      className="absolute top-full left-0 mt-2 w-56 animate-slide-down" 
+                      style={{ zIndex: 10000 }}
+                      onMouseEnter={() => {
+                        if (dropdownTimeoutRef.current) {
+                          clearTimeout(dropdownTimeoutRef.current)
+                          dropdownTimeoutRef.current = null
+                        }
+                        setOpenDropdown('about')
+                      }}
+                      onMouseLeave={() => {
+                        dropdownTimeoutRef.current = setTimeout(() => {
+                          setOpenDropdown(null)
+                        }, 500)
+                      }}
+                    >
+                      <div className="bg-slate-50 rounded-xl shadow-2xl border border-slate-300 p-2">
+                        <Link
+                          href="/services"
+                          className="block px-4 py-3 rounded-lg hover:bg-slate-200 transition-colors text-slate-700 hover:text-[#0A3049] font-medium"
+                          onClick={() => setOpenDropdown(null)}
+                        >
+                          Services
+                        </Link>
+                        <Link
+                          href="/coaching"
+                          className="block px-4 py-3 rounded-lg hover:bg-slate-200 transition-colors text-slate-700 hover:text-[#0A3049] font-medium"
+                          onClick={() => setOpenDropdown(null)}
+                        >
+                          Coaching
+                        </Link>
+                        <Link
+                          href="/consulting"
+                          className="block px-4 py-3 rounded-lg hover:bg-slate-200 transition-colors text-slate-700 hover:text-[#0A3049] font-medium"
+                          onClick={() => setOpenDropdown(null)}
+                        >
+                          Consulting
+                        </Link>
+                      </div>
+                    </div>
+                  </>
+                )}
+              </div>
               <span className="text-slate-500">|</span>
 
               <Link
@@ -151,8 +239,12 @@ export default function Header() {
                 Contact Us
               </Link>
               <span className="text-slate-500">|</span>
-              <Link href="/courses" className="font-medium transition-colors">
-                Course Finder
+              <Link href="/why-choose-tei" className="font-medium transition-colors">
+                Why Choose TEI
+                </Link>
+              <span className="text-slate-500">|</span>
+              <Link href="/downloads" className="font-medium transition-colors">
+                Downloads
               </Link>
               {/* <span className="text-slate-500">|</span>
               <div className="flex items-center gap-2">
@@ -201,45 +293,92 @@ export default function Header() {
               >
                 Home
               </Link> */}
-
-              {/* Training Subjects Dropdown */}
-              <div
-                className="relative"
-                onMouseEnter={() => setOpenDropdown('subjects')}
-                onMouseLeave={() => setOpenDropdown(null)}
-              >
-                <button className="flex items-center gap-1 px-4 py-2 text-slate-700 hover:text-[#0A3049] font-medium transition-colors rounded-lg hover:bg-[#0A3049]/5">
-                  Training Programs
-                  <ChevronDown className="w-4 h-4" />
-                </button>
-                {openDropdown === 'subjects' && (
-                  <div className="absolute top-full left-0 mt-2 w-[600px] bg-white rounded-xl shadow-2xl border border-slate-200 p-4 animate-slide-down">
-                    <div className="grid grid-cols-2 gap-2">
-                      {courseCategories.map((category, index) => (
-                        <Link
-                          key={index}
-                          href={`/courses?category=${encodeURIComponent(category)}`}
-                          className="block px-4 py-3 text-slate-700 hover:text-[#0A3049] hover:bg-[#0A3049]/5 rounded-lg transition-colors group"
-                          onClick={() => setOpenDropdown(null)}
-                        >
-                          <div className="flex items-center justify-between">
-                            <span className="font-medium group-hover:text-[#0A3049] text-sm">{category}</span>
-                            <ChevronRight className="w-4 h-4 opacity-0 group-hover:opacity-100 transition-opacity" />
-                          </div>
-                        </Link>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              <Link
+                  <Link
                 href="/calendar"
                 className="flex items-center gap-1 px-4 py-2 text-slate-700 hover:text-[#0A3049] font-medium transition-colors rounded-lg hover:bg-[#0A3049]/5"
               >
                 <Calendar className="w-4 h-4" />
                 Calendar
               </Link>
+
+              {/* Training Subjects Dropdown */}
+              <div
+                className="relative"
+                onMouseEnter={() => {
+                  if (subjectsTimeoutRef.current) {
+                    clearTimeout(subjectsTimeoutRef.current)
+                    subjectsTimeoutRef.current = null
+                  }
+                  setOpenDropdown('subjects')
+                }}
+                onMouseLeave={() => {
+                  subjectsTimeoutRef.current = setTimeout(() => {
+                    setOpenDropdown(null)
+                  }, 500)
+                }}
+              >
+                <button className="flex items-center gap-1 px-4 py-2 text-slate-700 hover:text-[#0A3049] font-medium transition-colors rounded-lg hover:bg-[#0A3049]/5">
+                  Training Programs
+                  <ChevronDown className="w-4 h-4" />
+                </button>
+                {openDropdown === 'subjects' && (
+                  <>
+                    {/* Invisible bridge to cover the gap */}
+                    <div 
+                      className="absolute top-full left-0 w-[600px] h-2 z-50"
+                      onMouseEnter={() => {
+                        if (subjectsTimeoutRef.current) {
+                          clearTimeout(subjectsTimeoutRef.current)
+                          subjectsTimeoutRef.current = null
+                        }
+                        setOpenDropdown('subjects')
+                      }}
+                    />
+                    <div 
+                      className="absolute top-full left-0 mt-2 w-[600px] animate-slide-down z-50"
+                      onMouseEnter={() => {
+                        if (subjectsTimeoutRef.current) {
+                          clearTimeout(subjectsTimeoutRef.current)
+                          subjectsTimeoutRef.current = null
+                        }
+                        setOpenDropdown('subjects')
+                      }}
+                      onMouseLeave={() => {
+                        subjectsTimeoutRef.current = setTimeout(() => {
+                          setOpenDropdown(null)
+                        }, 500)
+                      }}
+                    >
+                      <div className="bg-white rounded-xl shadow-2xl border border-slate-200 p-4">
+                        <div className="grid grid-cols-2 gap-2">
+                          {courseCategories.map((category, index) => (
+                            <Link
+                              key={index}
+                              href={`/courses?category=${encodeURIComponent(category)}`}
+                              className="block px-4 py-3 text-slate-700 hover:text-[#0A3049] hover:bg-[#0A3049]/5 rounded-lg transition-colors group"
+                              onClick={() => setOpenDropdown(null)}
+                            >
+                              <div className="flex items-center justify-between">
+                                <span className="font-medium group-hover:text-[#0A3049] text-sm">{category}</span>
+                                <ChevronRight className="w-4 h-4 opacity-0 group-hover:opacity-100 transition-opacity" />
+                              </div>
+                            </Link>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  </>
+                )}
+              </div>
+
+              
+              <Link
+                href="/venues"
+                className="px-4 py-2 text-slate-700 hover:text-[#0A3049] font-medium transition-colors rounded-lg hover:bg-[#0A3049]/5"
+              >
+               Training Venues
+              </Link>
+          
 
               <Link
                 href="/certificates"
@@ -249,12 +388,7 @@ export default function Header() {
                 Certificates
               </Link>
 
-              <Link
-                href="/venues"
-                className="px-4 py-2 text-slate-700 hover:text-[#0A3049] font-medium transition-colors rounded-lg hover:bg-[#0A3049]/5"
-              >
-                Venues
-              </Link>
+              
 
               {/* <div
                 className="relative"
@@ -426,14 +560,14 @@ export default function Header() {
                   className="block px-4 py-2 rounded-lg hover:bg-[#0A3049]/5 text-slate-700 font-medium transition-colors"
                   onClick={() => setIsMobileMenuOpen(false)}
                 >
-                  Venues
+                  Training Venues
                 </Link>
                 <Link
                   href="/about"
                   className="block px-4 py-2 rounded-lg hover:bg-[#0A3049]/5 text-slate-700 font-medium transition-colors"
                   onClick={() => setIsMobileMenuOpen(false)}
                 >
-                  About
+                  About Us
                 </Link>
                 <Link
                   href="/contact"

@@ -8,7 +8,6 @@ Add these to your `.env` file:
 
 ```env
 # Stripe Configuration
-# Replace with your actual keys from Stripe Dashboard
 STRIPE_SECRET_KEY=sk_test_YOUR_SECRET_KEY_HERE
 STRIPE_PUBLISHABLE_KEY=pk_test_YOUR_PUBLISHABLE_KEY_HERE
 STRIPE_WEBHOOK_SECRET=whsec_YOUR_WEBHOOK_SECRET_HERE
@@ -75,14 +74,13 @@ STRIPE_API_VERSION=2024-11-20.acacia
 
 ```env
 # Stripe Configuration (Test Mode)
-# Replace with your actual keys from Stripe Dashboard
 STRIPE_SECRET_KEY=sk_test_YOUR_SECRET_KEY_HERE
 STRIPE_PUBLISHABLE_KEY=pk_test_YOUR_PUBLISHABLE_KEY_HERE
 STRIPE_WEBHOOK_SECRET=whsec_YOUR_WEBHOOK_SECRET_HERE
 
 # For Production (use live keys)
-# STRIPE_SECRET_KEY=sk_live_YOUR_LIVE_SECRET_KEY_HERE
-# STRIPE_PUBLISHABLE_KEY=pk_live_YOUR_LIVE_PUBLISHABLE_KEY_HERE
+# STRIPE_SECRET_KEY=sk_live_...
+# STRIPE_PUBLISHABLE_KEY=pk_live_...
 ```
 
 ## 🔒 Security Best Practices

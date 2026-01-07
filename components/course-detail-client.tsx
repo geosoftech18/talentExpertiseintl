@@ -282,7 +282,7 @@ export default function CourseDetailClient({
             </Badge>
           </div>
 
-          <h1 className="text-2xl md:text-6xl font-bold mb-6 leading-tight animate-slide-up">
+      <h1 className="text-2xl md:text-4xl font-bold mb-6 leading-tight animate-slide-up">
             {course.title}
           </h1>
 

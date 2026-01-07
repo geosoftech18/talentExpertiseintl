@@ -132,7 +132,7 @@ export function verifyOTP(email: string, code: string): boolean {
  */
 export function isAdminEmail(email: string): boolean {
   const allowedEmails = [
-'amarkorde18@gmail.com'
+'pranavkhandekar152@gmail.com'
   ]
   return allowedEmails.includes(email.toLowerCase())
 }

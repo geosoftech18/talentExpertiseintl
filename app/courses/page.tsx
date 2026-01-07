@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useMemo, useEffect, Suspense } from 'react'
-import { Search, Calendar, MapPin, Clock, X, SlidersHorizontal } from 'lucide-react'
+import { Search, Calendar, MapPin, Clock, X, SlidersHorizontal, Loader2 } from 'lucide-react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { Card, CardContent } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
@@ -10,8 +10,10 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { format } from 'date-fns'
+import { CourseRegistrationForm } from '@/components/course-registration-form'
+import type { Course, CourseSchedule } from '@/lib/supabase'
 
-interface Course {
+interface CourseListItem {
   id: string
   slug: string
   title: string
@@ -44,8 +46,13 @@ function CourseFinderPageContent() {
   const [sortBy, setSortBy] = useState<string>('relevance')
   const [currentPage, setCurrentPage] = useState(1)
   const coursesPerPage = 12
-  const [allCourses, setAllCourses] = useState<Course[]>([])
+  const [allCourses, setAllCourses] = useState<CourseListItem[]>([])
   const [loading, setLoading] = useState(true)
+  const [showRegistration, setShowRegistration] = useState(false)
+  const [selectedCourse, setSelectedCourse] = useState<Course | null>(null)
+  const [selectedSchedules, setSelectedSchedules] = useState<CourseSchedule[]>([])
+  const [selectedScheduleId, setSelectedScheduleId] = useState<string | null>(null)
+  const [loadingCourseData, setLoadingCourseData] = useState(false)
 
   // Cache key for sessionStorage
   const CACHE_KEY = 'courses_cache'
@@ -233,36 +240,74 @@ function CourseFinderPageContent() {
       })
     }
 
-    // Sort - Always sort by date first (earliest first), then by selected sort option
+    // Sort based on selected option
     filtered.sort((a, b) => {
-      // Primary sort: by date (earliest first)
-      const aDate = a.startDate ? new Date(a.startDate).getTime() : Infinity
-      const bDate = b.startDate ? new Date(b.startDate).getTime() : Infinity
-      const dateDiff = aDate - bDate
-      
-      // If dates are the same (or both missing), apply secondary sort
-      if (dateDiff === 0 || (aDate === Infinity && bDate === Infinity)) {
-        // Secondary sort based on selected option
-        switch (sortBy) {
-          case 'price-low':
-            return a.price - b.price
-          case 'price-high':
-            return b.price - a.price
-          case 'rating':
-            return (b.rating || 0) - (a.rating || 0)
-          case 'name':
-            return a.title.localeCompare(b.title)
-          default:
-            // Relevance: featured first, then trending, then by rating
-            if (a.featured && !b.featured) return -1
-            if (!a.featured && b.featured) return 1
-            if (a.trending && !b.trending) return -1
-            if (!a.trending && b.trending) return 1
-            return (b.rating || 0) - (a.rating || 0)
-        }
+      switch (sortBy) {
+        case 'name':
+          // Sort by name (A-Z)
+          return a.title.localeCompare(b.title)
+        
+        case 'price-low':
+          // Sort by price: Low to High
+          return a.price - b.price
+        
+        case 'price-high':
+          // Sort by price: High to Low
+          return b.price - a.price
+        
+        case 'date':
+          // Sort by date: Earliest First
+          const aDate = a.startDate ? new Date(a.startDate).getTime() : Infinity
+          const bDate = b.startDate ? new Date(b.startDate).getTime() : Infinity
+          return aDate - bDate
+        
+        case 'date-desc':
+          // Sort by date: Latest First
+          const aDateDesc = a.startDate ? new Date(a.startDate).getTime() : 0
+          const bDateDesc = b.startDate ? new Date(b.startDate).getTime() : 0
+          return bDateDesc - aDateDesc
+        
+        case 'month':
+          // Sort by month (January to December)
+          const aMonth = a.startDate ? new Date(a.startDate).getMonth() : 12
+          const bMonth = b.startDate ? new Date(b.startDate).getMonth() : 12
+          if (aMonth !== bMonth) return aMonth - bMonth
+          // If same month, sort by date within month
+          const aDateMonth = a.startDate ? new Date(a.startDate).getTime() : Infinity
+          const bDateMonth = b.startDate ? new Date(b.startDate).getTime() : Infinity
+          return aDateMonth - bDateMonth
+        
+        case 'year':
+          // Sort by year (earliest to latest)
+          const aYear = a.startDate ? new Date(a.startDate).getFullYear() : Infinity
+          const bYear = b.startDate ? new Date(b.startDate).getFullYear() : Infinity
+          if (aYear !== bYear) return aYear - bYear
+          // If same year, sort by date within year
+          const aDateYear = a.startDate ? new Date(a.startDate).getTime() : Infinity
+          const bDateYear = b.startDate ? new Date(b.startDate).getTime() : Infinity
+          return aDateYear - bDateYear
+        
+        case 'year-desc':
+          // Sort by year (latest to earliest)
+          const aYearDesc = a.startDate ? new Date(a.startDate).getFullYear() : 0
+          const bYearDesc = b.startDate ? new Date(b.startDate).getFullYear() : 0
+          if (aYearDesc !== bYearDesc) return bYearDesc - aYearDesc
+          // If same year, sort by date within year (latest first)
+          const aDateYearDesc = a.startDate ? new Date(a.startDate).getTime() : 0
+          const bDateYearDesc = b.startDate ? new Date(b.startDate).getTime() : 0
+          return bDateYearDesc - aDateYearDesc
+        
+        default:
+          // Relevance: featured first, then trending, then by date
+          if (a.featured && !b.featured) return -1
+          if (!a.featured && b.featured) return 1
+          if (a.trending && !b.trending) return -1
+          if (!a.trending && b.trending) return 1
+          // Finally sort by date (earliest first)
+          const aDateRel = a.startDate ? new Date(a.startDate).getTime() : Infinity
+          const bDateRel = b.startDate ? new Date(b.startDate).getTime() : Infinity
+          return aDateRel - bDateRel
       }
-      
-      return dateDiff
     })
 
     return filtered
@@ -279,6 +324,7 @@ function CourseFinderPageContent() {
     setSelectedCategory('all')
     setSelectedVenue('all')
     setSelectedDuration('all')
+    setSortBy('relevance')
     setCurrentPage(1)
   }
 
@@ -286,10 +332,71 @@ function CourseFinderPageContent() {
     selectedCategory !== 'all',
     selectedVenue !== 'all',
     selectedDuration !== 'all',
+    sortBy !== 'relevance',
   ].filter(Boolean).length
+
+  const handleRegisterClick = async (e: React.MouseEvent, course: CourseListItem) => {
+    e.stopPropagation() // Prevent row click
+    setLoadingCourseData(true)
+    
+    try {
+      // Fetch full course details with schedules
+      const response = await fetch(`/api/courses/${course.slug}`)
+      const result = await response.json()
+      
+      if (result.success && result.data) {
+        const courseData = result.data.course as Course
+        const schedules = result.data.schedules as CourseSchedule[]
+        
+        // Try to find matching schedule based on the course row's date/venue
+        let matchingScheduleId: string | null = null
+        if (course.startDate && schedules.length > 0) {
+          const matchingSchedule = schedules.find(s => {
+            const scheduleStart = s.start_date ? new Date(s.start_date).toISOString().split('T')[0] : null
+            const rowStart = course.startDate ? new Date(course.startDate).toISOString().split('T')[0] : null
+            return scheduleStart === rowStart && 
+                   (s.venue === course.venue || (!s.venue && !course.venue))
+          })
+          if (matchingSchedule) {
+            matchingScheduleId = matchingSchedule.id
+          } else if (schedules.length > 0) {
+            // If no exact match, use first schedule
+            matchingScheduleId = schedules[0].id
+          }
+        } else if (schedules.length > 0) {
+          matchingScheduleId = schedules[0].id
+        }
+        
+        setSelectedCourse(courseData)
+        setSelectedSchedules(schedules)
+        setSelectedScheduleId(matchingScheduleId)
+        setShowRegistration(true)
+      } else {
+        alert('Failed to load course details. Please try again.')
+      }
+    } catch (error) {
+      console.error('Error fetching course details:', error)
+      alert('Failed to load course details. Please try again.')
+    } finally {
+      setLoadingCourseData(false)
+    }
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-slate-50 to-white">
+      {showRegistration && selectedCourse && (
+        <CourseRegistrationForm
+          course={selectedCourse}
+          schedules={selectedSchedules}
+          selectedScheduleId={selectedScheduleId}
+          onClose={() => {
+            setShowRegistration(false)
+            setSelectedCourse(null)
+            setSelectedSchedules([])
+            setSelectedScheduleId(null)
+          }}
+        />
+      )}
       {/* Hero Section */}
       <div className="relative bg-gradient-to-r from-[#0A3049] via-[#0A3049] to-[#0A3049] text-white overflow-hidden">
         <div className="absolute inset-0 bg-grid-white/[0.05] bg-[size:30px_30px]" />
@@ -394,25 +501,7 @@ function CourseFinderPageContent() {
                     </Select>
                   </div>
 
-                  {/* Duration Filter */}
-                  <div>
-                    <Label className="text-xs sm:text-sm font-semibold text-slate-700 mb-2 block">
-                      Duration
-                    </Label>
-                    <Select value={selectedDuration} onValueChange={(value) => { setSelectedDuration(value); setCurrentPage(1) }}>
-                      <SelectTrigger className="w-full h-9 sm:h-10">
-                        <SelectValue placeholder="All Durations" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="all">All Durations</SelectItem>
-                        <SelectItem value="1">1 Day</SelectItem>
-                        <SelectItem value="2">2 Days</SelectItem>
-                        <SelectItem value="3">3 Days</SelectItem>
-                        <SelectItem value="4">4 Days</SelectItem>
-                        <SelectItem value="5">5 Days</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
+                 
 
                   {/* Sort Filter */}
                   <div>
@@ -428,8 +517,11 @@ function CourseFinderPageContent() {
                         <SelectItem value="name">Name (A-Z)</SelectItem>
                         <SelectItem value="price-low">Price: Low to High</SelectItem>
                         <SelectItem value="price-high">Price: High to Low</SelectItem>
-                        <SelectItem value="rating">Highest Rated</SelectItem>
                         <SelectItem value="date">Date: Earliest First</SelectItem>
+                        <SelectItem value="date-desc">Date: Latest First</SelectItem>
+                        <SelectItem value="month">By Month</SelectItem>
+                        <SelectItem value="year">By Year (Earliest)</SelectItem>
+                        <SelectItem value="year-desc">By Year (Latest)</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
@@ -481,9 +573,6 @@ function CourseFinderPageContent() {
                         <thead className="bg-slate-50 border-b border-slate-200">
                           <tr>
                             <th className="px-6 py-4 text-left text-xs font-semibold text-slate-700 uppercase tracking-wider">
-                              Reference Code
-                            </th>
-                            <th className="px-6 py-4 text-left text-xs font-semibold text-slate-700 uppercase tracking-wider">
                               Course Title
                             </th>
                             <th className="px-6 py-4 text-left text-xs font-semibold text-slate-700 uppercase tracking-wider">
@@ -493,10 +582,10 @@ function CourseFinderPageContent() {
                               Venue
                             </th>
                             <th className="px-6 py-4 text-left text-xs font-semibold text-slate-700 uppercase tracking-wider">
-                              Duration
+                              Fee
                             </th>
                             <th className="px-6 py-4 text-left text-xs font-semibold text-slate-700 uppercase tracking-wider">
-                              Fee
+                              Register
                             </th>
                           </tr>
                         </thead>
@@ -507,15 +596,6 @@ function CourseFinderPageContent() {
                               onClick={() => router.push(`/courses/${course.slug}`)}
                               className="hover:bg-blue-50 transition-colors cursor-pointer group"
                             >
-                              <td className="px-6 py-4">
-                                {course.courseCode ? (
-                                  <span className="text-sm font-mono font-medium text-slate-700 bg-slate-100 px-2 py-1 rounded">
-                                    {course.courseCode}
-                                  </span>
-                                ) : (
-                                  <span className="text-sm text-slate-400">-</span>
-                                )}
-                              </td>
                               <td className="px-6 py-4">
                                 <div className="flex items-center gap-3">
                                   <div className="shrink-0 w-1 h-8 bg-gradient-to-b from-blue-600 to-purple-600 rounded group-hover:w-1.5 transition-all"></div>
@@ -548,12 +628,6 @@ function CourseFinderPageContent() {
                                 )}
                               </td>
                               <td className="px-6 py-4">
-                                <div className="flex items-center gap-2 text-sm text-slate-700">
-                                  <Clock className="w-4 h-4 text-slate-400 shrink-0" />
-                                  <span>{course.duration}</span>
-                                </div>
-                              </td>
-                              <td className="px-6 py-4">
                                 {course.price > 0 ? (
                                   <div className="text-base font-semibold text-slate-900">
                                     ${course.price.toLocaleString()}
@@ -561,6 +635,23 @@ function CourseFinderPageContent() {
                                 ) : (
                                   <span className="text-sm text-slate-400">Contact for pricing</span>
                                 )}
+                              </td>
+                              <td className="px-6 py-4" onClick={(e) => e.stopPropagation()}>
+                                <Button
+                                  onClick={(e) => handleRegisterClick(e, course)}
+                                  disabled={loadingCourseData}
+                                  className="bg-[#0A3049] hover:bg-blue-700 text-white"
+                                  size="sm"
+                                >
+                                  {loadingCourseData ? (
+                                    <>
+                                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                                      Loading...
+                                    </>
+                                  ) : (
+                                    'Register Now'
+                                  )}
+                                </Button>
                               </td>
                             </tr>
                           ))}
@@ -575,22 +666,15 @@ function CourseFinderPageContent() {
                   {paginatedCourses.map((course) => (
                     <Card
                       key={course.id}
-                      onClick={() => router.push(`/courses/${course.slug}`)}
-                      className="shadow-md hover:shadow-lg transition-shadow cursor-pointer border-l-4 border-l-blue-600"
+                      className="shadow-md hover:shadow-lg transition-shadow border-l-4 border-l-blue-600"
                     >
                       <CardContent className="p-4 sm:p-5">
                         <div className="space-y-3">
-                          {/* Course Code */}
-                          {course.courseCode && (
-                            <div>
-                              <span className="text-xs font-mono font-medium text-slate-700 bg-slate-100 px-2 py-1 rounded">
-                                {course.courseCode}
-                              </span>
-                            </div>
-                          )}
-                          
                           {/* Title */}
-                          <h3 className="text-base sm:text-lg font-semibold text-slate-900 line-clamp-2">
+                          <h3 
+                            onClick={() => router.push(`/courses/${course.slug}`)}
+                            className="text-base sm:text-lg font-semibold text-slate-900 line-clamp-2 cursor-pointer hover:text-blue-600 transition-colors"
+                          >
                             {course.title}
                           </h3>
 
@@ -615,12 +699,6 @@ function CourseFinderPageContent() {
                               </div>
                             )}
 
-                            {/* Duration */}
-                            <div className="flex items-center gap-2 text-slate-700">
-                              <Clock className="w-4 h-4 text-slate-400 shrink-0" />
-                              <span className="text-xs sm:text-sm">{course.duration} Days</span>
-                            </div>
-
                             {/* Price */}
                             <div className="flex items-center justify-between pt-2 border-t border-slate-200">
                               {course.price > 0 ? (
@@ -630,6 +708,21 @@ function CourseFinderPageContent() {
                               ) : (
                                 <span className="text-xs sm:text-sm text-slate-400">Contact for pricing</span>
                               )}
+                              <Button
+                                onClick={(e) => handleRegisterClick(e, course)}
+                                disabled={loadingCourseData}
+                                className="bg-blue-600 hover:bg-blue-700 text-white"
+                                size="sm"
+                              >
+                                {loadingCourseData ? (
+                                  <>
+                                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                                    Loading...
+                                  </>
+                                ) : (
+                                  'Register Now'
+                                )}
+                              </Button>
                             </div>
                           </div>
                         </div>

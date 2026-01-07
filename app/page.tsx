@@ -9,6 +9,7 @@ import UpcomingProgramsSection from "@/components/home/upcoming-programs-section
 import UpcomingProgramsCarousel from "@/components/home/upcoming-programs-carousel"
 import AffiliationsSection from "@/components/home/affiliations-section"
 import ClientsLogoSection from "@/components/home/clients-logo-section"
+import ChooseVenueSection from "@/components/home/choose-venue-section"
 
 export default function Page() {
   return (
@@ -23,6 +24,7 @@ export default function Page() {
       <UpcomingProgramsCarousel />
       
       <CourseCategoriesSection />
+      <ChooseVenueSection />
       <ClientsLogoSection />
       <AffiliationsSection />
       <TestimonialsSection />
