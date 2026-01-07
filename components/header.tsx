@@ -231,6 +231,10 @@ export default function Header() {
                 )}
               </div>
               <span className="text-slate-500">|</span>
+              <span className="text-slate-500">|</span>
+              <Link href="/why-choose-tei" className="font-medium transition-colors">
+                Why Choose TEI
+                </Link>
 
               <Link
                 href="/contact"
@@ -238,10 +242,7 @@ export default function Header() {
               >
                 Contact Us
               </Link>
-              <span className="text-slate-500">|</span>
-              <Link href="/why-choose-tei" className="font-medium transition-colors">
-                Why Choose TEI
-                </Link>
+             
               <span className="text-slate-500">|</span>
               <Link href="/downloads" className="font-medium transition-colors">
                 Downloads
