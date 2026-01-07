@@ -20,19 +20,19 @@ STRIPE_API_VERSION=2024-11-20.acacia
 
 ### 1. STRIPE_SECRET_KEY
 - **Type**: Secret key (server-side only)
-- **Format**: Starts with `sk_test_YOUR_SECRET_KEY_HERE (test mode) or `sk_live_` (production)
+- **Format**: Starts with `sk_test_` (test mode) or `sk_live_` (production)
 - **Purpose**: Used for server-side API calls (creating payments, managing customers, etc.)
 - **Security**: ⚠️ **NEVER expose this in client-side code**
 
 ### 2. STRIPE_PUBLISHABLE_KEY
 - **Type**: Public key (can be used in client-side)
-- **Format**: Starts with `pk_test_YOUR_PUBLISHABLE_KEY_HERE (test mode) or `pk_live_` (production)
+- **Format**: Starts with `pk_test_` (test mode) or `pk_live_` (production)
 - **Purpose**: Used in frontend to initialize Stripe.js and create payment elements
 - **Security**: ✅ Safe to use in client-side code
 
 ### 3. STRIPE_WEBHOOK_SECRET (Optional but Recommended)
 - **Type**: Webhook signing secret
-- **Format**: Starts with `whsec_YOUR_WEBHOOK_SECRET_HERE
+- **Format**: Starts with `whsec_`
 - **Purpose**: Used to verify webhook events from Stripe
 - **Security**: ⚠️ **Keep this secret, server-side only**
 
@@ -54,8 +54,8 @@ STRIPE_API_VERSION=2024-11-20.acacia
 1. **Log in to Stripe Dashboard**
 2. **Go to Developers → API Keys**
 3. **Test Mode Keys** (for development):
-   - Copy **Publishable key** (starts with `pk_test_YOUR_PUBLISHABLE_KEY_HERE
-   - Click **Reveal test key** to see **Secret key** (starts with `sk_test_YOUR_SECRET_KEY_HERE
+   - Copy **Publishable key** (starts with `pk_test_`)
+   - Click **Reveal test key** to see **Secret key** (starts with `sk_test_`)
 
 4. **Live Mode Keys** (for production):
    - Toggle to **Live mode** in the dashboard
@@ -68,7 +68,7 @@ STRIPE_API_VERSION=2024-11-20.acacia
 2. **Click "Add endpoint"**
 3. **Endpoint URL**: `https://yourdomain.com/api/webhooks/stripe` (or your webhook endpoint)
 4. **Events to send**: Select events you want to listen to (e.g., `payment_intent.succeeded`, `payment_intent.payment_failed`)
-5. **Copy the Signing secret** (starts with `whsec_YOUR_WEBHOOK_SECRET_HERE
+5. **Copy the Signing secret** (starts with `whsec_`)
 
 ## 📋 Complete .env Example
 
@@ -79,8 +79,8 @@ STRIPE_PUBLISHABLE_KEY=pk_test_YOUR_PUBLISHABLE_KEY_HERE
 STRIPE_WEBHOOK_SECRET=whsec_YOUR_WEBHOOK_SECRET_HERE
 
 # For Production (use live keys)
-# STRIPE_SECRET_KEY=sk_live_...
-# STRIPE_PUBLISHABLE_KEY=pk_live_...
+# STRIPE_SECRET_KEY=sk_live_YOUR_SECRET_KEY_HERE
+# STRIPE_PUBLISHABLE_KEY=pk_live_YOUR_PUBLISHABLE_KEY_HERE
 ```
 
 ## 🔒 Security Best Practices
@@ -93,7 +93,7 @@ STRIPE_WEBHOOK_SECRET=whsec_YOUR_WEBHOOK_SECRET_HERE
 
 ## 🧪 Testing
 
-1. **Test Mode**: Use test keys (`sk_test_YOUR_SECRET_KEY_HERE `pk_test_YOUR_PUBLISHABLE_KEY_HERE
+1. **Test Mode**: Use test keys (`sk_test_`, `pk_test_`)
    - Use test card numbers: `4242 4242 4242 4242`
    - Any future expiry date
    - Any 3-digit CVC
