@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useMemo } from "react"
 import React from "react"
-import { Plus, Edit2, Trash2, Search, Eye, X, Calendar, Filter, Download } from "lucide-react"
+import { Plus, Edit2, Trash2, Search, Eye, X, Calendar, Filter, Download, Upload, FileSpreadsheet, ChevronLeft, ChevronRight } from "lucide-react"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog"
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog"
 import { Button } from "@/components/ui/button"
@@ -90,12 +90,36 @@ export default function CourseManagement({ onAddProgram, onAddSchedule, onEditPr
   const [selectedMonth, setSelectedMonth] = useState<string>('all')
   const [selectedYear, setSelectedYear] = useState<string>('all')
   
+  // Pagination states for schedules
+  const [schedulePage, setSchedulePage] = useState(1)
+  const [scheduleTotalPages, setScheduleTotalPages] = useState(1)
+  const [scheduleTotal, setScheduleTotal] = useState(0)
+  const [allScheduleMonths, setAllScheduleMonths] = useState<string[]>([])
+  const [allScheduleYears, setAllScheduleYears] = useState<string[]>([])
+  
+  // Pagination states for programs
+  const [programPage, setProgramPage] = useState(1)
+  const [programTotalPages, setProgramTotalPages] = useState(1)
+  const [programTotal, setProgramTotal] = useState(0)
+  
   // Preview states
   const [previewProgram, setPreviewProgram] = useState<ProgramDetails | null>(null)
   const [previewSchedule, setPreviewSchedule] = useState<ScheduleDetails | null>(null)
   const [showProgramPreview, setShowProgramPreview] = useState(false)
   const [showSchedulePreview, setShowSchedulePreview] = useState(false)
   const [expandedProgramId, setExpandedProgramId] = useState<string | null>(null)
+  
+  // Bulk import states
+  const [showBulkImport, setShowBulkImport] = useState(false)
+  const [importFile, setImportFile] = useState<File | null>(null)
+  const [importing, setImporting] = useState(false)
+  const [importResults, setImportResults] = useState<{
+    total: number
+    successful: number
+    failed: number
+    success: Array<{ row: number; refCode: string; programName: string }>
+    errors: Array<{ row: number; error: string; data: any }>
+  } | null>(null)
   
   // Store all program details for instant access
   const [programDetailsMap, setProgramDetailsMap] = useState<Map<string, ProgramDetails>>(new Map())
@@ -108,26 +132,14 @@ export default function CourseManagement({ onAddProgram, onAddSchedule, onEditPr
   const [selectedPrograms, setSelectedPrograms] = useState<Set<string>>(new Set())
   const [selectedSchedules, setSelectedSchedules] = useState<Set<string>>(new Set())
 
-  // Get unique months and years from schedules
+  // Use allScheduleMonths and allScheduleYears for filters (populated from all schedules)
   const availableMonths = useMemo(() => {
-    const months = new Set<string>()
-    schedules.forEach((schedule) => {
-      const date = new Date(schedule.startDate)
-      const month = date.getMonth() + 1 // 1-12
-      months.add(month.toString().padStart(2, '0'))
-    })
-    return Array.from(months).sort()
-  }, [schedules])
+    return allScheduleMonths.sort()
+  }, [allScheduleMonths])
 
   const availableYears = useMemo(() => {
-    const years = new Set<string>()
-    schedules.forEach((schedule) => {
-      const date = new Date(schedule.startDate)
-      const year = date.getFullYear()
-      years.add(year.toString())
-    })
-    return Array.from(years).sort((a, b) => parseInt(b) - parseInt(a)) // Descending order
-  }, [schedules])
+    return allScheduleYears.sort((a, b) => parseInt(b) - parseInt(a)) // Descending order
+  }, [allScheduleYears])
 
   const monthNames = [
     'January', 'February', 'March', 'April', 'May', 'June',
@@ -144,18 +156,40 @@ export default function CourseManagement({ onAddProgram, onAddSchedule, onEditPr
     setSearchTerm("")
     setSelectedMonth('all')
     setSelectedYear('all')
+    setSchedulePage(1) // Reset to first page when switching tabs
+    setProgramPage(1) // Reset to first page when switching tabs
     // Clear selections when switching tabs
     setSelectedPrograms(new Set())
     setSelectedSchedules(new Set())
   }, [activeTab])
+  
+  // Reset to page 1 when filters change
+  useEffect(() => {
+    if (activeTab === 'schedules') {
+      setSchedulePage(1)
+    } else if (activeTab === 'programs') {
+      setProgramPage(1)
+    }
+  }, [selectedMonth, selectedYear, searchTerm, activeTab])
 
-  // Fetch programs from database with all details upfront for instant preview
+  // Fetch programs from database with pagination and search
   useEffect(() => {
     const fetchPrograms = async () => {
       try {
         setLoading(true)
-        // Fetch with details to preload all data for instant preview
-        const response = await fetch('/api/admin/programs?includeDetails=true')
+        
+        // Build query params
+        const params = new URLSearchParams()
+        params.append('page', programPage.toString())
+        params.append('limit', '50')
+        params.append('includeDetails', 'true') // Include details for preview
+        
+        // Add search filter if provided
+        if (searchTerm.trim() && activeTab === 'programs') {
+          params.append('search', searchTerm.trim())
+        }
+        
+        const response = await fetch(`/api/admin/programs?${params.toString()}`)
         const result = await response.json()
         
         if (!response.ok) {
@@ -175,7 +209,7 @@ export default function CourseManagement({ onAddProgram, onAddSchedule, onEditPr
 
         setPrograms(transformedPrograms)
 
-        // Preload all program details into a Map for instant access
+        // Preload program details into a Map for instant access
         const detailsMap = new Map<string, ProgramDetails>()
         result.data.forEach((program: any) => {
           detailsMap.set(program.id, {
@@ -202,6 +236,12 @@ export default function CourseManagement({ onAddProgram, onAddSchedule, onEditPr
           })
         })
         setProgramDetailsMap(detailsMap)
+        
+        // Update pagination info
+        if (result.pagination) {
+          setProgramTotalPages(result.pagination.totalPages || 1)
+          setProgramTotal(result.pagination.total || 0)
+        }
       } catch (err) {
         console.error('Error fetching programs:', err)
         setError(err instanceof Error ? err.message : 'Failed to load programs')
@@ -211,23 +251,68 @@ export default function CourseManagement({ onAddProgram, onAddSchedule, onEditPr
       }
     }
 
-    fetchPrograms()
+    if (activeTab === 'programs') {
+      fetchPrograms()
+    }
+  }, [programPage, searchTerm, activeTab])
+
+  // Fetch all unique months and years from all schedules (for filter dropdowns)
+  useEffect(() => {
+    const fetchAllScheduleMetadata = async () => {
+      try {
+        // Fetch first page with large limit to get all unique months/years
+        // Or we can fetch all schedules metadata separately
+        const response = await fetch('/api/admin/schedules?page=1&limit=10000')
+        const result = await response.json()
+        
+        if (result.success && result.data) {
+          const months = new Set<string>()
+          const years = new Set<string>()
+          
+          result.data.forEach((schedule: any) => {
+            const date = new Date(schedule.startDate)
+            const month = (date.getMonth() + 1).toString().padStart(2, '0')
+            const year = date.getFullYear().toString()
+            months.add(month)
+            years.add(year)
+          })
+          
+          setAllScheduleMonths(Array.from(months))
+          setAllScheduleYears(Array.from(years))
+        }
+      } catch (err) {
+        console.error('Error fetching schedule metadata:', err)
+      }
+    }
+
+    fetchAllScheduleMetadata()
   }, [])
 
-  // Fetch schedules from database - only active (non-expired) schedules
+  // Fetch schedules from database with pagination and filters
   useEffect(() => {
     const fetchSchedules = async () => {
       try {
         setLoadingSchedules(true)
-        const response = await fetch('/api/admin/schedules')
+        
+        // Build query params
+        const params = new URLSearchParams()
+        params.append('page', schedulePage.toString())
+        params.append('limit', '50')
+        
+        // Add month and year filters if selected
+        if (selectedMonth !== 'all') {
+          params.append('month', selectedMonth)
+        }
+        if (selectedYear !== 'all') {
+          params.append('year', selectedYear)
+        }
+        
+        const response = await fetch(`/api/admin/schedules?${params.toString()}`)
         const result = await response.json()
         
         if (!response.ok) {
           throw new Error(result.error || 'Failed to fetch schedules')
         }
-
-        const today = new Date()
-        today.setHours(0, 0, 0, 0)
 
         const transformedSchedules = result.data
           .map((schedule: any) => {
@@ -249,18 +334,16 @@ export default function CourseManagement({ onAddProgram, onAddSchedule, onEditPr
               venue: schedule.venue,
               fee: feeDisplay,
               status: schedule.status,
-              startDateObj: new Date(schedule.startDate),
             }
           })
-          // Filter out expired schedules - only show active (non-expired) ones
-          .filter((schedule: any) => {
-            const startDate = new Date(schedule.startDateObj)
-            startDate.setHours(0, 0, 0, 0)
-            return startDate >= today
-          })
-          .map(({ startDateObj, ...rest }: any) => rest) // Remove temporary startDateObj
 
         setSchedules(transformedSchedules)
+        
+        // Update pagination info
+        if (result.pagination) {
+          setScheduleTotalPages(result.pagination.totalPages || 1)
+          setScheduleTotal(result.pagination.total || 0)
+        }
       } catch (err) {
         console.error('Error fetching schedules:', err)
         setScheduleError(err instanceof Error ? err.message : 'Failed to load schedules')
@@ -271,7 +354,7 @@ export default function CourseManagement({ onAddProgram, onAddSchedule, onEditPr
     }
 
     fetchSchedules()
-  }, [])
+  }, [schedulePage, selectedMonth, selectedYear])
 
   // Handle program preview - toggle inline expansion (instant, no API call)
   const handleProgramPreview = (programId: string) => {
@@ -420,6 +503,45 @@ export default function CourseManagement({ onAddProgram, onAddSchedule, onEditPr
       onEditProgram(id)
     } else if (type === 'schedule' && onEditSchedule) {
       onEditSchedule(id)
+    }
+  }
+
+  // Handle bulk import
+  const handleBulkImport = async () => {
+    if (!importFile) {
+      alert('Please select a file first')
+      return
+    }
+
+    setImporting(true)
+    try {
+      const formData = new FormData()
+      formData.append('file', importFile)
+
+      const response = await fetch('/api/admin/programs/bulk-import', {
+        method: 'POST',
+        body: formData,
+      })
+
+      const result = await response.json()
+
+      if (result.success) {
+        setImportResults(result.results)
+        // Refresh programs list after successful import
+        if (result.results.successful > 0) {
+          // Trigger a refresh of the programs list
+          setTimeout(() => {
+            window.location.reload()
+          }, 2000)
+        }
+      } else {
+        alert(`Import failed: ${result.error}`)
+      }
+    } catch (error: any) {
+      console.error('Error importing courses:', error)
+      alert(`Error: ${error.message || 'Failed to import courses'}`)
+    } finally {
+      setImporting(false)
     }
   }
 
@@ -584,45 +706,16 @@ export default function CourseManagement({ onAddProgram, onAddSchedule, onEditPr
     }
   }
 
-  // Filter programs based on search term (reference code, name, category)
+  // Programs are already filtered server-side, so use them directly
   const filteredPrograms = useMemo(() => {
-    if (!searchTerm.trim()) {
-      return programs
-    }
+    return programs
+  }, [programs])
 
-    const searchLower = searchTerm.toLowerCase().trim()
-    return programs.filter((program) => {
-      const refCodeMatch = program.refCode?.toLowerCase().includes(searchLower) || false
-      const nameMatch = program.name?.toLowerCase().includes(searchLower) || false
-      const categoryMatch = program.category?.toLowerCase().includes(searchLower) || false
-      
-      return refCodeMatch || nameMatch || categoryMatch
-    })
-  }, [programs, searchTerm])
-
-  // Filter schedules based on search term, month, and year
+  // Filter schedules based on search term only (month/year filtering is done server-side)
   const filteredSchedules = useMemo(() => {
     let filtered = schedules
 
-    // Filter by month
-    if (selectedMonth !== 'all') {
-      filtered = filtered.filter((schedule) => {
-        const scheduleDate = new Date(schedule.startDate)
-        const scheduleMonth = (scheduleDate.getMonth() + 1).toString().padStart(2, '0')
-        return scheduleMonth === selectedMonth
-      })
-    }
-
-    // Filter by year
-    if (selectedYear !== 'all') {
-      filtered = filtered.filter((schedule) => {
-        const scheduleDate = new Date(schedule.startDate)
-        const scheduleYear = scheduleDate.getFullYear().toString()
-        return scheduleYear === selectedYear
-      })
-    }
-
-    // Filter by search term
+    // Filter by search term (client-side for instant feedback)
     if (searchTerm.trim()) {
       const searchLower = searchTerm.toLowerCase().trim()
       filtered = filtered.filter((schedule) => {
@@ -634,7 +727,7 @@ export default function CourseManagement({ onAddProgram, onAddSchedule, onEditPr
     }
 
     return filtered
-  }, [schedules, searchTerm, selectedMonth, selectedYear])
+  }, [schedules, searchTerm])
 
   return (
     <div className="p-8 space-y-6 theme-bg">
@@ -1039,6 +1132,62 @@ export default function CourseManagement({ onAddProgram, onAddSchedule, onEditPr
               </tbody>
             </table>
           )}
+          {/* Pagination Controls for Programs */}
+          {filteredPrograms.length > 0 && programTotalPages > 1 && (
+            <div className="flex items-center justify-between px-6 py-4 border-t border-border">
+              <div className="text-sm theme-muted">
+                Showing page {programPage} of {programTotalPages} ({programTotal} total programs)
+              </div>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setProgramPage(prev => Math.max(1, prev - 1))}
+                  disabled={programPage === 1 || loading}
+                  className="flex items-center gap-1"
+                >
+                  <ChevronLeft size={16} />
+                  Previous
+                </Button>
+                <div className="flex items-center gap-1">
+                  {Array.from({ length: Math.min(5, programTotalPages) }, (_, i) => {
+                    let pageNum: number
+                    if (programTotalPages <= 5) {
+                      pageNum = i + 1
+                    } else if (programPage <= 3) {
+                      pageNum = i + 1
+                    } else if (programPage >= programTotalPages - 2) {
+                      pageNum = programTotalPages - 4 + i
+                    } else {
+                      pageNum = programPage - 2 + i
+                    }
+                    return (
+                      <Button
+                        key={pageNum}
+                        variant={programPage === pageNum ? "default" : "outline"}
+                        size="sm"
+                        onClick={() => setProgramPage(pageNum)}
+                        disabled={loading}
+                        className="min-w-[40px]"
+                      >
+                        {pageNum}
+                      </Button>
+                    )
+                  })}
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setProgramPage(prev => Math.min(programTotalPages, prev + 1))}
+                  disabled={programPage === programTotalPages || loading}
+                  className="flex items-center gap-1"
+                >
+                  Next
+                  <ChevronRight size={16} />
+                </Button>
+              </div>
+            </div>
+          )}
         </div>
       )}
 
@@ -1172,6 +1321,62 @@ export default function CourseManagement({ onAddProgram, onAddSchedule, onEditPr
                 ))}
               </tbody>
             </table>
+            {/* Pagination Controls */}
+            {scheduleTotalPages > 1 && (
+              <div className="flex items-center justify-between px-6 py-4 border-t border-border">
+                <div className="text-sm theme-muted">
+                  Showing page {schedulePage} of {scheduleTotalPages} ({scheduleTotal} total schedules)
+                </div>
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setSchedulePage(prev => Math.max(1, prev - 1))}
+                    disabled={schedulePage === 1 || loadingSchedules}
+                    className="flex items-center gap-1"
+                  >
+                    <ChevronLeft size={16} />
+                    Previous
+                  </Button>
+                  <div className="flex items-center gap-1">
+                    {Array.from({ length: Math.min(5, scheduleTotalPages) }, (_, i) => {
+                      let pageNum: number
+                      if (scheduleTotalPages <= 5) {
+                        pageNum = i + 1
+                      } else if (schedulePage <= 3) {
+                        pageNum = i + 1
+                      } else if (schedulePage >= scheduleTotalPages - 2) {
+                        pageNum = scheduleTotalPages - 4 + i
+                      } else {
+                        pageNum = schedulePage - 2 + i
+                      }
+                      return (
+                        <Button
+                          key={pageNum}
+                          variant={schedulePage === pageNum ? "default" : "outline"}
+                          size="sm"
+                          onClick={() => setSchedulePage(pageNum)}
+                          disabled={loadingSchedules}
+                          className="min-w-[40px]"
+                        >
+                          {pageNum}
+                        </Button>
+                      )
+                    })}
+                  </div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setSchedulePage(prev => Math.min(scheduleTotalPages, prev + 1))}
+                    disabled={schedulePage === scheduleTotalPages || loadingSchedules}
+                    className="flex items-center gap-1"
+                  >
+                    Next
+                    <ChevronRight size={16} />
+                  </Button>
+                </div>
+              </div>
+            )}
             </>
           )}
         </div>
@@ -1347,6 +1552,164 @@ export default function CourseManagement({ onAddProgram, onAddSchedule, onEditPr
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Bulk Import Dialog */}
+      <Dialog open={showBulkImport} onOpenChange={setShowBulkImport}>
+        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="text-2xl flex items-center gap-2">
+              <FileSpreadsheet className="w-6 h-6" />
+              Bulk Import Courses
+            </DialogTitle>
+            <DialogDescription>
+              Upload an Excel file with columns: Reference Code, Category, Course Name/Title, and Date (From Date).
+              The system will automatically generate course content based on the course name.
+            </DialogDescription>
+          </DialogHeader>
+
+          {!importResults ? (
+            <div className="space-y-4 mt-4">
+              <div className="border-2 border-dashed border-border rounded-lg p-8 text-center">
+                <FileSpreadsheet className="w-12 h-12 mx-auto mb-4 theme-muted" />
+                <p className="theme-text font-medium mb-2">Upload Excel File</p>
+                <p className="theme-muted text-sm mb-4">
+                  Supported formats: .xlsx, .xls
+                </p>
+                <input
+                  type="file"
+                  accept=".xlsx,.xls"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0]
+                    if (file) {
+                      setImportFile(file)
+                    }
+                  }}
+                  className="hidden"
+                  id="excel-upload"
+                />
+                <label
+                  htmlFor="excel-upload"
+                  className="inline-flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg cursor-pointer hover:bg-primary/90 transition-colors"
+                >
+                  <Upload size={16} />
+                  Choose File
+                </label>
+                {importFile && (
+                  <p className="mt-4 theme-text text-sm">
+                    Selected: <span className="font-medium">{importFile.name}</span>
+                  </p>
+                )}
+              </div>
+
+              <div className="bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
+                <p className="text-sm font-medium text-blue-900 dark:text-blue-100 mb-2">
+                  Excel File Format:
+                </p>
+                <ul className="text-sm text-blue-800 dark:text-blue-200 space-y-1 list-disc list-inside">
+                  <li><strong>Reference Code:</strong> Unique code for each course</li>
+                  <li><strong>Category:</strong> Course category (e.g., Management, Finance, IT)</li>
+                  <li><strong>Course Name/Title:</strong> Full name of the course</li>
+                  <li><strong>Date/From Date:</strong> Start date (used to calculate duration)</li>
+                </ul>
+              </div>
+
+              <div className="flex justify-end gap-3">
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setShowBulkImport(false)
+                    setImportFile(null)
+                  }}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  onClick={handleBulkImport}
+                  disabled={!importFile || importing}
+                  className="bg-primary text-primary-foreground"
+                >
+                  {importing ? 'Importing...' : 'Start Import'}
+                </Button>
+              </div>
+            </div>
+          ) : (
+            <div className="space-y-4 mt-4">
+              <div className="grid grid-cols-3 gap-4">
+                <div className="bg-green-50 dark:bg-green-950 border border-green-200 dark:border-green-800 rounded-lg p-4 text-center">
+                  <p className="text-2xl font-bold text-green-600 dark:text-green-400">
+                    {importResults.successful}
+                  </p>
+                  <p className="text-sm text-green-800 dark:text-green-200">Successful</p>
+                </div>
+                <div className="bg-red-50 dark:bg-red-950 border border-red-200 dark:border-red-800 rounded-lg p-4 text-center">
+                  <p className="text-2xl font-bold text-red-600 dark:text-red-400">
+                    {importResults.failed}
+                  </p>
+                  <p className="text-sm text-red-800 dark:text-red-200">Failed</p>
+                </div>
+                <div className="bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 rounded-lg p-4 text-center">
+                  <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">
+                    {importResults.total}
+                  </p>
+                  <p className="text-sm text-blue-800 dark:text-blue-200">Total</p>
+                </div>
+              </div>
+
+              {importResults.errors.length > 0 && (
+                <div className="border border-red-200 dark:border-red-800 rounded-lg p-4 max-h-60 overflow-y-auto">
+                  <p className="font-medium text-red-600 dark:text-red-400 mb-2">Errors:</p>
+                  <div className="space-y-2">
+                    {importResults.errors.map((error, idx) => (
+                      <div key={idx} className="text-sm bg-red-50 dark:bg-red-950 p-2 rounded">
+                        <p className="font-medium">Row {error.row}: {error.error}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {importResults.success.length > 0 && (
+                <div className="border border-green-200 dark:border-green-800 rounded-lg p-4 max-h-60 overflow-y-auto">
+                  <p className="font-medium text-green-600 dark:text-green-400 mb-2">
+                    Successfully Imported:
+                  </p>
+                  <div className="space-y-1">
+                    {importResults.success.map((item, idx) => (
+                      <div key={idx} className="text-sm bg-green-50 dark:bg-green-950 p-2 rounded">
+                        <span className="font-medium">{item.refCode}</span>: {item.programName}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              <div className="flex justify-end gap-3">
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setShowBulkImport(false)
+                    setImportFile(null)
+                    setImportResults(null)
+                    // Refresh programs list
+                    window.location.reload()
+                  }}
+                >
+                  Close
+                </Button>
+                <Button
+                  onClick={() => {
+                    setImportFile(null)
+                    setImportResults(null)
+                  }}
+                  className="bg-primary text-primary-foreground"
+                >
+                  Import Another File
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

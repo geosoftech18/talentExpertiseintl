@@ -152,7 +152,7 @@ export default function Footer() {
                 </div>
                 <div>
                   <p className="text-slate-300 text-sm">
-                    Mail : <a href="mailto:info@talentexpertiseintl.com" className="text-blue-400 hover:text-blue-300">training@talentexpertiseintl.com</a>
+                    Mail : <a href="mailto:info@talentexpertiseintl.com" className="text-blue-400 hover:text-blue-300">info@talentexpertiseintl.com</a>
                   </p>
                 </div>
               </div>
@@ -199,7 +199,7 @@ export default function Footer() {
             <p className="text-slate-400 text-sm text-center md:text-left">
               © {new Date().getFullYear()} Talent Expertise International. All rights reserved. designed & develped by <Link href="https://www.geosoftech.com" className="text-slate-400 hover:text-blue-400 transition-colors underline" target="_blank">Geosoftech</Link>
             </p>
-            <div className="flex items-center gap-6 text-sm">
+            {/* <div className="flex items-center gap-6 text-sm">
               <Link href="/terms" className="text-slate-400 hover:text-blue-400 transition-colors">
                 Terms & Conditions
               </Link>
@@ -209,7 +209,7 @@ export default function Footer() {
               <Link href="/cancellation" className="text-slate-400 hover:text-blue-400 transition-colors">
                 Cancellation Policy
               </Link>
-            </div>
+            </div> */}
           </div>
         </div>
       </div>

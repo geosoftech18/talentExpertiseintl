@@ -51,9 +51,109 @@ export async function GET(request: NextRequest) {
     const page = parseInt(searchParams.get('page') || '1')
     const limit = parseInt(searchParams.get('limit') || '50') // Increased default limit
     const skip = (page - 1) * limit
+    const month = searchParams.get('month') // Format: "01", "02", etc.
+    const year = searchParams.get('year') // Format: "2026", etc.
+    const includeExpired = searchParams.get('includeExpired') === 'true' // Allow fetching expired schedules
+
+    // Build where clause for filtering
+    const where: any = {}
+    
+    const today = new Date()
+    today.setHours(0, 0, 0, 0)
+    
+    // Filter by month and/or year
+    if (month && year) {
+      // Filter by specific month and year
+      const monthNum = parseInt(month)
+      const yearNum = parseInt(year)
+      const startOfMonth = new Date(yearNum, monthNum - 1, 1)
+      const endOfMonth = new Date(yearNum, monthNum, 0, 23, 59, 59, 999)
+      
+      if (includeExpired) {
+        // Show all schedules in this month/year (including expired)
+        where.startDate = {
+          gte: startOfMonth,
+          lte: endOfMonth,
+        }
+      } else {
+        // Only show future dates
+        const filterStart = startOfMonth > today ? startOfMonth : today
+        where.startDate = {
+          gte: filterStart,
+          lte: endOfMonth,
+        }
+      }
+    } else if (month) {
+      // Filter by month (any year) - we'll need to filter after fetching
+      // For now, set a wide range and filter in memory
+      // Or better: use year range from current year to future years
+      const monthNum = parseInt(month)
+      const currentYear = new Date().getFullYear()
+      const futureYears = 5 // Look ahead 5 years
+      
+      if (includeExpired) {
+        // Show all schedules for this month across multiple years (including expired)
+        const pastYears = 2 // Look back 2 years
+        const startOfMonth = new Date(currentYear - pastYears, monthNum - 1, 1)
+        const endOfMonth = new Date(currentYear + futureYears, monthNum, 0, 23, 59, 59, 999)
+        where.startDate = {
+          gte: startOfMonth,
+          lte: endOfMonth,
+        }
+      } else {
+        // Get the earliest possible date (current month if in future, or next year's month)
+        let startOfMonth: Date
+        if (monthNum > today.getMonth() + 1 || (monthNum === today.getMonth() + 1 && today.getDate() <= new Date(today.getFullYear(), monthNum, 0).getDate())) {
+          startOfMonth = new Date(currentYear, monthNum - 1, 1)
+          if (startOfMonth < today) {
+            startOfMonth = today
+          }
+        } else {
+          startOfMonth = new Date(currentYear + 1, monthNum - 1, 1)
+        }
+        
+        const endOfMonth = new Date(currentYear + futureYears, monthNum, 0, 23, 59, 59, 999)
+        where.startDate = {
+          gte: startOfMonth,
+          lte: endOfMonth,
+        }
+      }
+    } else if (year) {
+      // Filter by year
+      const yearNum = parseInt(year)
+      const startOfYear = new Date(yearNum, 0, 1)
+      const endOfYear = new Date(yearNum, 11, 31, 23, 59, 59, 999)
+      
+      if (includeExpired) {
+        // Show all schedules in this year (including expired)
+        where.startDate = {
+          gte: startOfYear,
+          lte: endOfYear,
+        }
+      } else {
+        // Ensure we only show future dates
+        const filterStart = startOfYear > today ? startOfYear : today
+        where.startDate = {
+          gte: filterStart,
+          lte: endOfYear,
+        }
+      }
+    } else {
+      // No month/year filter
+      if (includeExpired) {
+        // Show all schedules (no date filter)
+        // Don't add startDate filter
+      } else {
+        // Just show future schedules
+        where.startDate = {
+          gte: today,
+        }
+      }
+    }
 
     const [schedules, total] = await Promise.all([
       prisma.schedule.findMany({
+        where,
         skip,
         take: limit,
         select: {
@@ -84,19 +184,39 @@ export async function GET(request: NextRequest) {
             },
           },
         },
-        orderBy: { startDate: 'desc' },
+        orderBy: { startDate: 'asc' }, // Changed to asc for better UX (upcoming first)
       }),
-      prisma.schedule.count(),
+      prisma.schedule.count({ where }),
     ])
+
+    // If filtering by month only (without year), filter results to match exact month
+    let filteredSchedules = schedules
+    let filteredTotal = total
+    if (month && !year) {
+      const monthNum = parseInt(month)
+      filteredSchedules = schedules.filter((schedule: any) => {
+        const scheduleDate = new Date(schedule.startDate)
+        return scheduleDate.getMonth() + 1 === monthNum
+      })
+      // Recalculate total for month-only filter by counting all matching schedules
+      const allMatchingSchedules = await prisma.schedule.findMany({
+        where: { startDate: { gte: today } },
+        select: { startDate: true },
+      })
+      filteredTotal = allMatchingSchedules.filter((s: any) => {
+        const scheduleDate = new Date(s.startDate)
+        return scheduleDate.getMonth() + 1 === monthNum
+      }).length
+    }
 
     return NextResponse.json({
       success: true,
-      data: schedules,
+      data: filteredSchedules,
       pagination: {
         page,
         limit,
-        total,
-        totalPages: Math.ceil(total / limit),
+        total: filteredTotal,
+        totalPages: Math.ceil(filteredTotal / limit),
       },
     })
   } catch (error) {

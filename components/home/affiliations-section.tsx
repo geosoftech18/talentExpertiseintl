@@ -1,10 +1,11 @@
 "use client"
 
-import { Award, Shield, CheckCircle2, Sparkles } from "lucide-react"
+import { Award, Shield, CheckCircle2, Sparkles, ChevronLeft, ChevronRight } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Card } from "@/components/ui/card"
+import { Button } from "@/components/ui/button"
 import Image from "next/image"
-import { useEffect, useRef } from "react"
+import { useEffect, useRef, useState } from "react"
 
 const affiliations = [
   { id: 1, name: "Accreditation Partner 1", image: "/Affiliations/1.png" },
@@ -29,34 +30,151 @@ const affiliations = [
 
 export default function AffiliationsSection() {
   const carouselRef = useRef<HTMLDivElement>(null)
+  const isPausedRef = useRef(false)
+  const autoScrollRef = useRef<{ pause: () => void; resume: () => void } | null>(null)
 
+  // Auto-scroll animation
   useEffect(() => {
-    // Add CSS animation for infinite scroll
-    const style = document.createElement('style')
-    style.textContent = `
-      @keyframes scrollAffiliations {
-        0% {
-          transform: translateX(0);
+    const carousel = carouselRef.current
+    if (!carousel) return
+
+    let animationFrameId: number
+    let scrollPosition = 0
+    let originalWidth = 0
+    let itemWidth = 0
+    const scrollSpeed = 0.5 // pixels per frame for smooth animation
+
+    const initAnimation = () => {
+      // Wait for DOM to be ready
+      const items = carousel.querySelectorAll('[data-affiliation-item]:not([data-affiliation-item="clone"])')
+      if (items.length === 0) {
+        setTimeout(initAnimation, 100)
+        return
+      }
+
+      // Get actual item width including gap
+      const firstItem = items[0] as HTMLElement
+      if (!firstItem.offsetWidth || firstItem.offsetWidth === 0) {
+        setTimeout(initAnimation, 100)
+        return
+      }
+
+      itemWidth = firstItem.offsetWidth + (window.innerWidth >= 768 ? 24 : 12) // gap-6 on desktop, gap-3 on mobile
+
+      // Clear any existing clones
+      const existingClones = carousel.querySelectorAll('[data-affiliation-item="clone"]')
+      existingClones.forEach(clone => clone.remove())
+
+      // Duplicate items for seamless loop
+      const itemsArray = Array.from(items)
+      itemsArray.forEach(item => {
+        const clone = item.cloneNode(true) as HTMLElement
+        clone.setAttribute('data-affiliation-item', 'clone')
+        carousel.appendChild(clone)
+      })
+
+      originalWidth = itemsArray.length * itemWidth
+
+      // Disable smooth scrolling for programmatic control
+      carousel.style.scrollBehavior = 'auto'
+      carousel.scrollLeft = 0
+      scrollPosition = 0
+
+      const animate = () => {
+        if (!isPausedRef.current) {
+          scrollPosition += scrollSpeed
+          
+          // Reset scroll position when we've scrolled past all original items
+          if (scrollPosition >= originalWidth) {
+            scrollPosition = scrollPosition - originalWidth
+          }
+          
+          carousel.scrollLeft = scrollPosition
         }
-        100% {
-          transform: translateX(-50%);
+        animationFrameId = requestAnimationFrame(animate)
+      }
+
+      // Store pause/resume functions
+      autoScrollRef.current = {
+        pause: () => {
+          isPausedRef.current = true
+          scrollPosition = carousel.scrollLeft
+        },
+        resume: () => {
+          isPausedRef.current = false
+          scrollPosition = carousel.scrollLeft
         }
       }
-      .affiliations-carousel {
-        animation: scrollAffiliations 200s linear infinite;
-      }
-      .affiliations-carousel:hover {
-        animation-play-state: paused;
-      }
-    `
-    document.head.appendChild(style)
+
+      // Start animation
+      animationFrameId = requestAnimationFrame(animate)
+    }
+
+    // Initialize after a short delay
+    const timeoutId = setTimeout(initAnimation, 300)
 
     return () => {
-      if (document.head.contains(style)) {
-        document.head.removeChild(style)
+      clearTimeout(timeoutId)
+      if (animationFrameId) {
+        cancelAnimationFrame(animationFrameId)
       }
     }
   }, [])
+
+  // Navigation handlers
+  const scrollLeft = () => {
+    const carousel = carouselRef.current
+    if (!carousel) return
+    
+    // Pause auto-scroll
+    if (autoScrollRef.current) {
+      autoScrollRef.current.pause()
+    }
+    
+    // Temporarily enable smooth scrolling for manual navigation
+    const originalScrollBehavior = carousel.style.scrollBehavior
+    carousel.style.scrollBehavior = 'smooth'
+    
+    // Calculate scroll amount (approximately 2-3 items)
+    const itemWidth = window.innerWidth >= 768 ? 192 + 24 : 144 + 12 // card width + gap
+    const scrollAmount = -itemWidth * 2
+    carousel.scrollBy({ left: scrollAmount, behavior: 'smooth' })
+    
+    // Restore auto scroll behavior and resume after scroll completes
+    setTimeout(() => {
+      carousel.style.scrollBehavior = originalScrollBehavior
+      if (autoScrollRef.current) {
+        autoScrollRef.current.resume()
+      }
+    }, 1000)
+  }
+
+  const scrollRight = () => {
+    const carousel = carouselRef.current
+    if (!carousel) return
+    
+    // Pause auto-scroll
+    if (autoScrollRef.current) {
+      autoScrollRef.current.pause()
+    }
+    
+    // Temporarily enable smooth scrolling for manual navigation
+    const originalScrollBehavior = carousel.style.scrollBehavior
+    carousel.style.scrollBehavior = 'smooth'
+    
+    // Calculate scroll amount (approximately 2-3 items)
+    const itemWidth = window.innerWidth >= 768 ? 192 + 24 : 144 + 12 // card width + gap
+    const scrollAmount = itemWidth * 2
+    carousel.scrollBy({ left: scrollAmount, behavior: 'smooth' })
+    
+    // Restore auto scroll behavior and resume after scroll completes
+    setTimeout(() => {
+      carousel.style.scrollBehavior = originalScrollBehavior
+      if (autoScrollRef.current) {
+        autoScrollRef.current.resume()
+      }
+    }, 1000)
+  }
 
   // Duplicate affiliations for seamless infinite scroll
   const duplicatedAffiliations = [...affiliations, ...affiliations]
@@ -98,21 +216,58 @@ export default function AffiliationsSection() {
         {/* Main Content */}
         <div className="max-w-7xl mx-auto">
           {/* Infinite Scroll Carousel */}
-          <div className="relative overflow-hidden">
+          <div className="relative overflow-hidden group/container">
+            {/* Left Navigation Arrow */}
+            <Button
+              variant="outline"
+              size="icon"
+              className="absolute left-2 top-1/2 -translate-y-1/2 z-20 bg-white/90 hover:bg-white shadow-lg border-0 h-10 w-10 rounded-full opacity-0 group-hover/container:opacity-100 transition-opacity"
+              onClick={scrollLeft}
+              aria-label="Scroll left"
+            >
+              <ChevronLeft className="h-5 w-5 text-slate-600" />
+            </Button>
+
+            {/* Right Navigation Arrow */}
+            <Button
+              variant="outline"
+              size="icon"
+              className="absolute right-2 top-1/2 -translate-y-1/2 z-20 bg-white/90 hover:bg-white shadow-lg border-0 h-10 w-10 rounded-full opacity-0 group-hover/container:opacity-100 transition-opacity"
+              onClick={scrollRight}
+              aria-label="Scroll right"
+            >
+              <ChevronRight className="h-5 w-5 text-slate-600" />
+            </Button>
+
             {/* Gradient overlays for fade effect */}
             <div className="absolute left-0 hidden md:block top-0 bottom-0 w-32 bg-gradient-to-r from-slate-50 via-slate-50/80 to-transparent z-10 pointer-events-none" />
             <div className="absolute right-0 hidden md:block top-0 bottom-0 w-32 bg-gradient-to-l from-slate-50 via-slate-50/80 to-transparent z-10 pointer-events-none" />
             
             <div 
               ref={carouselRef}
-              className="flex gap-3 sm:gap-4 md:gap-6 affiliations-carousel"
+              className="flex gap-3 sm:gap-4 md:gap-6 overflow-x-hidden"
+              onMouseEnter={() => autoScrollRef.current?.pause()}
+              onMouseLeave={() => {
+                setTimeout(() => {
+                  autoScrollRef.current?.resume()
+                }, 500)
+              }}
+              onTouchStart={() => autoScrollRef.current?.pause()}
+              onTouchEnd={() => {
+                setTimeout(() => {
+                  autoScrollRef.current?.resume()
+                }, 3000)
+              }}
               style={{
-                width: 'fit-content',
+                scrollbarWidth: 'none',
+                msOverflowStyle: 'none',
+                WebkitOverflowScrolling: 'touch',
               }}
             >
               {duplicatedAffiliations.map((affiliation, index) => (
                 <Card
                   key={`${affiliation.id}-${index}`}
+                  data-affiliation-item={index < affiliations.length ? '' : 'clone'}
                   className="group flex-shrink-0 w-36 h-32 sm:w-40 sm:h-36 md:w-48 md:h-40 lg:w-56 lg:h-48 relative overflow-hidden border-2 border-gray-200 hover:border-[#0A3049]/40 transition-all duration-300 bg-white shadow-md hover:shadow-2xl rounded-lg sm:rounded-xl p-3 sm:p-4 md:p-5 lg:p-6 cursor-pointer transform hover:scale-105"
                 >
                   {/* Hover Overlay */}

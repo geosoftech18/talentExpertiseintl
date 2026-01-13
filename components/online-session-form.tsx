@@ -3,7 +3,6 @@
 import { useState } from 'react'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
-import { useRequireAuth } from '@/hooks/use-require-auth'
 
 interface OnlineSessionFormProps {
   course: {
@@ -14,27 +13,8 @@ interface OnlineSessionFormProps {
 }
 
 export function OnlineSessionForm({ course, onClose }: OnlineSessionFormProps) {
-  // Check authentication - redirects to /auth if not logged in
-  const { isAuthenticated, isLoading } = useRequireAuth()
-  
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [submitError, setSubmitError] = useState<string | null>(null)
-  
-  // Show loading state while checking authentication
-  if (isLoading) {
-    return (
-      <Dialog open={true}>
-        <DialogContent>
-          <p className="text-gray-600 text-center py-4">Checking authentication...</p>
-        </DialogContent>
-      </Dialog>
-    )
-  }
-  
-  // Don't render form if not authenticated (will redirect)
-  if (!isAuthenticated) {
-    return null
-  }
 
   const handleSubmit = async () => {
     setIsSubmitting(true)

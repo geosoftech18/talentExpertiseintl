@@ -18,109 +18,126 @@ import {
   CheckCircle,
   ArrowRight,
 } from "lucide-react"
+import router from "next/router"
 
 const testimonials = [
   {
     id: 1,
-    course: "Financial Statement Analysis of the Public Sector",
+    course: "Project Management Masterclass",
     rating: 5,
-    review: "Excellent course 5* Great instructors who knew their subject matter well.",
-    name: "Abdullah Al Thani",
-    position: "Senior Financial Analyst",
+    review: "One of the most beneficial course attended this year. Instructors capabilities to keep attention is excellent and he presented subjects clearly with great examples.",
+    name: "Umar Bakoji",
+    position: "Manager Services",
     company: "Qatar Financial Authority",
     avatar: "/placeholder.svg?height=60&width=60",
-    category: "Finance",
     verified: true,
-    courseDate: "March 2024",
-    location: "Dubai, UAE",
   },
   {
     id: 2,
-    course: "Developing Professional Skills for Executive Secretaries & PA's",
+    course: "Putting Strategy into Action",
     rating: 5,
-    review: "The trainer was excellent, she helped everyone and provided excellent examples",
-    name: "Moza Al Ali",
-    position: "PA - Group Chairman",
-    company: "Emirates Group",
+    review: "This program was excellent. Very practical, nice facilities and a great instructor who understood our business",
+    name: "Maryrose R O",
+    position: "General Manager",
+   
     avatar: "/placeholder.svg?height=60&width=60",
-    category: "Admin & Secretarial",
+   
     verified: true,
-    courseDate: "February 2024",
-    location: "Abu Dhabi, UAE",
+ 
   },
   {
     id: 3,
-    course: "Pumps & Compressors: Operation, Maintenance & Troubleshooting",
+    course: "Leadership for 4IR: the 4.0D Leadership Model",
     rating: 5,
-    review: "High level training delivered by High level instructors",
-    name: "Mohammed Al Abdallah",
-    position: "Maintenance Engineer",
-    company: "Saudi Aramco",
+    review: "I have attended more than 30 training programs in my career and this was by far the best Leadership training event EVER! Johann and John are a compelling double act.",
+    name: "Dr. James D. Wilson.",
+    position: "BDS",
+  
     avatar: "/placeholder.svg?height=60&width=60",
-    category: "Maintenance",
+ 
     verified: true,
-    courseDate: "January 2024",
-    location: "Riyadh, KSA",
+   
   },
   {
     id: 4,
-    course: "Project Management Masterclass",
-    rating: 5,
-    review:
-      "One of the most beneficial course attended this year. Instructors capabilities to keep attention is excellent and he presented subjects clearly with great examples.",
-    name: "Umar Bakoji",
-    position: "Manager Services",
-    company: "Nigerian National Petroleum Corporation",
-    avatar: "/placeholder.svg?height=60&width=60",
-    category: "Project Management",
-    verified: true,
-    courseDate: "April 2024",
-    location: "Lagos, Nigeria",
-  },
-  {
-    id: 5,
-    course: "Putting Strategy into Action",
-    rating: 5,
-    review:
-      "This program was excellent. Very practical, nice facilities and a great instructor who understood our business.",
-    name: "Maryrose R O",
-    position: "General Manager",
-    company: "East African Development Bank",
-    avatar: "/placeholder.svg?height=60&width=60",
-    category: "Management",
-    verified: true,
-    courseDate: "March 2024",
-    location: "Kampala, Uganda",
-  },
-  {
-    id: 6,
-    course: "Leadership for 4IR: the 4.0D Leadership Model",
-    rating: 5,
-    review:
-      "I have attended more than 30 training programs in my career and this was by far the best Leadership training event EVER! Johann and John are a compelling double act.",
-    name: "Dr. James D. Wilson. BDS",
-    position: "Chief Executive Officer",
-    company: "Wilson Dental Group",
-    avatar: "/placeholder.svg?height=60&width=60",
-    category: "Leadership",
-    verified: true,
-    courseDate: "February 2024",
-    location: "London, UK",
-  },
-  {
-    id: 7,
     course: "Due Diligence in the Petroleum Business",
     rating: 5,
     review:
       "The instructor made the complexities of corporate governance seem easy. Thoroughly recommend this program.",
     name: "Yakubu A",
     position: "General Manager",
-    company: "Nigerian Petroleum Development Company",
+   
     avatar: "/placeholder.svg?height=60&width=60",
-    category: "Oil & Gas",
+   
     verified: true,
-    courseDate: "January 2024",
-    location: "Abuja, Nigeria",
+ 
+  },
+  {
+      id: 5,
+      course: "Key Managerial Skills for New Managers & Supervisors",
+    rating: 5,
+    review:
+      "A good mix of theory and practice I feel much more confident now in my new role as Shift Supervisor.",
+    name: "Rachel N",
+    position: "Office Procurement",
+   
+    avatar: "/placeholder.svg?height=60&width=60",
+   
+    verified: true,
+ 
+  },
+  {
+    id: 6,
+    course: "Procurement & Supply Chain Management",
+    rating: 5,
+    review:
+      "This was an intensive program over 10 days, but the time flew by, thank you.",
+    name: "Imi Umaru",
+    position: "Manager Procurement",
+   
+    avatar: "/placeholder.svg?height=60&width=60",
+   
+    verified: true,
+ 
+  },
+  {
+    id: 7,
+    course: "Financial Statement Analysis of the Public Sector",
+    rating: 5,
+    review:
+      "Excellent course 5* Great instructors who knew their subject matter well.",
+    name: "Abdullah Al Thani",
+    position: "Senior Financial Analyst",
+   
+    avatar: "/placeholder.svg?height=60&width=60",
+    verified: true,
+
+  },
+  {
+    id: 8,
+    course: "Developing Professional Skills for Executive Secretaries & PA’s",
+    rating: 5,
+    review:
+      "The trainer was excellent, she helped everyone and provided excellent examples",
+    name: "Moza Al Ali",
+    position: "PA - Group Chairman",
+   
+    avatar: "/placeholder.svg?height=60&width=60",
+    verified: true,
+
+  },
+  {
+    id: 9,
+    course: "Pumps & Compressors: Operation, Maintenance & Troubleshooting",
+    rating: 5,
+    review:
+      "High level training delivered by High level instructors",
+    name: "Mohammed Al Abdallah",
+    position: "Maintenance Engineer",
+   
+    avatar: "/placeholder.svg?height=60&width=60",
+    verified: true,
+
   },
 ]
 
@@ -131,16 +148,7 @@ const stats = [
   { label: "Satisfaction Rate", value: "99.2%", icon: TrendingUp },
 ]
 
-const categories = [
-  "All Categories",
-  "Finance",
-  "Leadership",
-  "Project Management",
-  "Oil & Gas",
-  "Management",
-  "Admin & Secretarial",
-  "Maintenance",
-]
+
 
 export default function TestimonialsSection() {
   const [currentSlide, setCurrentSlide] = useState(0)
@@ -151,7 +159,7 @@ export default function TestimonialsSection() {
   const [isDesktop, setIsDesktop] = useState(false)
 
   const filteredTestimonials = testimonials.filter(
-    (testimonial) => selectedCategory === "All Categories" || testimonial.category === selectedCategory,
+    (testimonial) => selectedCategory === "All Categories" ,
   )
 
   // Calculate testimonials per slide based on screen size
@@ -251,9 +259,7 @@ export default function TestimonialsSection() {
 
         {/* Course Badge */}
         <div className="mb-3 sm:mb-4">
-          <Badge variant="outline" className="bg-[#6F4E25]/10 text-[#6F4E25] border-[#6F4E25]/30 text-[10px] sm:text-xs font-medium mb-2">
-            {testimonial.category}
-          </Badge>
+         
           <h4 className="font-semibold text-gray-900 text-xs sm:text-sm leading-tight line-clamp-2">{testimonial.course}</h4>
         </div>
 
@@ -344,65 +350,7 @@ export default function TestimonialsSection() {
           })}
         </div>
 
-        {/* Controls */}
-        <div className="flex flex-col lg:flex-row items-center justify-between mb-6 sm:mb-8 lg:mb-12 gap-4 sm:gap-6">
-          {/* Category Filter */}
-          <div className="w-full lg:w-auto relative">
-            <div className="flex lg:flex-wrap gap-2 justify-start lg:justify-start overflow-x-auto lg:overflow-visible pb-2 scrollbar-hide scroll-smooth snap-x snap-mandatory lg:snap-none px-1 lg:px-0 -mx-1 lg:mx-0">
-              {categories.map((category) => (
-                <Button
-                  key={category}
-                  variant={selectedCategory === category ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => {
-                    setSelectedCategory(category)
-                    setCurrentSlide(0)
-                  }}
-                  className={`transition-all duration-200 text-xs sm:text-sm whitespace-nowrap flex-shrink-0 snap-start ${
-                    selectedCategory === category
-                      ? "bg-[#0A3049] text-white shadow-lg"
-                      : "border-[#6F4E25]/30 !text-[#6F4E25] hover:bg-[#6F4E25]/10"
-                  }`}
-                >
-                  {category}
-                </Button>
-              ))}
-            </div>
-          </div>
-
-          {/* View Mode Toggle */}
-          {/* <div className="flex items-center space-x-4">
-            <div className="flex bg-gray-100 rounded-lg p-1">
-              <Button
-                variant={viewMode === "carousel" ? "default" : "ghost"}
-                size="sm"
-                onClick={() => setViewMode("carousel")}
-                className="px-4"
-              >
-                Carousel
-              </Button>
-              <Button
-                variant={viewMode === "grid" ? "default" : "ghost"}
-                size="sm"
-                onClick={() => setViewMode("grid")}
-                className="px-4"
-              >
-                Grid
-              </Button>
-            </div>
-
-            {viewMode === "carousel" && (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setIsAutoPlaying(!isAutoPlaying)}
-                className="border-[#6F4E25]/30 text-[#6F4E25] hover:bg-[#6F4E25]/10"
-              >
-                {isAutoPlaying ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
-              </Button>
-            )}
-          </div> */}
-        </div>
+       
 
         {/* Testimonials Display */}
         {viewMode === "carousel" ? (
@@ -511,6 +459,7 @@ export default function TestimonialsSection() {
           <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center">
             <Button
               size="lg"
+              onClick={() => router.push('/courses')}
               className="bg-[#0A3049] hover:bg-[#0A3049]/90 text-white font-semibold px-6 py-3 sm:px-8 sm:py-4 text-sm sm:text-base lg:text-lg rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 w-full sm:w-auto"
             >
               Browse Our Courses

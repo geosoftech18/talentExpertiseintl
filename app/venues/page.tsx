@@ -14,17 +14,19 @@ const countryToISOCode: { [key: string]: string } = {
   'Indonesia': 'id', 'India': 'in', 'Thailand': 'th', 'UAE': 'ae', 'United Arab Emirates': 'ae',
   'Malaysia': 'my', 'Saudi Arabia': 'sa', 'Qatar': 'qa', 'Bahrain': 'bh', 'Oman': 'om',
   'China': 'cn', 'Japan': 'jp', 'South Korea': 'kr', 'Philippines': 'ph', 'Vietnam': 'vn',
-  'Singapore': 'sg', 'Hong Kong': 'hk', 'Taiwan': 'tw', 'Bangladesh': 'bd', 'Pakistan': 'pk',
+  'Singapore': 'sg', 'HK': 'hk', 'Taiwan': 'tw', 'Bangladesh': 'bd', 'Pakistan': 'pk',
   'Sri Lanka': 'lk', 'Nepal': 'np', 'Myanmar': 'mm', 'Cambodia': 'kh', 'Laos': 'la',
   'Kuwait': 'kw', 'Jordan': 'jo', 'Lebanon': 'lb', 'Israel': 'il', 'Iraq': 'iq',
-  'Iran': 'ir', 'Afghanistan': 'af', 'Kazakhstan': 'kz', 'Uzbekistan': 'uz', 'Mongolia': 'mn',
+  'Iran': 'ir', 'Afghanistan': 'af', 'Kazakhstan': 'kz', 'Uzbekistan': 'uz', 'Mongolia': 'mn','SG':'sg','IN':'id',
+  'KSA':'sa','SN':'sg',
   // Africa
   'Ghana': 'gh', 'South Africa': 'za', 'Uganda': 'ug', 'Zimbabwe': 'zw', 'Rwanda': 'rw',
   'Morocco': 'ma', 'Kenya': 'ke', 'Mauritius': 'mu', 'Egypt': 'eg', 'Seychelles': 'sc',
   'Tanzania': 'tz', 'Ethiopia': 'et', 'Nigeria': 'ng', 'Algeria': 'dz', 'Tunisia': 'tn',
   'Libya': 'ly', 'Sudan': 'sd', 'Senegal': 'sn', 'Ivory Coast': 'ci',
   'Cameroon': 'cm', 'Angola': 'ao', 'Mozambique': 'mz', 'Madagascar': 'mg', 'Botswana': 'bw',
-  'Namibia': 'na', 'Zambia': 'zm', 'Malawi': 'mw',
+  'Namibia': 'na', 'Zambia': 'zm', 'Malawi': 'mw', 'SA':'za','TZ':'tz','SE':'se','MA':'ma','RW':'rw',
+  'KE':'ke','EG':'eg',
   // Europe
   'Netherlands': 'nl', 'Spain': 'es', 'UK': 'gb', 'United Kingdom': 'gb', 'Germany': 'de',
   'Switzerland': 'ch', 'Turkey': 'tr', 'Italy': 'it', 'France': 'fr', 'Czech Republic': 'cz',
@@ -32,8 +34,9 @@ const countryToISOCode: { [key: string]: string } = {
   'Poland': 'pl', 'Sweden': 'se', 'Norway': 'no', 'Denmark': 'dk', 'Finland': 'fi',
   'Ireland': 'ie', 'Romania': 'ro', 'Hungary': 'hu', 'Slovakia': 'sk',
   'Croatia': 'hr', 'Serbia': 'rs', 'Bulgaria': 'bg', 'Ukraine': 'ua', 'Russia': 'ru',
+  'SP':'es','CH':'ch','TR':'tr','PT':'pt','IT':'it',
   // North America
-  'USA': 'us', 'United States': 'us', 'United States of America': 'us', 'Canada': 'ca',
+  'USA': 'us', 'US': 'us', 'United States of America': 'us', 'Canada': 'ca',
   'Mexico': 'mx', 'Costa Rica': 'cr', 'Panama': 'pa', 'Jamaica': 'jm', 'Cuba': 'cu',
   // South America
   'Brazil': 'br', 'Argentina': 'ar', 'Chile': 'cl', 'Colombia': 'co', 'Peru': 'pe',
@@ -90,9 +93,9 @@ const getContinent = (country: string): string => {
   const asiaCountries = [
     'indonesia', 'india', 'thailand', 'uae', 'united arab emirates', 'malaysia', 'saudi arabia',
     'qatar', 'bahrain', 'oman', 'china', 'japan', 'south korea', 'philippines', 'vietnam',
-    'singapore', 'hong kong', 'taiwan', 'bangladesh', 'pakistan', 'sri lanka', 'nepal', 'myanmar',
+    'singapore', 'hongkong', 'taiwan', 'bangladesh', 'pakistan', 'sri lanka', 'nepal', 'myanmar',
     'cambodia', 'laos', 'kuwait', 'jordan', 'lebanon', 'israel', 'iraq', 'iran', 'afghanistan',
-    'kazakhstan', 'uzbekistan', 'mongolia'
+    'kazakhstan', 'uzbekistan', 'mongolia','hk','sg','KSA','SN'
   ]
   
   // Africa
@@ -100,7 +103,7 @@ const getContinent = (country: string): string => {
     'ghana', 'south africa', 'uganda', 'zimbabwe', 'rwanda', 'morocco', 'kenya', 'mauritius',
     'egypt', 'seychelles', 'tanzania', 'ethiopia', 'nigeria', 'algeria', 'tunisia', 'libya',
     'sudan', 'senegal', 'ivory coast', 'cameroon', 'angola', 'mozambique', 'madagascar',
-    'botswana', 'namibia', 'zambia', 'malawi'
+    'botswana', 'namibia', 'zambia', 'malawi','SA','TZ','SE','MA','RW','KE','EG'
   ]
   
   // Europe
@@ -108,19 +111,19 @@ const getContinent = (country: string): string => {
     'netherlands', 'spain', 'uk', 'united kingdom', 'germany', 'switzerland', 'turkey', 'italy',
     'france', 'czech republic', 'austria', 'greece', 'azerbaijan', 'portugal', 'belgium', 'poland',
     'sweden', 'norway', 'denmark', 'finland', 'ireland', 'romania', 'hungary', 'slovakia',
-    'croatia', 'serbia', 'bulgaria', 'ukraine', 'russia'
+    'croatia', 'serbia', 'bulgaria', 'ukraine', 'russia','SP','CH','TR','PT','IT'
   ]
   
   // North America
   const northAmericaCountries = [
     'usa', 'united states', 'united states of america', 'canada', 'mexico', 'costa rica',
-    'panama', 'jamaica', 'cuba'
+    'panama', 'jamaica', 'cuba','US'
   ]
   
   // South America
   const southAmericaCountries = [
     'brazil', 'argentina', 'chile', 'colombia', 'peru', 'ecuador', 'venezuela', 'uruguay',
-    'paraguay', 'bolivia'
+    'paraguay', 'bolivia',
   ]
   
   // Oceania

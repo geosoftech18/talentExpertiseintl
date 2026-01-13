@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useMemo } from "react"
+import { useState, useEffect, useMemo, useCallback } from "react"
 import { ArrowLeft, Plus, X, Save, Eye, Upload, Image as ImageIcon, ChevronDownIcon, CheckIcon } from "lucide-react"
 import dynamic from "next/dynamic"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
@@ -142,8 +142,9 @@ export default function AddNewProgram({ onBack, editId }: { onBack?: () => void;
   const [cardImage, setCardImage] = useState<File | null>(null)
   const [cardImagePreview, setCardImagePreview] = useState<string | null>(null)
   const [typeDropdownOpen, setTypeDropdownOpen] = useState(false)
-  const [isGeneratingRefCode, setIsGeneratingRefCode] = useState(false)
   const [loadingData, setLoadingData] = useState(false)
+  const [refCodeError, setRefCodeError] = useState<string | null>(null)
+  const [isCheckingRefCode, setIsCheckingRefCode] = useState(false)
 
   // Load program data if editing
   useEffect(() => {
@@ -217,72 +218,83 @@ export default function AddNewProgram({ onBack, editId }: { onBack?: () => void;
     }
   }, [editId])
 
-  // Function to generate reference code based on category
-  const generateReferenceCode = async (category: string) => {
-    if (!category || !categoryToRefCode[category]) {
-      setFormData((prev) => ({ ...prev, refCode: "" }))
-      return
+  // Function to check if reference code already exists
+  const checkReferenceCodeExists = useCallback(async (refCode: string): Promise<boolean> => {
+    if (!refCode || !refCode.trim()) {
+      return false
     }
 
-    const categoryCode = categoryToRefCode[category]
-    setIsGeneratingRefCode(true)
+    // In edit mode, skip check if it's the same code
+    if (isEditMode && editId) {
+      return false
+    }
 
     try {
-      // Fetch existing programs to find the highest number for this category
+      setIsCheckingRefCode(true)
       const response = await fetch('/api/admin/programs')
       const result = await response.json()
       
-      if (!response.ok) {
-        throw new Error(result.error || 'Failed to fetch programs')
+      if (result.success) {
+        const exists = result.data.some((program: any) => 
+          program.refCode && program.refCode.trim().toUpperCase() === refCode.trim().toUpperCase() &&
+          (!isEditMode || program.id !== editId)
+        )
+        return exists
       }
-
-      // Filter programs by category and extract numbers from refCodes
-      const categoryPrograms = result.data.filter((program: any) => 
-        program.category === category && 
-        program.refCode && 
-        program.refCode.startsWith(categoryCode)
-      )
-
-      // Extract numbers from reference codes (e.g., "PM001" -> 1, "PM023" -> 23)
-      const numbers = categoryPrograms
-        .map((program: any) => {
-          const code = program.refCode
-          if (code.startsWith(categoryCode) && code.length === categoryCode.length + 3) {
-            const numberPart = code.substring(categoryCode.length)
-            const num = parseInt(numberPart, 10)
-            return isNaN(num) ? 0 : num
-          }
-          return 0
-        })
-        .filter((num: number) => num > 0)
-
-      // Find the highest number and increment
-      const maxNumber = numbers.length > 0 ? Math.max(...numbers) : 0
-      const nextNumber = maxNumber + 1
-
-      // Format as 3-digit number (001, 002, etc.)
-      const formattedNumber = String(nextNumber).padStart(3, '0')
-      const newRefCode = `${categoryCode}${formattedNumber}`
-
-      setFormData((prev) => ({ ...prev, refCode: newRefCode }))
+      return false
     } catch (error) {
-      console.error('Error generating reference code:', error)
-      // Fallback: start from 001 if we can't fetch existing programs
-      const newRefCode = `${categoryCode}001`
-      setFormData((prev) => ({ ...prev, refCode: newRefCode }))
+      console.error('Error checking reference code:', error)
+      return false
     } finally {
-      setIsGeneratingRefCode(false)
+      setIsCheckingRefCode(false)
     }
-  }
+  }, [isEditMode, editId])
 
   const handleInputChange = (field: string, value: string) => {
     setFormData((prev) => ({ ...prev, [field]: value }))
     
-    // Auto-generate reference code when category changes (only for new programs)
-    if (field === "category" && !isEditMode) {
-      generateReferenceCode(value)
+    // Clear error when refCode changes
+    if (field === "refCode") {
+      setRefCodeError(null)
     }
   }
+
+  // Store original refCode when editing
+  const [originalRefCode, setOriginalRefCode] = useState<string>("")
+
+  // Load original refCode when editing
+  useEffect(() => {
+    if (isEditMode && editId && formData.refCode) {
+      setOriginalRefCode(formData.refCode)
+    }
+  }, [isEditMode, editId])
+
+  // Debounced validation for reference code
+  useEffect(() => {
+    const trimmedRefCode = formData.refCode.trim()
+    
+    if (!trimmedRefCode) {
+      setRefCodeError(null)
+      return
+    }
+
+    // Skip validation in edit mode if code hasn't changed from original
+    if (isEditMode && trimmedRefCode.toUpperCase() === originalRefCode.toUpperCase()) {
+      setRefCodeError(null)
+      return
+    }
+
+    const timeoutId = setTimeout(async () => {
+      const exists = await checkReferenceCodeExists(trimmedRefCode)
+      if (exists) {
+        setRefCodeError("This reference code already exists. Please use a different code.")
+      } else {
+        setRefCodeError(null)
+      }
+    }, 500)
+
+    return () => clearTimeout(timeoutId)
+  }, [formData.refCode, isEditMode, originalRefCode, checkReferenceCodeExists])
 
   const handleTypeChange = (typeValue: string) => {
     setFormData((prev) => {
@@ -332,17 +344,6 @@ export default function AddNewProgram({ onBack, editId }: { onBack?: () => void;
     }
   }
 
-  // Auto-update reference code when category changes (only for new programs, not when editing)
-  useEffect(() => {
-    if (!isEditMode && formData.category && categoryToRefCode[formData.category]) {
-      setFormData((prev) => ({
-        ...prev,
-        refCode: categoryToRefCode[formData.category],
-      }))
-    } else if (!isEditMode && !formData.category) {
-      setFormData((prev) => ({ ...prev, refCode: "" }))
-    }
-  }, [formData.category, isEditMode])
 
   const addCourseOutlineItem = () => {
     const newItem: CourseOutlineItem = {
@@ -418,8 +419,24 @@ export default function AddNewProgram({ onBack, editId }: { onBack?: () => void;
       return
     }
     
+    // Validate reference code is provided
+    if (!formData.refCode || !formData.refCode.trim()) {
+      setRefCodeError("Reference code is required")
+      alert("Please enter a reference code")
+      return
+    }
+    
+    // Check if reference code already exists
+    const codeExists = await checkReferenceCodeExists(formData.refCode.trim())
+    if (codeExists) {
+      setRefCodeError("This reference code already exists. Please use a different code.")
+      alert("This reference code already exists. Please use a different code.")
+      return
+    }
+    
     setIsSubmitting(true)
     setSubmitError(null)
+    setRefCodeError(null)
 
     try {
       // TODO: Handle image uploads separately (upload to cloud storage first)
@@ -513,21 +530,27 @@ export default function AddNewProgram({ onBack, editId }: { onBack?: () => void;
             <div>
               <label className="block text-sm font-semibold theme-text mb-2">
                 Reference Code <span className="text-destructive">*</span>
-                {isGeneratingRefCode && (
-                  <span className="ml-2 text-xs theme-muted">(Generating...)</span>
+                {isCheckingRefCode && (
+                  <span className="ml-2 text-xs theme-muted">(Checking...)</span>
                 )}
               </label>
               <input
                 type="text"
                 value={formData.refCode}
-                readOnly
-                className="w-full px-4 py-2 bg-muted/50 border border-border rounded-lg theme-text cursor-not-allowed opacity-80"
-                placeholder={formData.category ? "Select category to auto-generate" : "Auto-generated based on category"}
+                onChange={(e) => handleInputChange("refCode", e.target.value)}
+                className={`w-full px-4 py-2 bg-input border rounded-lg theme-text placeholder-muted-foreground focus:outline-none focus:ring-1 transition-all ${
+                  refCodeError 
+                    ? 'border-destructive focus:border-destructive focus:ring-destructive' 
+                    : 'border-border focus:border-primary focus:ring-primary'
+                }`}
+                placeholder="Enter reference code (e.g., PM001, HR023)"
+                required
               />
-              {formData.refCode && (
-                <p className="mt-1 text-xs theme-muted">
-                  Auto-generated: {formData.category ? `${categoryToRefCode[formData.category] || ''}###` : ''}
-                </p>
+              {refCodeError && (
+                <p className="mt-1 text-xs text-destructive">{refCodeError}</p>
+              )}
+              {!refCodeError && formData.refCode && !isCheckingRefCode && (
+                <p className="mt-1 text-xs text-green-600 dark:text-green-400">Reference code is available</p>
               )}
             </div>
 

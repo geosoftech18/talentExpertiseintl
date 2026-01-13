@@ -1,8 +1,11 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
+import { useRouter } from 'next/navigation'
 import Image from 'next/image'
 import { Card } from '@/components/ui/card'
+import { ChevronLeft, ChevronRight } from 'lucide-react'
+import { Button } from '@/components/ui/button'
 
 interface Venue {
   id: string
@@ -114,8 +117,11 @@ const getCityImageUrlEnhanced = (city: string, country: string): string => {
 
 export default function ChooseVenueSection() {
   const carouselRef = useRef<HTMLDivElement>(null)
+  const router = useRouter()
   const [venues, setVenues] = useState<Venue[]>([])
   const [loading, setLoading] = useState(true)
+  const isPausedRef = useRef(false)
+  const autoScrollRef = useRef<{ pause: () => void; resume: () => void } | null>(null)
 
   // Fetch venues from API
   useEffect(() => {
@@ -159,6 +165,9 @@ export default function ChooseVenueSection() {
 
     let animationFrameId: number
     let scrollPosition = 0
+    let originalWidth = 0
+    let itemWidth = 0
+    const scrollSpeed = 0.8 // pixels per frame for smooth animation
 
     const initAnimation = () => {
       // Wait for images to load and DOM to be ready
@@ -177,7 +186,7 @@ export default function ChooseVenueSection() {
         return
       }
 
-      const itemWidth = firstItem.offsetWidth + 24 // 24px gap (gap-6)
+      itemWidth = firstItem.offsetWidth + 24 // 24px gap (gap-6)
 
       // Clear any existing clones
       const existingClones = carousel.querySelectorAll('[data-venue-item="clone"]')
@@ -191,23 +200,39 @@ export default function ChooseVenueSection() {
         carousel.appendChild(clone)
       })
 
-      const originalWidth = itemsArray.length * itemWidth
-      const scrollSpeed = 0.8 // pixels per frame for smooth animation
+      originalWidth = itemsArray.length * itemWidth
 
       // Disable smooth scrolling for programmatic control
       carousel.style.scrollBehavior = 'auto'
       carousel.scrollLeft = 0
+      scrollPosition = 0
 
       const animate = () => {
-        scrollPosition += scrollSpeed
-        
-        // Reset scroll position when we've scrolled past all original items
-        if (scrollPosition >= originalWidth) {
-          scrollPosition = scrollPosition - originalWidth
+        if (!isPausedRef.current) {
+          scrollPosition += scrollSpeed
+          
+          // Reset scroll position when we've scrolled past all original items
+          if (scrollPosition >= originalWidth) {
+            scrollPosition = scrollPosition - originalWidth
+          }
+          
+          carousel.scrollLeft = scrollPosition
         }
-        
-        carousel.scrollLeft = scrollPosition
         animationFrameId = requestAnimationFrame(animate)
+      }
+
+      // Store pause/resume functions with sync capability
+      autoScrollRef.current = {
+        pause: () => {
+          isPausedRef.current = true
+          // Sync scrollPosition with actual scroll position when pausing
+          scrollPosition = carousel.scrollLeft
+        },
+        resume: () => {
+          isPausedRef.current = false
+          // Sync scrollPosition with actual scroll position when resuming
+          scrollPosition = carousel.scrollLeft
+        }
       }
 
       // Start animation
@@ -224,6 +249,69 @@ export default function ChooseVenueSection() {
       }
     }
   }, [loading, venues.length])
+
+  // Handle manual scroll - pause auto-scroll temporarily
+  const handleManualScroll = () => {
+    if (autoScrollRef.current) {
+      autoScrollRef.current.pause()
+    }
+  }
+
+  // Navigation handlers
+  const scrollLeft = () => {
+    const carousel = carouselRef.current
+    if (!carousel) return
+    
+    // Pause auto-scroll
+    handleManualScroll()
+    
+    // Temporarily enable smooth scrolling for manual navigation
+    const originalScrollBehavior = carousel.style.scrollBehavior
+    carousel.style.scrollBehavior = 'smooth'
+    
+    const itemWidth = 300 + 24 // 300px card + 24px gap
+    const scrollAmount = -itemWidth * 2
+    carousel.scrollBy({ left: scrollAmount, behavior: 'smooth' })
+    
+    // Restore auto scroll behavior and resume after scroll completes
+    setTimeout(() => {
+      carousel.style.scrollBehavior = originalScrollBehavior
+      if (autoScrollRef.current) {
+        autoScrollRef.current.resume()
+      }
+    }, 1000) // Wait for smooth scroll to complete
+  }
+
+  const scrollRight = () => {
+    const carousel = carouselRef.current
+    if (!carousel) return
+    
+    // Pause auto-scroll
+    handleManualScroll()
+    
+    // Temporarily enable smooth scrolling for manual navigation
+    const originalScrollBehavior = carousel.style.scrollBehavior
+    carousel.style.scrollBehavior = 'smooth'
+    
+    const itemWidth = 300 + 24 // 300px card + 24px gap
+    const scrollAmount = itemWidth * 2
+    carousel.scrollBy({ left: scrollAmount, behavior: 'smooth' })
+    
+    // Restore auto scroll behavior and resume after scroll completes
+    setTimeout(() => {
+      carousel.style.scrollBehavior = originalScrollBehavior
+      if (autoScrollRef.current) {
+        autoScrollRef.current.resume()
+      }
+    }, 1000) // Wait for smooth scroll to complete
+  }
+
+  // Handle venue card click
+  const handleVenueClick = (city: string, country: string) => {
+    // Format venue as "City, Country" to match the courses page filter format
+    const venueFilter = `${city}, ${country}`
+    router.push(`/courses?venue=${encodeURIComponent(venueFilter)}`)
+  }
 
   return (
     <section className="py-16 md:py-24 bg-gradient-to-b from-slate-50 to-white">
@@ -247,10 +335,44 @@ export default function ChooseVenueSection() {
 
         {/* Carousel Container */}
         {!loading && venues.length > 0 && (
-          <div className="relative overflow-hidden">
+          <div className="relative overflow-hidden group/container">
+            {/* Left Navigation Arrow */}
+            <Button
+              variant="outline"
+              size="icon"
+              className="absolute left-2 top-1/2 -translate-y-1/2 z-10 bg-white/90 hover:bg-white shadow-lg border-0 h-10 w-10 rounded-full opacity-0 group-hover/container:opacity-100 transition-opacity"
+              onClick={scrollLeft}
+              aria-label="Scroll left"
+            >
+              <ChevronLeft className="h-5 w-5 text-slate-600" />
+            </Button>
+
+            {/* Right Navigation Arrow */}
+            <Button
+              variant="outline"
+              size="icon"
+              className="absolute right-2 top-1/2 -translate-y-1/2 z-10 bg-white/90 hover:bg-white shadow-lg border-0 h-10 w-10 rounded-full opacity-0 group-hover/container:opacity-100 transition-opacity"
+              onClick={scrollRight}
+              aria-label="Scroll right"
+            >
+              <ChevronRight className="h-5 w-5 text-slate-600" />
+            </Button>
+
             <div
               ref={carouselRef}
               className="flex gap-6 overflow-x-hidden"
+              onMouseEnter={() => autoScrollRef.current?.pause()}
+              onMouseLeave={() => {
+                setTimeout(() => {
+                  autoScrollRef.current?.resume()
+                }, 500)
+              }}
+              onTouchStart={() => autoScrollRef.current?.pause()}
+              onTouchEnd={() => {
+                setTimeout(() => {
+                  autoScrollRef.current?.resume()
+                }, 3000)
+              }}
               style={{
                 scrollbarWidth: 'none',
                 msOverflowStyle: 'none',
@@ -263,14 +385,17 @@ export default function ChooseVenueSection() {
                 data-venue-item
                 className="flex-shrink-0 w-[280px] sm:w-[300px]"
               >
-                <Card className="overflow-hidden group hover:shadow-lg transition-shadow duration-300">
+                <Card 
+                  className="overflow-hidden group hover:shadow-lg transition-shadow duration-300 cursor-pointer"
+                  onClick={() => handleVenueClick(venue.city, venue.country)}
+                >
                   {/* Image Container */}
                   <div className="relative h-[180px] sm:h-[200px] overflow-hidden bg-slate-200">
                     <Image
                       src={venue.image}
                       alt={`${venue.city}, ${venue.country}`}
                       fill
-                      className="object-cover"
+                      className="object-cover group-hover:scale-105 transition-transform duration-300"
                       sizes="(max-width: 640px) 280px, 300px"
                       quality={95}
                       priority={false}

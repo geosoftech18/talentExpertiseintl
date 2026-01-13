@@ -9,6 +9,7 @@ import { Label } from '@/components/ui/label'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Checkbox } from '@/components/ui/checkbox'
 import { format } from 'date-fns'
 import { CourseRegistrationForm } from '@/components/course-registration-form'
 import type { Course, CourseSchedule } from '@/lib/supabase'
@@ -44,6 +45,8 @@ function CourseFinderPageContent() {
   const [selectedDuration, setSelectedDuration] = useState<string>('all')
   const [showFilters, setShowFilters] = useState(false)
   const [sortBy, setSortBy] = useState<string>('relevance')
+  const [sortByMonth, setSortByMonth] = useState<boolean>(false)
+  const [sortByYear, setSortByYear] = useState<boolean>(false)
   const [currentPage, setCurrentPage] = useState(1)
   const coursesPerPage = 12
   const [allCourses, setAllCourses] = useState<CourseListItem[]>([])
@@ -242,6 +245,23 @@ function CourseFinderPageContent() {
 
     // Sort based on selected option
     filtered.sort((a, b) => {
+      // Apply year sort first if enabled
+      if (sortByYear) {
+        const aYear = a.startDate ? new Date(a.startDate).getFullYear() : Infinity
+        const bYear = b.startDate ? new Date(b.startDate).getFullYear() : Infinity
+        if (aYear !== bYear) return aYear - bYear
+      }
+      
+      // Apply month sort if enabled
+      if (sortByMonth) {
+        const aMonth = a.startDate ? new Date(a.startDate).getMonth() : 12
+        const bMonth = b.startDate ? new Date(b.startDate).getMonth() : 12
+        if (aMonth !== bMonth) return aMonth - bMonth
+      }
+      
+      // If both month and year are enabled and they match, or if only one is enabled and they match,
+      // fall through to the main sortBy logic
+      // Otherwise, apply the main sortBy logic
       switch (sortBy) {
         case 'name':
           // Sort by name (A-Z)
@@ -267,36 +287,6 @@ function CourseFinderPageContent() {
           const bDateDesc = b.startDate ? new Date(b.startDate).getTime() : 0
           return bDateDesc - aDateDesc
         
-        case 'month':
-          // Sort by month (January to December)
-          const aMonth = a.startDate ? new Date(a.startDate).getMonth() : 12
-          const bMonth = b.startDate ? new Date(b.startDate).getMonth() : 12
-          if (aMonth !== bMonth) return aMonth - bMonth
-          // If same month, sort by date within month
-          const aDateMonth = a.startDate ? new Date(a.startDate).getTime() : Infinity
-          const bDateMonth = b.startDate ? new Date(b.startDate).getTime() : Infinity
-          return aDateMonth - bDateMonth
-        
-        case 'year':
-          // Sort by year (earliest to latest)
-          const aYear = a.startDate ? new Date(a.startDate).getFullYear() : Infinity
-          const bYear = b.startDate ? new Date(b.startDate).getFullYear() : Infinity
-          if (aYear !== bYear) return aYear - bYear
-          // If same year, sort by date within year
-          const aDateYear = a.startDate ? new Date(a.startDate).getTime() : Infinity
-          const bDateYear = b.startDate ? new Date(b.startDate).getTime() : Infinity
-          return aDateYear - bDateYear
-        
-        case 'year-desc':
-          // Sort by year (latest to earliest)
-          const aYearDesc = a.startDate ? new Date(a.startDate).getFullYear() : 0
-          const bYearDesc = b.startDate ? new Date(b.startDate).getFullYear() : 0
-          if (aYearDesc !== bYearDesc) return bYearDesc - aYearDesc
-          // If same year, sort by date within year (latest first)
-          const aDateYearDesc = a.startDate ? new Date(a.startDate).getTime() : 0
-          const bDateYearDesc = b.startDate ? new Date(b.startDate).getTime() : 0
-          return bDateYearDesc - aDateYearDesc
-        
         default:
           // Relevance: featured first, then trending, then by date
           if (a.featured && !b.featured) return -1
@@ -311,7 +301,7 @@ function CourseFinderPageContent() {
     })
 
     return filtered
-  }, [searchTerm, selectedCategory, selectedVenue, selectedDuration, sortBy, allCourses])
+  }, [searchTerm, selectedCategory, selectedVenue, selectedDuration, sortBy, sortByMonth, sortByYear, allCourses])
 
   const totalPages = Math.ceil(filteredCourses.length / coursesPerPage)
   const paginatedCourses = filteredCourses.slice(
@@ -325,6 +315,8 @@ function CourseFinderPageContent() {
     setSelectedVenue('all')
     setSelectedDuration('all')
     setSortBy('relevance')
+    setSortByMonth(false)
+    setSortByYear(false)
     setCurrentPage(1)
   }
 
@@ -333,6 +325,8 @@ function CourseFinderPageContent() {
     selectedVenue !== 'all',
     selectedDuration !== 'all',
     sortBy !== 'relevance',
+    sortByMonth,
+    sortByYear,
   ].filter(Boolean).length
 
   const handleRegisterClick = async (e: React.MouseEvent, course: CourseListItem) => {
@@ -504,26 +498,68 @@ function CourseFinderPageContent() {
                  
 
                   {/* Sort Filter */}
-                  <div>
-                    <Label className="text-xs sm:text-sm font-semibold text-slate-700 mb-2 block">
-                      Sort By
-                    </Label>
-                    <Select value={sortBy} onValueChange={setSortBy}>
-                      <SelectTrigger className="w-full h-9 sm:h-10">
-                        <SelectValue placeholder="Sort By" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="relevance">Relevance</SelectItem>
-                        <SelectItem value="name">Name (A-Z)</SelectItem>
-                        <SelectItem value="price-low">Price: Low to High</SelectItem>
-                        <SelectItem value="price-high">Price: High to Low</SelectItem>
-                        <SelectItem value="date">Date: Earliest First</SelectItem>
-                        <SelectItem value="date-desc">Date: Latest First</SelectItem>
-                        <SelectItem value="month">By Month</SelectItem>
-                        <SelectItem value="year">By Year (Earliest)</SelectItem>
-                        <SelectItem value="year-desc">By Year (Latest)</SelectItem>
-                      </SelectContent>
-                    </Select>
+                  <div className="space-y-3">
+                    <div>
+                      <Label className="text-xs sm:text-sm font-semibold text-slate-700 mb-2 block">
+                        Sort By
+                      </Label>
+                      <Select value={sortBy} onValueChange={setSortBy}>
+                        <SelectTrigger className="w-full h-9 sm:h-10">
+                          <SelectValue placeholder="Sort By" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="relevance">Relevance</SelectItem>
+                          <SelectItem value="name">Name (A-Z)</SelectItem>
+                          
+                          <SelectItem value="date">Date: Earliest First</SelectItem>
+                          <SelectItem value="date-desc">Date: Latest First</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    
+                    {/* Additional Sort Options */}
+                    <div className="space-y-2">
+                   
+                      <div className="space-y-2">
+                        <div className="flex items-center space-x-2">
+                          <Checkbox
+                            id="sort-by-year"
+                            checked={sortByYear}
+                            onCheckedChange={(checked) => setSortByYear(checked === true)}
+                            className='border-slate-500'
+                          />
+                          <label
+                            htmlFor="sort-by-year"
+                            className="text-xs sm:text-sm text-slate-700 cursor-pointer font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                          >
+                            Sort by Year
+                          </label>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <Checkbox
+                            id="sort-by-month"
+                            checked={sortByMonth}
+                            onCheckedChange={(checked) => setSortByMonth(checked === true)}
+                            className='border-slate-500'
+                          />
+                          <label
+                            htmlFor="sort-by-month"
+                            className="text-xs sm:text-sm text-slate-700 cursor-pointer font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                          >
+                            Sort by Month
+                          </label>
+                        </div>
+                      </div>
+                      {(sortByYear || sortByMonth) && (
+                        <p className="text-xs text-slate-500 mt-1">
+                          {sortByYear && sortByMonth 
+                            ? 'Sorting by Year, then Month, then main sort'
+                            : sortByYear 
+                            ? 'Sorting by Year, then main sort'
+                            : 'Sorting by Month, then main sort'}
+                        </p>
+                      )}
+                    </div>
                   </div>
 
                   {/* Clear Filters */}
@@ -584,9 +620,9 @@ function CourseFinderPageContent() {
                             <th className="px-6 py-4 text-left text-xs font-semibold text-slate-700 uppercase tracking-wider">
                               Fee
                             </th>
-                            <th className="px-6 py-4 text-left text-xs font-semibold text-slate-700 uppercase tracking-wider">
+                            {/* <th className="px-6 py-4 text-left text-xs font-semibold text-slate-700 uppercase tracking-wider">
                               Register
-                            </th>
+                            </th> */}
                           </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-200">
@@ -636,7 +672,7 @@ function CourseFinderPageContent() {
                                   <span className="text-sm text-slate-400">Contact for pricing</span>
                                 )}
                               </td>
-                              <td className="px-6 py-4" onClick={(e) => e.stopPropagation()}>
+                              {/* <td className="px-6 py-4" onClick={(e) => e.stopPropagation()}>
                                 <Button
                                   onClick={(e) => handleRegisterClick(e, course)}
                                   disabled={loadingCourseData}
@@ -652,7 +688,7 @@ function CourseFinderPageContent() {
                                     'Register Now'
                                   )}
                                 </Button>
-                              </td>
+                              </td> */}
                             </tr>
                           ))}
                         </tbody>

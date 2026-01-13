@@ -1,6 +1,8 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
+import { useSession } from 'next-auth/react'
+import { useRouter } from 'next/navigation'
 import {
   Calendar, Clock, MapPin, Users, GraduationCap,
   TrendingUp, Target, BookOpen, Award, Download,
@@ -29,6 +31,7 @@ interface Course {
   category: string
   price: number
   image_url?: string | null
+  course_code?: string | null
 }
 
 interface CourseSchedule {
@@ -101,6 +104,8 @@ export default function CourseDetailClient({
   faqs,
   relatedCourses
 }: CourseDetailClientProps) {
+  const { data: session, status } = useSession()
+  const router = useRouter()
   const [activeTab, setActiveTab] = useState('overview')
   const [showRegistration, setShowRegistration] = useState(false)
   const [selectedScheduleId, setSelectedScheduleId] = useState<string | null>(null)
@@ -128,6 +133,39 @@ export default function CourseDetailClient({
 
   const getBenefitsByType = (type: string) => {
     return benefits.filter(b => b.benefit_type === type)
+  }
+
+  const handleRegisterClick = () => {
+    // Check if user is authenticated
+    if (status === 'loading') {
+      return // Wait for session to load
+    }
+    
+    if (status === 'unauthenticated' || !session?.user) {
+      // Redirect to auth page if not logged in
+      router.push('/auth')
+      return
+    }
+    
+    // User is authenticated, show registration form
+    setShowRegistration(true)
+  }
+
+  const handleScheduleRegisterClick = (scheduleId: string) => {
+    // Check if user is authenticated
+    if (status === 'loading') {
+      return // Wait for session to load
+    }
+    
+    if (status === 'unauthenticated' || !session?.user) {
+      // Redirect to auth page if not logged in
+      router.push('/auth')
+      return
+    }
+    
+    // User is authenticated, show registration form with selected schedule
+    setSelectedScheduleId(scheduleId)
+    setShowRegistration(true)
   }
 
   const scrollToSection = (sectionId: string) => {
@@ -275,7 +313,7 @@ export default function CourseDetailClient({
         <div className="relative max-w-7xl mx-auto px-6 py-20">
           <div className="flex items-center gap-2 mb-6 animate-fade-in">
             <Badge variant="secondary" className="bg-blue-500/20 text-blue-300 border-blue-400/30">
-              {course.duration}
+              {course.course_code || course.duration}
             </Badge>
             <Badge variant="secondary" className="bg-emerald-500/20 text-emerald-300 border-emerald-400/30">
               {course.category}
@@ -311,7 +349,7 @@ export default function CourseDetailClient({
             <Button
               size="lg"
               className="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-8 shadow-lg shadow-blue-500/50 transition-all hover:shadow-xl hover:shadow-blue-500/60 hover:scale-105"
-              onClick={() => setShowRegistration(true)}
+              onClick={handleRegisterClick}
             >
               Register Now
               <ArrowRight className="ml-2 w-5 h-5" />
@@ -617,8 +655,7 @@ export default function CourseDetailClient({
                                 className="py-4 px-4 text-center"
                                 onClick={(e) => {
                                   e.stopPropagation()
-                                  setSelectedScheduleId(schedule.id)
-                                  setShowRegistration(true)
+                                  handleScheduleRegisterClick(schedule.id)
                                 }}
                               >
                                 <ChevronRight className="w-5 h-5 text-red-600 mx-auto group-hover:translate-x-1 transition-transform cursor-pointer" />
@@ -1299,7 +1336,7 @@ export default function CourseDetailClient({
                   <Button
                     className="w-full bg-blue-600 hover:bg-blue-700 font-semibold shadow-md hover:shadow-lg transition-all justify-start"
                     size="lg"
-                    onClick={() => setShowRegistration(true)}
+                    onClick={handleRegisterClick}
                   >
                     <Edit className="w-5 h-5 mr-2" />
                     Register for the Course
@@ -1376,7 +1413,7 @@ export default function CourseDetailClient({
                   <div className="space-y-4">
                     <div>
                       <p className="text-lg text-slate-700 leading-relaxed">
-                        On successful completion of this training course, <span className="font-semibold text-slate-900">GLOMACS Certificate</span> will be awarded to the delegates.
+                        On successful completion of this training course, <span className="font-semibold text-slate-900">Certificate</span> will be awarded to the delegates.
                       </p>
                     </div>
                     <div className="bg-white/80 p-6 rounded-lg border border-blue-200">

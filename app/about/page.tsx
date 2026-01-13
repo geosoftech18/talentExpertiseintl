@@ -8,6 +8,7 @@ import Link from 'next/link'
 import { CompanyIntro } from '@/components/about/company-intro'
 import { CEOMessage } from '@/components/about/ceo-message'
 import AffiliationsSection from '@/components/home/affiliations-section'
+import TestimonialsSection from '@/components/home/testimonials-section'
 
 const stats = [
   { label: 'Years of Experience', value: '30+', icon: Award },
@@ -149,6 +150,7 @@ export default function AboutPage() {
         message="At TEI Training, we believe that exceptional training is the cornerstone of professional excellence. For over three decades, we have dedicated ourselves to empowering individuals and organizations worldwide with world-class training programs that drive real, measurable results.\n\nOur commitment to excellence, innovation, and integrity has made us a trusted partner for thousands of professionals across the globe. We understand that every learner is unique, and our personalized approach ensures that each participant receives the guidance and support they need to succeed.\n\nAs we look to the future, we remain steadfast in our mission to transform careers and organizations through meaningful learning experiences. We invite you to join us on this journey of growth and discovery."
       />
 
+      <TestimonialsSection />
       {/* Stats Section */}
       {/* <div className="max-w-7xl mx-auto px-6 py-16 -mt-12 relative z-10">
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">

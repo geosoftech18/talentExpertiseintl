@@ -160,8 +160,7 @@ export default function WhyChooseTeiPage() {
                       left: `${centerX + pos.x - 64}px`,
                       top: `${centerY + pos.y - 64}px`,
                     }}
-                    onMouseEnter={() => setHoveredReason(reason.id)}
-                    onMouseLeave={() => setHoveredReason(null)}
+                    
                   >
                     <div
                       className={`
@@ -214,44 +213,7 @@ export default function WhyChooseTeiPage() {
         </div>
       </section>
 
-      {/* Detailed Reasons Grid Section */}
-      <section className="py-16 md:py-24 bg-white">
-        <div className="max-w-7xl mx-auto px-6">
-          <div className="text-center mb-12">
-            <Badge className="bg-emerald-100 text-emerald-700 border-emerald-200 mb-4">
-              Our Commitment
-            </Badge>
-            <h2 className="text-3xl md:text-4xl font-bold text-slate-900 mb-4">
-              What We Deliver
-            </h2>
-          </div>
-
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {reasons.map((reason) => {
-              const Icon = reason.icon
-              return (
-                <Card
-                  key={reason.id}
-                  className="border-2 border-slate-200 hover:border-blue-300 transition-all duration-300 hover:shadow-lg group"
-                >
-                  <CardContent className="p-6">
-                    <div className="w-14 h-14 bg-gradient-to-br from-blue-600 to-blue-800 rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300">
-                      <Icon className="w-7 h-7 text-white" />
-                    </div>
-                    <h3 className="text-xl font-bold text-slate-900 mb-3">
-                      {reason.title}
-                    </h3>
-                    <div className="flex items-center text-blue-600">
-                      <CheckCircle2 className="w-5 h-5 mr-2" />
-                      <span className="text-sm font-medium">Core Strength</span>
-                    </div>
-                  </CardContent>
-                </Card>
-              )
-            })}
-          </div>
-        </div>
-      </section>
+      
 
       {/* CTA Section */}
       <section className="py-16 md:py-24 bg-gradient-to-r from-[#0A3049] to-[#0A3049] text-white">
@@ -270,7 +232,7 @@ export default function WhyChooseTeiPage() {
                 <ArrowRight className="ml-2 w-4 h-4" />
               </Link>
             </Button>
-            <Button asChild size="lg" variant="outline" className="border-white/30 text-white hover:bg-white/10">
+            <Button asChild size="lg" variant="outline" className="border-white/30 text-white bg-white/10 hover:bg-white/10">
               <Link href="/contact">
                 Get in Touch
               </Link>

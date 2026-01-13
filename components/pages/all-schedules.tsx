@@ -93,7 +93,8 @@ export default function AllSchedules({ onAddSchedule, onEditSchedule }: AllSched
     const fetchSchedules = async () => {
       try {
         setLoading(true)
-        const response = await fetch('/api/admin/schedules')
+        // Include expired schedules by passing includeExpired=true
+        const response = await fetch('/api/admin/schedules?includeExpired=true&limit=10000')
         const result = await response.json()
         
         if (!response.ok) {
@@ -146,7 +147,7 @@ export default function AllSchedules({ onAddSchedule, onEditSchedule }: AllSched
   // Handle schedule preview
   const handleSchedulePreview = async (scheduleId: string) => {
     try {
-      const response = await fetch('/api/admin/schedules')
+      const response = await fetch('/api/admin/schedules?includeExpired=true&limit=10000')
       const result = await response.json()
       
       if (result.success) {
@@ -184,7 +185,7 @@ export default function AllSchedules({ onAddSchedule, onEditSchedule }: AllSched
 
       if (result.success) {
         // Refresh the list
-        const response = await fetch('/api/admin/schedules')
+        const response = await fetch('/api/admin/schedules?includeExpired=true&limit=10000')
         const result = await response.json()
         if (result.success) {
           const today = new Date()

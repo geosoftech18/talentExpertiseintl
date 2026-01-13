@@ -68,9 +68,23 @@ export async function GET(request: NextRequest) {
     const limit = parseInt(searchParams.get('limit') || '50') // Increased default limit
     const skip = (page - 1) * limit
     const status = searchParams.get('status')
+    const search = searchParams.get('search') // Search term for refCode, programName, category
     const includeDetails = searchParams.get('includeDetails') === 'true' // Only include nested data if explicitly requested
 
-    const where = status ? { status } : {}
+    // Build where clause
+    const where: any = status ? { status } : {}
+    
+    // Add search filter if provided
+    // Note: MongoDB with Prisma uses contains (case-sensitive)
+    // For case-insensitive, we'll filter results after fetching
+    if (search && search.trim()) {
+      const searchTerm = search.trim()
+      where.OR = [
+        { refCode: { contains: searchTerm } },
+        { programName: { contains: searchTerm } },
+        { category: { contains: searchTerm } },
+      ]
+    }
 
     // Build query based on whether details are needed
     const queryOptions: any = {
@@ -110,14 +124,39 @@ export async function GET(request: NextRequest) {
       prisma.program.count({ where }),
     ])
 
+    // If search is provided, do case-insensitive filtering on results
+    let filteredPrograms = programs
+    let filteredTotal = total
+    if (search && search.trim()) {
+      const searchTerm = search.trim().toLowerCase()
+      filteredPrograms = programs.filter((program: any) => {
+        const refCodeMatch = program.refCode?.toLowerCase().includes(searchTerm) || false
+        const nameMatch = program.programName?.toLowerCase().includes(searchTerm) || false
+        const categoryMatch = program.category?.toLowerCase().includes(searchTerm) || false
+        return refCodeMatch || nameMatch || categoryMatch
+      })
+      // For accurate total count with case-insensitive search, we need to count all matching programs
+      // This is a limitation - for better performance, consider using MongoDB text indexes
+      const allProgramsForCount = await prisma.program.findMany({
+        where: status ? { status } : {},
+        select: { refCode: true, programName: true, category: true },
+      })
+      filteredTotal = allProgramsForCount.filter((p: any) => {
+        const refCodeMatch = p.refCode?.toLowerCase().includes(searchTerm) || false
+        const nameMatch = p.programName?.toLowerCase().includes(searchTerm) || false
+        const categoryMatch = p.category?.toLowerCase().includes(searchTerm) || false
+        return refCodeMatch || nameMatch || categoryMatch
+      }).length
+    }
+
     return NextResponse.json({
       success: true,
-      data: programs,
+      data: filteredPrograms,
       pagination: {
         page,
         limit,
-        total,
-        totalPages: Math.ceil(total / limit),
+        total: filteredTotal,
+        totalPages: Math.ceil(filteredTotal / limit),
       },
     })
   } catch (error) {

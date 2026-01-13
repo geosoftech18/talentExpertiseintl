@@ -2,7 +2,6 @@
 
 import { useState } from 'react'
 import { X, ChevronLeft, ChevronRight, Check, Building2 } from 'lucide-react'
-import { useRequireAuth } from '@/hooks/use-require-auth'
 import Image from 'next/image'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -131,26 +130,7 @@ const steps = [
 ]
 
 export function InHouseCourseForm({ course, onClose }: InHouseCourseFormProps) {
-  // Check authentication - redirects to /auth if not logged in
-  const { isAuthenticated, isLoading } = useRequireAuth()
-  
   const [step, setStep] = useState(1)
-  
-  // Show loading state while checking authentication
-  if (isLoading) {
-    return (
-      <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-        <div className="bg-white rounded-lg p-6 text-center">
-          <p className="text-gray-600">Checking authentication...</p>
-        </div>
-      </div>
-    )
-  }
-  
-  // Don't render form if not authenticated (will redirect)
-  if (!isAuthenticated) {
-    return null
-  }
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [submitError, setSubmitError] = useState<string | null>(null)

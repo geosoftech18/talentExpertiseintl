@@ -230,22 +230,21 @@ export default function Header() {
                   </>
                 )}
               </div>
-              <span className="text-slate-500">|</span>
+              
               <span className="text-slate-500">|</span>
               <Link href="/why-choose-tei" className="font-medium transition-colors">
                 Why Choose TEI
                 </Link>
-
+              <span className="text-slate-500">|</span>
+              <Link href="/downloads" className="font-medium transition-colors">
+                Downloads
+              </Link>
+              <span className="text-slate-500">|</span>
               <Link
                 href="/contact"
                 className="px-4 py-2 font-medium transition-colors rounded-lg "
               >
                 Contact Us
-              </Link>
-             
-              <span className="text-slate-500">|</span>
-              <Link href="/downloads" className="font-medium transition-colors">
-                Downloads
               </Link>
               {/* <span className="text-slate-500">|</span>
               <div className="flex items-center gap-2">

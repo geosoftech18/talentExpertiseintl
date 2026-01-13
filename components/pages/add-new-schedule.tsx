@@ -116,7 +116,8 @@ export default function AddNewSchedule({ onBack, editId }: { onBack?: () => void
     const fetchPrograms = async () => {
       try {
         setLoadingPrograms(true)
-        const response = await fetch('/api/admin/programs')
+        // Fetch all programs by setting a high limit
+        const response = await fetch('/api/admin/programs?limit=10000')
         const result = await response.json()
         
         if (!response.ok) {
@@ -359,8 +360,19 @@ export default function AddNewSchedule({ onBack, editId }: { onBack?: () => void
                       aria-expanded={programSearchOpen}
                       className="w-full justify-between bg-input border-border theme-text h-11"
                     >
-                      <span className="truncate">
-                        {formData.program || "Select a course..."}
+                      <span className="truncate flex items-center gap-2">
+                        {formData.program ? (
+                          <>
+                            <span>{formData.program}</span>
+                            {selectedProgram && (
+                              <span className="text-xs text-primary bg-primary/10 px-2 py-0.5 rounded font-semibold">
+                                {selectedProgram.refCode}
+                              </span>
+                            )}
+                          </>
+                        ) : (
+                          "Select a course..."
+                        )}
                       </span>
                       <ChevronDownIcon className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                     </Button>
@@ -368,7 +380,7 @@ export default function AddNewSchedule({ onBack, editId }: { onBack?: () => void
                     <PopoverContent className="w-full p-0" align="start">
                     <Command shouldFilter={false}>
                       <CommandInput
-                        placeholder="Search courses by name, ref code, or category..."
+                        placeholder="Search by course name, reference code, or category..."
                         value={programSearch}
                         onValueChange={setProgramSearch}
                       />
@@ -393,10 +405,15 @@ export default function AddNewSchedule({ onBack, editId }: { onBack?: () => void
                                   : "opacity-0"
                               }`}
                             />
-                            <div className="flex flex-col">
-                              <span className="font-medium">{program.name}</span>
-                              <span className="text-xs theme-muted">
-                                {program.refCode} • {program.category} • {program.duration}
+                            <div className="flex flex-col w-full">
+                              <div className="flex items-center justify-between gap-2">
+                                <span className="font-medium flex-1">{program.name}</span>
+                                <span className="text-xs font-semibold text-primary bg-primary/10 px-2 py-0.5 rounded">
+                                  {program.refCode}
+                                </span>
+                              </div>
+                              <span className="text-xs theme-muted mt-0.5">
+                                {program.category} • {program.duration}
                               </span>
                             </div>
                           </CommandItem>
