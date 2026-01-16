@@ -47,6 +47,8 @@ function CourseFinderPageContent() {
   const [sortBy, setSortBy] = useState<string>('relevance')
   const [sortByMonth, setSortByMonth] = useState<boolean>(false)
   const [sortByYear, setSortByYear] = useState<boolean>(false)
+  const [selectedYear, setSelectedYear] = useState<string>('all')
+  const [selectedMonth, setSelectedMonth] = useState<string>('all')
   const [currentPage, setCurrentPage] = useState(1)
   const coursesPerPage = 12
   const [allCourses, setAllCourses] = useState<CourseListItem[]>([])
@@ -91,7 +93,8 @@ function CourseFinderPageContent() {
 
         // No cache or cache expired - fetch fresh data
         setLoading(true)
-        const coursesResponse = await fetch('/api/courses?limit=1000')
+        // Fetch all courses including expired ones to populate year/month filters
+        const coursesResponse = await fetch('/api/courses?limit=10000&includeExpired=true')
 
         const coursesResult = await coursesResponse.json()
 
@@ -188,24 +191,65 @@ function CourseFinderPageContent() {
     return Array.from(venueSet).sort()
   }, [allCourses])
 
+  // Extract available years from courses
+  const availableYears = useMemo(() => {
+    const yearSet = new Set<number>()
+    allCourses.forEach(course => {
+      if (course.startDate) {
+        const year = new Date(course.startDate).getFullYear()
+        yearSet.add(year)
+      }
+    })
+    return Array.from(yearSet).sort((a, b) => b - a) // Latest first
+  }, [allCourses])
+
+  // Show all 12 months in chronological order (January-December)
+  // This provides a consistent and predictable month filter
+  const availableMonths = useMemo(() => {
+    // Always return all 12 months in order (0-11 = January-December)
+    return [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]
+  }, [])
+
+  const monthNames = [
+    'January', 'February', 'March', 'April', 'May', 'June',
+    'July', 'August', 'September', 'October', 'November', 'December'
+  ]
+
   const filteredCourses = useMemo(() => {
     let filtered = allCourses
 
     // Filter out expired courses - only show upcoming schedules
+    // BUT: If user has selected a specific month or year, show courses for that period even if expired
     const today = new Date()
     today.setHours(0, 0, 0, 0) // Reset time to start of day for accurate comparison
     
-    filtered = filtered.filter(course => {
-      // If course has no start date, exclude it (only show courses with upcoming dates)
-      if (!course.startDate) {
-        return false
-      }
-      
-      // Check if start date is today or in the future
-      const startDate = new Date(course.startDate)
-      startDate.setHours(0, 0, 0, 0)
-      return startDate >= today
-    })
+    // Only filter out expired courses if no specific month/year is selected
+    const hasSpecificMonthFilter = selectedMonth !== 'all'
+    const hasSpecificYearFilter = selectedYear !== 'all'
+    
+    if (!hasSpecificMonthFilter && !hasSpecificYearFilter) {
+      // No specific month/year selected - only show upcoming courses
+      filtered = filtered.filter(course => {
+        // If course has no start date, exclude it (only show courses with upcoming dates)
+        if (!course.startDate) {
+          return false
+        }
+        
+        // Check if start date is today or in the future
+        const startDate = new Date(course.startDate)
+        startDate.setHours(0, 0, 0, 0)
+        return startDate >= today
+      })
+    } else {
+      // Specific month/year selected - show courses for that period (including past)
+      filtered = filtered.filter(course => {
+        // If course has no start date, exclude it
+        if (!course.startDate) {
+          return false
+        }
+        return true
+      })
+    }
 
     // Search filter
     if (searchTerm) {
@@ -243,6 +287,26 @@ function CourseFinderPageContent() {
       })
     }
 
+    // Year filter
+    if (selectedYear !== 'all') {
+      const year = parseInt(selectedYear)
+      filtered = filtered.filter(course => {
+        if (!course.startDate) return false
+        const courseYear = new Date(course.startDate).getFullYear()
+        return courseYear === year
+      })
+    }
+
+    // Month filter
+    if (selectedMonth !== 'all') {
+      const month = parseInt(selectedMonth)
+      filtered = filtered.filter(course => {
+        if (!course.startDate) return false
+        const courseMonth = new Date(course.startDate).getMonth()
+        return courseMonth === month
+      })
+    }
+
     // Sort based on selected option
     filtered.sort((a, b) => {
       // Apply year sort first if enabled
@@ -266,14 +330,6 @@ function CourseFinderPageContent() {
         case 'name':
           // Sort by name (A-Z)
           return a.title.localeCompare(b.title)
-        
-        case 'price-low':
-          // Sort by price: Low to High
-          return a.price - b.price
-        
-        case 'price-high':
-          // Sort by price: High to Low
-          return b.price - a.price
         
         case 'date':
           // Sort by date: Earliest First
@@ -301,7 +357,7 @@ function CourseFinderPageContent() {
     })
 
     return filtered
-  }, [searchTerm, selectedCategory, selectedVenue, selectedDuration, sortBy, sortByMonth, sortByYear, allCourses])
+  }, [searchTerm, selectedCategory, selectedVenue, selectedDuration, selectedYear, selectedMonth, sortBy, sortByMonth, sortByYear, allCourses])
 
   const totalPages = Math.ceil(filteredCourses.length / coursesPerPage)
   const paginatedCourses = filteredCourses.slice(
@@ -314,6 +370,8 @@ function CourseFinderPageContent() {
     setSelectedCategory('all')
     setSelectedVenue('all')
     setSelectedDuration('all')
+    setSelectedYear('all')
+    setSelectedMonth('all')
     setSortBy('relevance')
     setSortByMonth(false)
     setSortByYear(false)
@@ -324,6 +382,8 @@ function CourseFinderPageContent() {
     selectedCategory !== 'all',
     selectedVenue !== 'all',
     selectedDuration !== 'all',
+    selectedYear !== 'all',
+    selectedMonth !== 'all',
     sortBy !== 'relevance',
     sortByMonth,
     sortByYear,
@@ -499,27 +559,49 @@ function CourseFinderPageContent() {
 
                   {/* Sort Filter */}
                   <div className="space-y-3">
-                    <div>
+                   
+                    
+                    {/* Year Filter */}
+                    <div className="space-y-3">
                       <Label className="text-xs sm:text-sm font-semibold text-slate-700 mb-2 block">
-                        Sort By
+                        Filter by Year
                       </Label>
-                      <Select value={sortBy} onValueChange={setSortBy}>
+                      <Select value={selectedYear} onValueChange={(value) => { setSelectedYear(value); setCurrentPage(1) }}>
                         <SelectTrigger className="w-full h-9 sm:h-10">
-                          <SelectValue placeholder="Sort By" />
+                          <SelectValue placeholder="All Years" />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="relevance">Relevance</SelectItem>
-                          <SelectItem value="name">Name (A-Z)</SelectItem>
-                          
-                          <SelectItem value="date">Date: Earliest First</SelectItem>
-                          <SelectItem value="date-desc">Date: Latest First</SelectItem>
+                          <SelectItem value="all">All Years</SelectItem>
+                          {availableYears.map((year) => (
+                            <SelectItem key={year} value={year.toString()}>{year}</SelectItem>
+                          ))}
                         </SelectContent>
                       </Select>
                     </div>
-                    
+
+                    {/* Month Filter */}
+                    <div className="space-y-3">
+                      <Label className="text-xs sm:text-sm font-semibold text-slate-700 mb-2 block">
+                        Filter by Month
+                      </Label>
+                      <Select value={selectedMonth} onValueChange={(value) => { setSelectedMonth(value); setCurrentPage(1) }}>
+                        <SelectTrigger className="w-full h-9 sm:h-10">
+                          <SelectValue placeholder="All Months" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="all">All Months</SelectItem>
+                          {availableMonths.map((month) => (
+                            <SelectItem key={month} value={month.toString()}>{monthNames[month]}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+
                     {/* Additional Sort Options */}
-                    <div className="space-y-2">
-                   
+                    {/* <div className="space-y-2">
+                      <Label className="text-xs sm:text-sm font-semibold text-slate-700 mb-2 block">
+                        Additional Sort Options
+                      </Label>
                       <div className="space-y-2">
                         <div className="flex items-center space-x-2">
                           <Checkbox
@@ -559,7 +641,7 @@ function CourseFinderPageContent() {
                             : 'Sorting by Month, then main sort'}
                         </p>
                       )}
-                    </div>
+                    </div> */}
                   </div>
 
                   {/* Clear Filters */}

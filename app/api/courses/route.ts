@@ -20,6 +20,7 @@ export async function GET(request: NextRequest) {
     const skip = (page - 1) * limit
     const category = searchParams.get('category')
     const search = searchParams.get('search')
+    const includeExpired = searchParams.get('includeExpired') === 'true'
 
     const where: any = {
       status: 'Published', // Only show published programs
@@ -38,7 +39,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Optimized: Fetch schedules directly with program data using Prisma relations
-    // Only fetch upcoming schedules (startDate >= today)
+    // Only fetch upcoming schedules (startDate >= today) unless includeExpired is true
     const today = new Date()
     today.setHours(0, 0, 0, 0)
     
@@ -47,9 +48,11 @@ export async function GET(request: NextRequest) {
     const allSchedules = await prisma.schedule.findMany({
       where: {
         status: { in: ['Open', 'Published'] },
-        startDate: {
-          gte: today, // Only upcoming schedules
-        },
+        ...(includeExpired ? {} : {
+          startDate: {
+            gte: today, // Only upcoming schedules
+          },
+        }),
         program: {
           status: 'Published', // Only schedules for published programs
           ...(category && category !== 'all' ? { category } : {}),
@@ -99,11 +102,11 @@ export async function GET(request: NextRequest) {
       // Skip if no program (shouldn't happen with proper relation, but safety check)
       if (!program) continue
 
-      // Verify schedule is upcoming (double-check)
+      // Verify schedule is upcoming (double-check) - skip if includeExpired is false
       if (!schedule.startDate) continue
       const startDate = new Date(schedule.startDate)
       startDate.setHours(0, 0, 0, 0)
-      if (startDate < now) continue
+      if (!includeExpired && startDate < now) continue
 
       // Create duplicate key: name + date + venue
       const duplicateKey = `${program.programName}-${schedule.startDate.toISOString().split('T')[0]}-${schedule.venue || 'no-venue'}`

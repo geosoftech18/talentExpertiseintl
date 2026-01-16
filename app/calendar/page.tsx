@@ -2,11 +2,10 @@
 
 import { useState, useEffect, useMemo } from 'react'
 import { Calendar as CalendarIcon, Clock, MapPin, ChevronLeft, ChevronRight, Filter, Loader2, X } from 'lucide-react'
-import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { generateSlug } from '@/lib/utils/slug'
 
 const months = [
@@ -28,6 +27,7 @@ interface CourseEvent {
 }
 
 export default function CalendarPage() {
+  const router = useRouter()
   const [currentMonth, setCurrentMonth] = useState(new Date().getMonth())
   const [currentYear, setCurrentYear] = useState(new Date().getFullYear())
   const [selectedCategory, setSelectedCategory] = useState<string>('all')
@@ -37,6 +37,8 @@ export default function CalendarPage() {
   const [courseEvents, setCourseEvents] = useState<CourseEvent[]>([])
   const [loading, setLoading] = useState(true)
   const [showFilters, setShowFilters] = useState(false)
+  const [currentPage, setCurrentPage] = useState(1)
+  const itemsPerPage = 50
 
   // Cache key for sessionStorage
   const CACHE_KEY = 'calendar_cache'
@@ -77,8 +79,8 @@ export default function CalendarPage() {
 
         // No cache or cache expired - fetch fresh data
         setLoading(true)
-        // Fetch all courses - optimized API now returns all schedules efficiently
-        const response = await fetch('/api/courses?limit=1000')
+        // Fetch all courses including expired ones for calendar view
+        const response = await fetch('/api/courses?limit=10000&includeExpired=true')
         const result = await response.json()
 
         if (!cancelled && result.success) {
@@ -192,6 +194,17 @@ export default function CalendarPage() {
     })
   }, [courseEvents, selectedCategory, selectedVenue, selectedMonth, selectedYear])
 
+  // Pagination calculations
+  const totalPages = Math.ceil(filteredEvents.length / itemsPerPage)
+  const startIndex = (currentPage - 1) * itemsPerPage
+  const endIndex = startIndex + itemsPerPage
+  const paginatedEvents = filteredEvents.slice(startIndex, endIndex)
+
+  // Reset to page 1 when filters change
+  useEffect(() => {
+    setCurrentPage(1)
+  }, [selectedCategory, selectedVenue, selectedMonth, selectedYear])
+
   const nextMonth = () => {
     let newMonth = currentMonth
     let newYear = currentYear
@@ -260,8 +273,7 @@ export default function CalendarPage() {
         </div>
 
         {/* Filters */}
-        <Card className={`mb-6 sm:mb-8 shadow-lg ${showFilters ? 'block' : 'hidden lg:block'}`}>
-          <CardContent className="pt-4 sm:pt-6">
+        <div className={`bg-white rounded-lg shadow-lg mb-6 sm:mb-8 p-4 sm:p-6 ${showFilters ? 'block' : 'hidden lg:block'}`}>
             <div className="flex flex-col sm:flex-row sm:flex-wrap items-stretch sm:items-center gap-3 sm:gap-4">
               <div className="flex items-center gap-2 mb-2 sm:mb-0">
                 <Filter className="w-4 h-4 sm:w-5 sm:h-5 text-slate-600" />
@@ -312,8 +324,7 @@ export default function CalendarPage() {
                 </SelectContent>
               </Select>
             </div>
-          </CardContent>
-        </Card>
+        </div>
 
         {/* Calendar Header */}
         <div className="flex items-center justify-between mb-6 sm:mb-8 gap-2 sm:gap-4">
@@ -336,88 +347,157 @@ export default function CalendarPage() {
 
         {/* Course Events List */}
         {loading ? (
-          <Card className="text-center py-8 sm:py-12">
-            <CardContent>
-              <Loader2 className="w-12 h-12 sm:w-16 sm:h-16 text-blue-600 mx-auto mb-4 animate-spin" />
-              <h3 className="text-lg sm:text-xl font-semibold text-slate-900 mb-2">Loading courses...</h3>
-              <p className="text-sm sm:text-base text-slate-600">Please wait while we fetch the latest training schedules.</p>
-            </CardContent>
-          </Card>
-        ) : filteredEvents.length > 0 ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
-            {filteredEvents.map((event) => (
-              <Card key={event.id} className="hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
-                <CardContent className="pt-4 sm:pt-6">
-                  <div className="flex items-start justify-between mb-3 sm:mb-4 gap-2">
-                    <Badge variant="secondary" className="text-xs">{event.category}</Badge>
-                    <div className="text-right">
-                      <div className="text-lg sm:text-xl md:text-2xl font-bold text-slate-900">${event.price.toLocaleString()}</div>
-                      {event.seats !== undefined && (
-                        <div className="text-xs text-slate-500">{event.seats} seats left</div>
-                      )}
-                    </div>
-                  </div>
-
-                  <Link href={`/courses/${event.slug}`}>
-                    <h3 className="text-base sm:text-lg font-bold text-slate-900 mb-2 sm:mb-3 line-clamp-2 hover:text-blue-600 transition-colors cursor-pointer">
-                      {event.title}
-                    </h3>
-                  </Link>
-
-                  <div className="space-y-2 mb-3 sm:mb-4 text-xs sm:text-sm text-slate-600">
-                    <div className="flex items-center gap-2">
-                      <CalendarIcon className="w-3 h-3 sm:w-4 sm:h-4 shrink-0" />
-                      <span className="break-words">{event.date.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Clock className="w-3 h-3 sm:w-4 sm:h-4 shrink-0" />
-                      <span>{event.duration}</span>
-                    </div>
-                    {event.venue && (
-                      <div className="flex items-center gap-2">
-                        <MapPin className="w-3 h-3 sm:w-4 sm:h-4 shrink-0" />
-                        <span className="break-words">{event.venue}</span>
-                      </div>
-                    )}
-                  </div>
-
-                  <div className="flex gap-2 pt-4 border-t">
-                    <Button asChild size="sm" className="flex-1 bg-gradient-to-r from-[#0A3049] to-[#0A3049] text-white">
-                      <Link href={`/courses/${event.slug}`}>
-                        View Details
-                      </Link>
-                    </Button>
-                    <Button asChild size="sm" variant="outline">
-                      <Link href={`/courses/${event.slug}`}>
-                        Register
-                      </Link>
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
+          <div className="bg-white rounded-lg shadow-lg text-center py-8 sm:py-12">
+            <Loader2 className="w-12 h-12 sm:w-16 sm:h-16 text-blue-600 mx-auto mb-4 animate-spin" />
+            <h3 className="text-lg sm:text-xl font-semibold text-slate-900 mb-2">Loading courses...</h3>
+            <p className="text-sm sm:text-base text-slate-600">Please wait while we fetch the latest training schedules.</p>
           </div>
-        ) : (
-          <Card className="text-center py-8 sm:py-12">
-            <CardContent>
-              <CalendarIcon className="w-12 h-12 sm:w-16 sm:h-16 text-slate-400 mx-auto mb-4" />
-              <h3 className="text-lg sm:text-xl font-semibold text-slate-900 mb-2">No courses scheduled</h3>
-              <p className="text-sm sm:text-base text-slate-600 mb-4 sm:mb-6 px-4">
-                There are no courses scheduled for {months[currentMonth]} {currentYear} with the selected filters.
-              </p>
-              <Button 
-                onClick={() => {
-                  setSelectedCategory('all')
-                  setSelectedVenue('all')
-                  setSelectedMonth(new Date().getMonth().toString())
-                  setSelectedYear(new Date().getFullYear().toString())
-                }}
-                className="text-sm sm:text-base"
+        ) : filteredEvents.length > 0 ? (
+          <div className="overflow-x-auto bg-white rounded-lg shadow-lg">
+            <table className="w-full border-collapse min-w-[800px]">
+              <thead className="bg-gradient-to-r from-[#0A3049] to-[#0A3049] text-white">
+                <tr>
+                  <th className="px-3 sm:px-4 py-3 text-left text-xs sm:text-sm font-semibold">Date</th>
+                  <th className="px-3 sm:px-4 py-3 text-left text-xs sm:text-sm font-semibold">Course Title</th>
+                  <th className="px-3 sm:px-4 py-3 text-left text-xs sm:text-sm font-semibold hidden sm:table-cell">Category</th>
+                  <th className="px-3 sm:px-4 py-3 text-left text-xs sm:text-sm font-semibold hidden md:table-cell">Duration</th>
+                  <th className="px-3 sm:px-4 py-3 text-left text-xs sm:text-sm font-semibold hidden lg:table-cell">Venue</th>
+                  <th className="px-3 sm:px-4 py-3 text-left text-xs sm:text-sm font-semibold">Price</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-200">
+                {paginatedEvents.map((event) => (
+                  <tr 
+                    key={event.id} 
+                    className="hover:bg-slate-50 transition-colors cursor-pointer"
+                    onClick={() => router.push(`/courses/${event.slug}`)}
+                  >
+                    <td className="px-3 sm:px-4 py-3 sm:py-4 text-xs sm:text-sm">
+                      <div className="flex items-center gap-1 sm:gap-2">
+                        <CalendarIcon className="w-3 h-3 sm:w-4 sm:h-4 text-slate-500 shrink-0" />
+                        <span className="text-slate-900 font-medium whitespace-nowrap">
+                          {event.date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                        </span>
+                      </div>
+                    </td>
+                    <td className="px-3 sm:px-4 py-3 sm:py-4">
+                      <div className="text-xs sm:text-sm font-semibold text-slate-900 hover:text-blue-600 transition-colors line-clamp-2">
+                        {event.title}
+                      </div>
+                      <div className="sm:hidden mt-1">
+                        <Badge variant="secondary" className="text-xs">{event.category}</Badge>
+                      </div>
+                    </td>
+                    <td className="px-3 sm:px-4 py-3 sm:py-4 hidden sm:table-cell">
+                      <Badge variant="secondary" className="text-xs">{event.category}</Badge>
+                    </td>
+                    <td className="px-3 sm:px-4 py-3 sm:py-4 text-xs sm:text-sm text-slate-600 hidden md:table-cell">
+                      <div className="flex items-center gap-1 sm:gap-2">
+                        <Clock className="w-3 h-3 sm:w-4 sm:h-4 text-slate-500 shrink-0" />
+                        <span>{event.duration}</span>
+                      </div>
+                    </td>
+                    <td className="px-3 sm:px-4 py-3 sm:py-4 text-xs sm:text-sm text-slate-600 hidden lg:table-cell">
+                      {event.venue ? (
+                        <div className="flex items-center gap-1 sm:gap-2">
+                          <MapPin className="w-3 h-3 sm:w-4 sm:h-4 text-slate-500 shrink-0" />
+                          <span className="break-words">{event.venue}</span>
+                        </div>
+                      ) : (
+                        <span className="text-slate-400">N/A</span>
+                      )}
+                    </td>
+                    <td className="px-3 sm:px-4 py-3 sm:py-4 text-xs sm:text-sm">
+                      <span className="font-bold text-slate-900">${event.price.toLocaleString()}</span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        ) : null}
+
+        {/* Pagination Controls */}
+        {!loading && filteredEvents.length > 0 && totalPages > 1 && (
+          <div className="mt-6 flex flex-col sm:flex-row items-center justify-between gap-4 bg-white rounded-lg shadow-lg p-4">
+            <div className="text-sm text-slate-600">
+              Showing <span className="font-semibold text-slate-900">{startIndex + 1}</span> to{' '}
+              <span className="font-semibold text-slate-900">{Math.min(endIndex, filteredEvents.length)}</span> of{' '}
+              <span className="font-semibold text-slate-900">{filteredEvents.length}</span> courses
+            </div>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                disabled={currentPage === 1}
+                className="text-xs sm:text-sm"
               >
-                Clear Filters
+                <ChevronLeft className="w-3 h-3 sm:w-4 sm:h-4 mr-1" />
+                Previous
               </Button>
-            </CardContent>
-          </Card>
+              <div className="flex items-center gap-1">
+                {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                  let pageNum
+                  if (totalPages <= 5) {
+                    pageNum = i + 1
+                  } else if (currentPage <= 3) {
+                    pageNum = i + 1
+                  } else if (currentPage >= totalPages - 2) {
+                    pageNum = totalPages - 4 + i
+                  } else {
+                    pageNum = currentPage - 2 + i
+                  }
+                  return (
+                    <Button
+                      key={pageNum}
+                      variant={currentPage === pageNum ? "default" : "outline"}
+                      size="sm"
+                      onClick={() => setCurrentPage(pageNum)}
+                      className={`text-xs sm:text-sm min-w-[2rem] ${
+                        currentPage === pageNum 
+                          ? 'bg-gradient-to-r from-[#0A3049] to-[#0A3049] text-white' 
+                          : ''
+                      }`}
+                    >
+                      {pageNum}
+                    </Button>
+                  )
+                })}
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                disabled={currentPage === totalPages}
+                className="text-xs sm:text-sm"
+              >
+                Next
+                <ChevronRight className="w-3 h-3 sm:w-4 sm:h-4 ml-1" />
+              </Button>
+            </div>
+          </div>
+        )}
+
+        {!loading && filteredEvents.length === 0 && (
+          <div className="bg-white rounded-lg shadow-lg text-center py-8 sm:py-12">
+            <CalendarIcon className="w-12 h-12 sm:w-16 sm:h-16 text-slate-400 mx-auto mb-4" />
+            <h3 className="text-lg sm:text-xl font-semibold text-slate-900 mb-2">No courses scheduled</h3>
+            <p className="text-sm sm:text-base text-slate-600 mb-4 sm:mb-6 px-4">
+              There are no courses scheduled for {months[currentMonth]} {currentYear} with the selected filters.
+            </p>
+            <Button 
+              onClick={() => {
+                setSelectedCategory('all')
+                setSelectedVenue('all')
+                setSelectedMonth(new Date().getMonth().toString())
+                setSelectedYear(new Date().getFullYear().toString())
+              }}
+              className="text-sm sm:text-base"
+            >
+              Clear Filters
+            </Button>
+          </div>
         )}
       </div>
     </div>
