@@ -1,99 +1,65 @@
 'use client'
 
-import { Award, CheckCircle2, GraduationCap, Shield, FileText, Star, Users, TrendingUp } from 'lucide-react'
+import { useState, useEffect } from 'react'
+import { Award, GraduationCap, Shield, FileText, Star, Users, TrendingUp, Loader2, AlertCircle } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import Link from 'next/link'
+import Image from 'next/image'
 
-const certificates = [
-  {
-    title: 'CPD Certified Training Courses',
-    description: 'Continuous Professional Development certified courses recognized globally',
-    icon: Award,
-    color: 'text-blue-600',
-    bgColor: 'bg-blue-50',
-    borderColor: 'border-blue-200',
-    benefits: [
-      'Globally recognized certification',
-      'CPD points awarded',
-      'Industry-standard training',
-      'Professional development credits',
-    ],
-  },
-  {
-    title: 'ILM Recognised Training Courses',
-    description: 'Institute of Leadership & Management recognized programs',
-    icon: GraduationCap,
-    color: 'text-purple-600',
-    bgColor: 'bg-purple-50',
-    borderColor: 'border-purple-200',
-    benefits: [
-      'ILM certification upon completion',
-      'Leadership skills development',
-      'Management competency enhancement',
-      'Internationally accredited',
-    ],
-  },
-  {
-    title: 'PMI Registered Training Courses',
-    description: 'Project Management Institute registered courses for PMP certification',
-    icon: FileText,
-    color: 'text-emerald-600',
-    bgColor: 'bg-emerald-50',
-    borderColor: 'border-emerald-200',
-    benefits: [
-      'PMI PDUs awarded',
-      'PMP exam preparation',
-      'Project management expertise',
-      'Global PMI recognition',
-    ],
-  },
-  {
-    title: 'HRCI Pre-approved Training Courses',
-    description: 'Human Resource Certification Institute pre-approved programs',
-    icon: Users,
-    color: 'text-orange-600',
-    bgColor: 'bg-orange-50',
-    borderColor: 'border-orange-200',
-    benefits: [
-      'HRCI recertification credits',
-      'HR professional development',
-      'Certified HR programs',
-      'Industry best practices',
-    ],
-  },
-  {
-    title: 'NASBA Approved Training Courses',
-    description: 'National Association of State Boards of Accountancy approved courses',
-    icon: Shield,
-    color: 'text-red-600',
-    bgColor: 'bg-red-50',
-    borderColor: 'border-red-200',
-    benefits: [
-      'NASBA CPE credits',
-      'Accounting professional development',
-      'CPA continuing education',
-      'Financial expertise enhancement',
-    ],
-  },
-  {
-    title: 'ISO Training Courses',
-    description: 'International Organization for Standardization training programs',
-    icon: Star,
-    color: 'text-indigo-600',
-    bgColor: 'bg-indigo-50',
-    borderColor: 'border-indigo-200',
-    benefits: [
-      'ISO certification knowledge',
-      'Quality management systems',
-      'International standards compliance',
-      'Organizational excellence',
-    ],
-  },
+interface Certificate {
+  id: string
+  name: string
+  description: string | null
+  imageUrl: string | null
+  status: string
+  createdAt: string
+  updatedAt: string
+}
+
+// Color and icon themes for certificates (cycling through)
+const colorThemes = [
+  { color: 'text-blue-600', bgColor: 'bg-blue-50', borderColor: 'border-blue-200', icon: Award },
+  { color: 'text-purple-600', bgColor: 'bg-purple-50', borderColor: 'border-purple-200', icon: GraduationCap },
+  { color: 'text-emerald-600', bgColor: 'bg-emerald-50', borderColor: 'border-emerald-200', icon: FileText },
+  { color: 'text-orange-600', bgColor: 'bg-orange-50', borderColor: 'border-orange-200', icon: Users },
+  { color: 'text-red-600', bgColor: 'bg-red-50', borderColor: 'border-red-200', icon: Shield },
+  { color: 'text-indigo-600', bgColor: 'bg-indigo-50', borderColor: 'border-indigo-200', icon: Star },
 ]
 
 export default function CertificatesPage() {
+  const [certificates, setCertificates] = useState<Certificate[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    const fetchCertificates = async () => {
+      try {
+        setLoading(true)
+        setError(null)
+        const response = await fetch('/api/certificates')
+        const result = await response.json()
+
+        if (!response.ok) {
+          throw new Error(result.error || 'Failed to fetch certificates')
+        }
+
+        setCertificates(result.data || [])
+      } catch (err) {
+        console.error('Error fetching certificates:', err)
+        setError(err instanceof Error ? err.message : 'Failed to load certificates')
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchCertificates()
+  }, [])
+
+  const getTheme = (index: number) => {
+    return colorThemes[index % colorThemes.length]
+  }
   return (
     <div className="min-h-screen bg-gradient-to-b from-slate-50 to-white">
       {/* Hero Section */}
@@ -116,44 +82,74 @@ export default function CertificatesPage() {
 
       {/* Certificates Grid */}
       <div className="max-w-7xl mx-auto px-6 py-16">
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {certificates.map((certificate, index) => {
-            const IconComponent = certificate.icon
-            return (
-              <Card
-                key={index}
-                className={`border-l-4 ${certificate.borderColor} shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1`}
-              >
-                <CardContent className="pt-6">
-                  <div className={`inline-flex p-3 rounded-xl ${certificate.bgColor} mb-4`}>
-                    <IconComponent className={`w-8 h-8 ${certificate.color}`} />
-                  </div>
-                  <h3 className="text-xl font-bold text-slate-900 mb-2">{certificate.title}</h3>
-                  <p className="text-slate-600 mb-4 text-sm leading-relaxed">{certificate.description}</p>
-
-                  <div className="space-y-2 mb-6">
-                    {certificate.benefits.map((benefit, benefitIndex) => (
-                      <div key={benefitIndex} className="flex items-start gap-2">
-                        <CheckCircle2 className={`w-4 h-4 ${certificate.color} mt-0.5 shrink-0`} />
-                        <span className="text-sm text-slate-700">{benefit}</span>
+        {loading ? (
+          <div className="flex items-center justify-center py-20">
+            <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
+            <span className="ml-3 text-slate-600">Loading certificates...</span>
+          </div>
+        ) : error ? (
+          <div className="flex flex-col items-center justify-center py-20">
+            <AlertCircle className="w-12 h-12 text-red-500 mb-4" />
+            <p className="text-lg text-slate-700 mb-2">Failed to load certificates</p>
+            <p className="text-sm text-slate-500">{error}</p>
+            <Button
+              onClick={() => window.location.reload()}
+              className="mt-4"
+              variant="outline"
+            >
+              Try Again
+            </Button>
+          </div>
+        ) : certificates.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-20">
+            <Award className="w-12 h-12 text-slate-400 mb-4" />
+            <p className="text-lg text-slate-700">No certificates available at the moment</p>
+            <p className="text-sm text-slate-500 mt-2">Please check back later</p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 lg:gap-12">
+            {certificates.map((certificate, index) => {
+              const theme = getTheme(index)
+              const IconComponent = theme.icon
+              return (
+                <Link
+                  key={certificate.id}
+                  href={`/courses?certificate=${encodeURIComponent(certificate.id)}`}
+                  className="flex gap-6 items-start p-6 rounded-lg border border-slate-200 bg-white hover:shadow-lg hover:border-blue-300 transition-all duration-300 cursor-pointer group"
+                >
+                  {/* Logo/Image Section */}
+                  <div className="flex-shrink-0">
+                    {certificate.imageUrl ? (
+                      <div className="w-24 h-24 rounded-full overflow-hidden bg-slate-100 border-2 border-slate-200 flex items-center justify-center group-hover:border-blue-300 transition-colors">
+                        <Image
+                          src={certificate.imageUrl}
+                          alt={certificate.name}
+                          width={96}
+                          height={96}
+                          className="w-full h-full object-cover"
+                        />
                       </div>
-                    ))}
+                    ) : (
+                      <div className={`w-24 h-24 rounded-full ${theme.bgColor} border-2 ${theme.borderColor} flex items-center justify-center group-hover:border-blue-300 transition-colors`}>
+                        <IconComponent className={`w-12 h-12 ${theme.color}`} />
+                      </div>
+                    )}
                   </div>
 
-                  <Button
-                    asChild
-                    variant="outline"
-                    className={`w-full border-2 ${certificate.borderColor} ${certificate.color} hover:${certificate.bgColor}`}
-                  >
-                    <Link href="/courses">
-                      Browse Courses
-                    </Link>
-                  </Button>
-                </CardContent>
-              </Card>
-            )
-          })}
-        </div>
+                  {/* Content Section */}
+                  <div className="flex-1 min-w-0">
+                    <h3 className="text-2xl font-bold text-slate-900 mb-3 leading-tight group-hover:text-blue-600 transition-colors">
+                      {certificate.name}
+                    </h3>
+                    {certificate.description && (
+                      <p className="text-slate-600 text-lg leading-relaxed">{certificate.description}</p>
+                    )}
+                  </div>
+                </Link>
+              )
+            })}
+          </div>
+        )}
       </div>
 
       {/* Why Get Certified Section */}

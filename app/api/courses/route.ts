@@ -82,6 +82,7 @@ export async function GET(request: NextRequest) {
             duration: true,
             description: true,
             cardImageUrl: true,
+            certificateIds: true,
           },
         },
       },
@@ -136,6 +137,7 @@ export async function GET(request: NextRequest) {
         featured: false,
         trending: false,
         imageUrl: program.cardImageUrl,
+        certificateIds: program.certificateIds || [],
       })
     }
 

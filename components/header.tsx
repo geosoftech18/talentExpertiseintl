@@ -209,7 +209,7 @@ export default function Header() {
                           className="block px-4 py-3 rounded-lg hover:bg-slate-200 transition-colors text-slate-700 hover:text-[#0A3049] font-medium"
                           onClick={() => setOpenDropdown(null)}
                         >
-                          Services
+                         Our Services
                         </Link>
                         <Link
                           href="/coaching"

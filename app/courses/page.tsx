@@ -27,12 +27,21 @@ interface CourseListItem {
   featured?: boolean
   trending?: boolean
   imageUrl?: string | null
+  certificateIds?: string[]
   // For display purposes
   venue?: string
   startDate?: string
   endDate?: string
   seats?: number
   level?: string
+}
+
+interface Certificate {
+  id: string
+  name: string
+  description: string | null
+  imageUrl: string | null
+  status: string
 }
 
 
@@ -49,10 +58,13 @@ function CourseFinderPageContent() {
   const [sortByYear, setSortByYear] = useState<boolean>(false)
   const [selectedYear, setSelectedYear] = useState<string>('all')
   const [selectedMonth, setSelectedMonth] = useState<string>('all')
+  const [selectedCertificate, setSelectedCertificate] = useState<string>('all')
   const [currentPage, setCurrentPage] = useState(1)
   const coursesPerPage = 12
   const [allCourses, setAllCourses] = useState<CourseListItem[]>([])
+  const [availableCertificates, setAvailableCertificates] = useState<Certificate[]>([])
   const [loading, setLoading] = useState(true)
+  const [loadingCertificates, setLoadingCertificates] = useState(true)
   const [showRegistration, setShowRegistration] = useState(false)
   const [selectedCourse, setSelectedCourse] = useState<Course | null>(null)
   const [selectedSchedules, setSelectedSchedules] = useState<CourseSchedule[]>([])
@@ -62,6 +74,8 @@ function CourseFinderPageContent() {
   // Cache key for sessionStorage
   const CACHE_KEY = 'courses_cache'
   const CACHE_TIMESTAMP_KEY = 'courses_cache_timestamp'
+  const CACHE_VERSION_KEY = 'courses_cache_version'
+  const CACHE_VERSION = '2' // Increment when data structure changes (e.g., adding certificateIds)
   const CACHE_DURATION = 5 * 60 * 1000 // 5 minutes
 
   // Fetch courses from database (schedules are already included in the response)
@@ -74,13 +88,14 @@ function CourseFinderPageContent() {
         if (typeof window !== 'undefined') {
           const cachedData = sessionStorage.getItem(CACHE_KEY)
           const cacheTimestamp = sessionStorage.getItem(CACHE_TIMESTAMP_KEY)
+          const cacheVersion = sessionStorage.getItem(CACHE_VERSION_KEY)
           
           if (cachedData && cacheTimestamp) {
             const timestamp = parseInt(cacheTimestamp)
             const now = Date.now()
             
-            // Use cached data if it's still fresh (less than 5 minutes old)
-            if (now - timestamp < CACHE_DURATION) {
+            // Use cached data if it's still fresh (less than 5 minutes old) and version matches
+            if (now - timestamp < CACHE_DURATION && cacheVersion === CACHE_VERSION) {
               const parsedData = JSON.parse(cachedData)
               if (!cancelled) {
                 setAllCourses(parsedData)
@@ -106,6 +121,7 @@ function CourseFinderPageContent() {
           if (typeof window !== 'undefined') {
             sessionStorage.setItem(CACHE_KEY, JSON.stringify(coursesResult.data))
             sessionStorage.setItem(CACHE_TIMESTAMP_KEY, Date.now().toString())
+            sessionStorage.setItem(CACHE_VERSION_KEY, CACHE_VERSION)
           }
         }
       } catch (error) {
@@ -139,11 +155,34 @@ function CourseFinderPageContent() {
     }
   }, [])
 
-  // Read venue, category, and search from URL params and update when they change
+  // Fetch certificates from database
+  useEffect(() => {
+    const fetchCertificates = async () => {
+      try {
+        setLoadingCertificates(true)
+        const response = await fetch('/api/certificates')
+        const result = await response.json()
+        
+        if (result.success) {
+          setAvailableCertificates(result.data || [])
+        }
+      } catch (error) {
+        console.error('Error fetching certificates:', error)
+        setAvailableCertificates([])
+      } finally {
+        setLoadingCertificates(false)
+      }
+    }
+
+    fetchCertificates()
+  }, [])
+
+  // Read venue, category, search, and certificate from URL params and update when they change
   useEffect(() => {
     const venueParam = searchParams.get('venue')
     const categoryParam = searchParams.get('category')
     const searchParam = searchParams.get('search')
+    const certificateParam = searchParams.get('certificate')
     
     // Update venue filter from URL param
     if (venueParam) {
@@ -174,6 +213,16 @@ function CourseFinderPageContent() {
     } else {
       // Reset search if no search param
       setSearchTerm('')
+    }
+    
+    // Update certificate filter from URL param
+    if (certificateParam) {
+      const decodedCertificate = decodeURIComponent(certificateParam)
+      setSelectedCertificate(decodedCertificate)
+      setCurrentPage(1)
+    } else {
+      // Reset to 'all' if no certificate param
+      setSelectedCertificate('all')
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams]) // Run when searchParams change
@@ -278,6 +327,25 @@ function CourseFinderPageContent() {
       })
     }
 
+     // Certificate filter
+     if (selectedCertificate !== 'all') {
+      filtered = filtered.filter(course => {
+        // If course has no certificateIds, exclude it when a specific certificate is selected
+        if (!course.certificateIds || !Array.isArray(course.certificateIds) || course.certificateIds.length === 0) {
+          return false
+        }
+        // Convert all IDs to strings for comparison (MongoDB ObjectIds may be strings or objects)
+        const certificateIdsAsStrings = course.certificateIds.map((id: any) => {
+          // Handle both string IDs and ObjectId objects
+          if (typeof id === 'string') return id
+          if (id && typeof id === 'object' && id.toString) return id.toString()
+          return String(id)
+        })
+        const selectedCertId = String(selectedCertificate)
+        return certificateIdsAsStrings.some((id: string) => id === selectedCertId)
+      })
+    }
+
     // Duration filter
     if (selectedDuration !== 'all') {
       const days = parseInt(selectedDuration)
@@ -306,6 +374,8 @@ function CourseFinderPageContent() {
         return courseMonth === month
       })
     }
+
+   
 
     // Sort based on selected option
     filtered.sort((a, b) => {
@@ -357,7 +427,7 @@ function CourseFinderPageContent() {
     })
 
     return filtered
-  }, [searchTerm, selectedCategory, selectedVenue, selectedDuration, selectedYear, selectedMonth, sortBy, sortByMonth, sortByYear, allCourses])
+  }, [searchTerm, selectedCategory, selectedVenue, selectedDuration, selectedYear, selectedMonth, selectedCertificate, sortBy, sortByMonth, sortByYear, allCourses])
 
   const totalPages = Math.ceil(filteredCourses.length / coursesPerPage)
   const paginatedCourses = filteredCourses.slice(
@@ -372,6 +442,7 @@ function CourseFinderPageContent() {
     setSelectedDuration('all')
     setSelectedYear('all')
     setSelectedMonth('all')
+    setSelectedCertificate('all')
     setSortBy('relevance')
     setSortByMonth(false)
     setSortByYear(false)
@@ -384,6 +455,7 @@ function CourseFinderPageContent() {
     selectedDuration !== 'all',
     selectedYear !== 'all',
     selectedMonth !== 'all',
+    selectedCertificate !== 'all',
     sortBy !== 'relevance',
     sortByMonth,
     sortByYear,
@@ -555,7 +627,29 @@ function CourseFinderPageContent() {
                     </Select>
                   </div>
 
-                 
+                   {/* Certificate Filter */}
+                   <div className="space-y-3">
+                      <Label className="text-xs sm:text-sm font-semibold text-slate-700 mb-2 block">
+                        Filter by Certificate
+                      </Label>
+                      <Select 
+                        value={selectedCertificate} 
+                        onValueChange={(value) => { setSelectedCertificate(value); setCurrentPage(1) }}
+                        disabled={loadingCertificates}
+                      >
+                        <SelectTrigger className="w-full h-9 sm:h-10">
+                          <SelectValue placeholder={loadingCertificates ? "Loading..." : "All Certificates"} />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="all">All Certificates</SelectItem>
+                          {availableCertificates.map((certificate) => (
+                            <SelectItem key={certificate.id} value={certificate.id}>
+                              {certificate.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
 
                   {/* Sort Filter */}
                   <div className="space-y-3">
@@ -596,6 +690,8 @@ function CourseFinderPageContent() {
                         </SelectContent>
                       </Select>
                     </div>
+
+                  
 
                     {/* Additional Sort Options */}
                     {/* <div className="space-y-2">

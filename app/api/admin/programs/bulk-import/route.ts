@@ -18,15 +18,17 @@ export async function POST(request: NextRequest) {
     // Read Excel file
     const arrayBuffer = await file.arrayBuffer()
     const workbook = XLSX.read(arrayBuffer, { type: 'array' })
-    const sheetName = workbook.SheetNames[0]
-    const worksheet = workbook.Sheets[sheetName]
-    const data = XLSX.utils.sheet_to_json(worksheet, { raw: false })
-
-    if (!data || data.length === 0) {
-      return NextResponse.json(
-        { success: false, error: 'Excel file is empty' },
-        { status: 400 }
-      )
+    
+    // Fetch all active certificates to match with sheet names
+    const allCertificates = await prisma.certificate.findMany({
+      where: { status: 'Active' },
+      select: { id: true, name: true },
+    })
+    
+    // Create a map of certificate names to IDs (case-insensitive)
+    const certificateMap = new Map<string, string>()
+    for (const cert of allCertificates) {
+      certificateMap.set(cert.name.toLowerCase().trim(), cert.id)
     }
 
     // Process each row
@@ -35,97 +37,128 @@ export async function POST(request: NextRequest) {
       errors: [] as any[],
     }
 
-    for (let i = 0; i < data.length; i++) {
-      const row = data[i] as any
-      try {
-        // Extract data from Excel row (case-insensitive column matching)
-        const refCode = findColumnValue(row, ['refcode', 'reference code', 'reference_code', 'code'])
-        const category = findColumnValue(row, ['category', 'cat'])
-        const courseName = findColumnValue(row, ['course name', 'course_name', 'title', 'name', 'program name', 'program_name'])
-        const dateStr = findColumnValue(row, ['date', 'from date', 'from_date', 'start date', 'start_date'])
+    // Process all sheets in the workbook
+    for (const sheetName of workbook.SheetNames) {
+      const worksheet = workbook.Sheets[sheetName]
+      const data = XLSX.utils.sheet_to_json(worksheet, { raw: false })
 
-        // Validate required fields
-        if (!refCode || !category || !courseName) {
-          results.errors.push({
-            row: i + 2, // +2 because Excel rows start at 1 and we have header
-            error: `Missing required fields: ${!refCode ? 'Reference Code' : ''} ${!category ? 'Category' : ''} ${!courseName ? 'Course Name' : ''}`.trim(),
-            data: row,
+      if (!data || data.length === 0) {
+        continue // Skip empty sheets
+      }
+
+      // Try to match sheet name to a certificate
+      const sheetNameLower = sheetName.toLowerCase().trim()
+      const matchedCertificateId = certificateMap.get(sheetNameLower)
+      const certificateIds: string[] = matchedCertificateId ? [matchedCertificateId] : []
+
+      // Log certificate matching for debugging
+      if (matchedCertificateId) {
+        console.log(`Sheet "${sheetName}" matched to certificate ID: ${matchedCertificateId}`)
+      } else {
+        console.log(`Sheet "${sheetName}" - no matching certificate found`)
+      }
+
+      for (let i = 0; i < data.length; i++) {
+        const row = data[i] as any
+        try {
+          // Extract data from Excel row (case-insensitive column matching)
+          const refCode = findColumnValue(row, ['refcode', 'reference code', 'reference_code', 'code'])
+          const category = findColumnValue(row, ['category', 'cat'])
+          const courseName = findColumnValue(row, ['course name', 'course_name', 'title', 'name', 'program name', 'program_name'])
+          const dateStr = findColumnValue(row, ['date', 'from date', 'from_date', 'start date', 'start_date'])
+
+          // Validate required fields
+          if (!refCode || !category || !courseName) {
+            results.errors.push({
+              row: i + 2, // +2 because Excel rows start at 1 and we have header
+              sheet: sheetName,
+              error: `Missing required fields: ${!refCode ? 'Reference Code' : ''} ${!category ? 'Category' : ''} ${!courseName ? 'Course Name' : ''}`.trim(),
+              data: row,
+            })
+            continue
+          }
+
+          // Check if reference code already exists
+          const existingProgram = await prisma.program.findUnique({
+            where: { refCode: String(refCode).trim() },
           })
-          continue
-        }
 
-        // Check if reference code already exists
-        const existingProgram = await prisma.program.findUnique({
-          where: { refCode: String(refCode).trim() },
-        })
+          if (existingProgram) {
+            results.errors.push({
+              row: i + 2,
+              sheet: sheetName,
+              error: `Reference code "${refCode}" already exists`,
+              data: row,
+            })
+            continue
+          }
 
-        if (existingProgram) {
+          // Calculate duration from date
+          let duration = '5 Days' // Default
+          if (dateStr) {
+            duration = calculateDuration(dateStr)
+          }
+
+          // Generate course content based on course name
+          const generatedContent = generateCourseContent(String(courseName).trim(), String(category).trim(), duration)
+
+          // Create program
+          const program = await prisma.program.create({
+            data: {
+              refCode: String(refCode).trim(),
+              programName: String(courseName).trim(),
+              shortDescription: generatedContent.shortDescription,
+              category: String(category).trim(),
+              type: ['Public Program'], // Default type
+              status: 'Published', // Set to Published as requested
+              duration: duration,
+              targetAudience: generatedContent.targetAudience,
+              learningObjectives: generatedContent.learningObjectives,
+              trainingMethodology: generatedContent.trainingMethodology,
+              introduction: generatedContent.introduction,
+              description: generatedContent.description,
+              organisationalImpact: generatedContent.organisationalImpact,
+              personalImpact: generatedContent.personalImpact,
+              whoShouldAttend: generatedContent.whoShouldAttend,
+              certificateIds: certificateIds, // Link certificates based on sheet name
+              courseOutline: {
+                create: generatedContent.courseOutline,
+              },
+              faqs: {
+                create: generatedContent.faqs,
+              },
+            },
+            include: {
+              courseOutline: true,
+              faqs: true,
+            },
+          })
+
+          results.success.push({
+            row: i + 2,
+            sheet: sheetName,
+            refCode: program.refCode,
+            programName: program.programName,
+            certificateLinked: certificateIds.length > 0,
+          })
+        } catch (error: any) {
           results.errors.push({
             row: i + 2,
-            error: `Reference code "${refCode}" already exists`,
+            sheet: sheetName,
+            error: error.message || 'Unknown error',
             data: row,
           })
-          continue
         }
+      } // End of row loop
+    } // End of sheet loop
 
-        // Calculate duration from date
-        let duration = '5 Days' // Default
-        if (dateStr) {
-          duration = calculateDuration(dateStr)
-        }
-
-        // Generate course content based on course name
-        const generatedContent = generateCourseContent(String(courseName).trim(), String(category).trim(), duration)
-
-        // Create program
-        const program = await prisma.program.create({
-          data: {
-            refCode: String(refCode).trim(),
-            programName: String(courseName).trim(),
-            shortDescription: generatedContent.shortDescription,
-            category: String(category).trim(),
-            type: ['Public Program'], // Default type
-            status: 'Published', // Set to Published as requested
-            duration: duration,
-            targetAudience: generatedContent.targetAudience,
-            learningObjectives: generatedContent.learningObjectives,
-            trainingMethodology: generatedContent.trainingMethodology,
-            introduction: generatedContent.introduction,
-            description: generatedContent.description,
-            organisationalImpact: generatedContent.organisationalImpact,
-            personalImpact: generatedContent.personalImpact,
-            whoShouldAttend: generatedContent.whoShouldAttend,
-            courseOutline: {
-              create: generatedContent.courseOutline,
-            },
-            faqs: {
-              create: generatedContent.faqs,
-            },
-          },
-          include: {
-            courseOutline: true,
-            faqs: true,
-          },
-        })
-
-        results.success.push({
-          row: i + 2,
-          refCode: program.refCode,
-          programName: program.programName,
-        })
-      } catch (error: any) {
-        results.errors.push({
-          row: i + 2,
-          error: error.message || 'Unknown error',
-          data: row,
-        })
-      }
-    }
+    // Calculate total rows processed across all sheets
+    const totalRows = results.success.length + results.errors.length
 
     return NextResponse.json({
       success: true,
       results: {
-        total: data.length,
+        total: totalRows,
         successful: results.success.length,
         failed: results.errors.length,
         success: results.success,

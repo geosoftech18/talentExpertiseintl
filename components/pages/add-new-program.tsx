@@ -152,64 +152,67 @@ export default function AddNewProgram({ onBack, editId }: { onBack?: () => void;
       const loadProgram = async () => {
         try {
           setLoadingData(true)
-          const response = await fetch('/api/admin/programs?includeDetails=true')
+          const response = await fetch(`/api/admin/programs/${editId}`)
           const result = await response.json()
           
-          if (result.success) {
-            const program = result.data.find((p: any) => p.id === editId)
-            if (program) {
-              setFormData({
-                refCode: program.refCode || "",
-                programName: program.programName || "",
-                shortDescription: program.shortDescription || "",
-                category: program.category || "",
-                type: program.type || [],
-                status: program.status || "Draft",
-                duration: program.duration || "",
-                targetAudience: program.targetAudience || "",
-                learningObjectives: program.learningObjectives || "",
-                trainingMethodology: program.trainingMethodology || "",
-                introduction: program.introduction || "",
-                description: program.description || "",
-                organisationalImpact: program.organisationalImpact || "",
-                personalImpact: program.personalImpact || "",
-                whoShouldAttend: program.whoShouldAttend || "",
-              })
-              
-              if (program.mainCourseImageUrl) {
-                setMainCourseImagePreview(program.mainCourseImageUrl)
-              }
-              if (program.cardImageUrl) {
-                setCardImagePreview(program.cardImageUrl)
-              }
-              
-              // Load course outline
-              if (program.courseOutline && program.courseOutline.length > 0) {
-                setCourseOutline(program.courseOutline.map((item: any, index: number) => ({
-                  id: String(index + 1),
-                  day: item.day || `Day ${index + 1}`,
-                  title: item.title || "",
-                  content: item.content || "",
-                })))
-              }
-              
-              // Load certificate IDs
-              if (program.certificateIds && program.certificateIds.length > 0) {
-                setSelectedCertificateIds(program.certificateIds.map((id: any) => String(id)))
-              }
-              
-              // Load FAQs
-              if (program.faqs && program.faqs.length > 0) {
-                setFAQs(program.faqs.map((faq: any, index: number) => ({
-                  id: String(index + 1),
-                  question: faq.question || "",
-                  answer: faq.answer || "",
-                })))
-              }
+          if (result.success && result.data) {
+            const program = result.data
+            
+            setFormData({
+              refCode: program.refCode || "",
+              programName: program.programName || "",
+              shortDescription: program.shortDescription || "",
+              category: program.category || "",
+              type: program.type || [],
+              status: program.status || "Draft",
+              duration: program.duration || "",
+              targetAudience: program.targetAudience || "",
+              learningObjectives: program.learningObjectives || "",
+              trainingMethodology: program.trainingMethodology || "",
+              introduction: program.introduction || "",
+              description: program.description || "",
+              organisationalImpact: program.organisationalImpact || "",
+              personalImpact: program.personalImpact || "",
+              whoShouldAttend: program.whoShouldAttend || "",
+            })
+            
+            if (program.mainCourseImageUrl) {
+              setMainCourseImagePreview(program.mainCourseImageUrl)
             }
+            if (program.cardImageUrl) {
+              setCardImagePreview(program.cardImageUrl)
+            }
+            
+            // Load course outline
+            if (program.courseOutline && program.courseOutline.length > 0) {
+              setCourseOutline(program.courseOutline.map((item: any, index: number) => ({
+                id: String(index + 1),
+                day: item.day || `Day ${index + 1}`,
+                title: item.title || "",
+                content: item.content || "",
+              })))
+            }
+            
+            // Load certificate IDs
+            if (program.certificateIds && program.certificateIds.length > 0) {
+              setSelectedCertificateIds(program.certificateIds.map((id: any) => String(id)))
+            }
+            
+            // Load FAQs
+            if (program.faqs && program.faqs.length > 0) {
+              setFAQs(program.faqs.map((faq: any, index: number) => ({
+                id: String(index + 1),
+                question: faq.question || "",
+                answer: faq.answer || "",
+              })))
+            }
+          } else {
+            console.error('Failed to load program:', result.error)
+            alert('Failed to load program data. Please try again.')
           }
         } catch (err) {
           console.error('Error loading program:', err)
+          alert('Error loading program data. Please try again.')
         } finally {
           setLoadingData(false)
         }
@@ -519,6 +522,16 @@ export default function AddNewProgram({ onBack, editId }: { onBack?: () => void;
         </div>
       </div>
 
+      {loadingData && isEditMode && (
+        <div className="flex items-center justify-center py-12">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+            <p className="theme-muted">Loading course data...</p>
+          </div>
+        </div>
+      )}
+
+      {!loadingData && (
       <form onSubmit={handleSubmit} className="space-y-6">
         {/* Basic Information */}
         <div className="theme-card rounded-xl p-6 space-y-6">
@@ -1194,6 +1207,7 @@ export default function AddNewProgram({ onBack, editId }: { onBack?: () => void;
           </button>
         </div>
       </form>
+      )}
     </div>
   )
 }
