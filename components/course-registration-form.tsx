@@ -1,13 +1,16 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { X, ChevronLeft, ChevronRight, BookOpen, Loader2 } from 'lucide-react'
+import { X, ChevronLeft, ChevronRight, BookOpen, Loader2, RotateCcw } from 'lucide-react'
 import { useRequireAuth } from '@/hooks/use-require-auth'
 import Image from 'next/image'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command'
+import { Check, ChevronsUpDown } from 'lucide-react'
 import { Textarea } from '@/components/ui/textarea'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -60,6 +63,254 @@ const countries = [
   { code: "+62", name: "Indonesia", iso: "id" },
   { code: "+84", name: "Vietnam", iso: "vn" },
   { code: "+82", name: "South Korea", iso: "kr" },
+]
+
+// Comprehensive list of all countries for country selection
+const allCountries = [
+  { code: "af", name: "Afghanistan" },
+  { code: "al", name: "Albania" },
+  { code: "dz", name: "Algeria" },
+  { code: "as", name: "American Samoa" },
+  { code: "ad", name: "Andorra" },
+  { code: "ao", name: "Angola" },
+  { code: "ai", name: "Anguilla" },
+  { code: "aq", name: "Antarctica" },
+  { code: "ag", name: "Antigua and Barbuda" },
+  { code: "ar", name: "Argentina" },
+  { code: "am", name: "Armenia" },
+  { code: "aw", name: "Aruba" },
+  { code: "au", name: "Australia" },
+  { code: "at", name: "Austria" },
+  { code: "az", name: "Azerbaijan" },
+  { code: "bs", name: "Bahamas" },
+  { code: "bh", name: "Bahrain" },
+  { code: "bd", name: "Bangladesh" },
+  { code: "bb", name: "Barbados" },
+  { code: "by", name: "Belarus" },
+  { code: "be", name: "Belgium" },
+  { code: "bz", name: "Belize" },
+  { code: "bj", name: "Benin" },
+  { code: "bm", name: "Bermuda" },
+  { code: "bt", name: "Bhutan" },
+  { code: "bo", name: "Bolivia" },
+  { code: "ba", name: "Bosnia and Herzegovina" },
+  { code: "bw", name: "Botswana" },
+  { code: "br", name: "Brazil" },
+  { code: "io", name: "British Indian Ocean Territory" },
+  { code: "bn", name: "Brunei" },
+  { code: "bg", name: "Bulgaria" },
+  { code: "bf", name: "Burkina Faso" },
+  { code: "bi", name: "Burundi" },
+  { code: "cv", name: "Cabo Verde" },
+  { code: "kh", name: "Cambodia" },
+  { code: "cm", name: "Cameroon" },
+  { code: "ca", name: "Canada" },
+  { code: "ky", name: "Cayman Islands" },
+  { code: "cf", name: "Central African Republic" },
+  { code: "td", name: "Chad" },
+  { code: "cl", name: "Chile" },
+  { code: "cn", name: "China" },
+  { code: "cx", name: "Christmas Island" },
+  { code: "cc", name: "Cocos (Keeling) Islands" },
+  { code: "co", name: "Colombia" },
+  { code: "km", name: "Comoros" },
+  { code: "cg", name: "Congo" },
+  { code: "cd", name: "Congo (DRC)" },
+  { code: "ck", name: "Cook Islands" },
+  { code: "cr", name: "Costa Rica" },
+  { code: "ci", name: "Côte d'Ivoire" },
+  { code: "hr", name: "Croatia" },
+  { code: "cu", name: "Cuba" },
+  { code: "cw", name: "Curaçao" },
+  { code: "cy", name: "Cyprus" },
+  { code: "cz", name: "Czech Republic" },
+  { code: "dk", name: "Denmark" },
+  { code: "dj", name: "Djibouti" },
+  { code: "dm", name: "Dominica" },
+  { code: "do", name: "Dominican Republic" },
+  { code: "ec", name: "Ecuador" },
+  { code: "eg", name: "Egypt" },
+  { code: "sv", name: "El Salvador" },
+  { code: "gq", name: "Equatorial Guinea" },
+  { code: "er", name: "Eritrea" },
+  { code: "ee", name: "Estonia" },
+  { code: "sz", name: "Eswatini" },
+  { code: "et", name: "Ethiopia" },
+  { code: "fk", name: "Falkland Islands" },
+  { code: "fo", name: "Faroe Islands" },
+  { code: "fj", name: "Fiji" },
+  { code: "fi", name: "Finland" },
+  { code: "fr", name: "France" },
+  { code: "gf", name: "French Guiana" },
+  { code: "pf", name: "French Polynesia" },
+  { code: "ga", name: "Gabon" },
+  { code: "gm", name: "Gambia" },
+  { code: "ge", name: "Georgia" },
+  { code: "de", name: "Germany" },
+  { code: "gh", name: "Ghana" },
+  { code: "gi", name: "Gibraltar" },
+  { code: "gr", name: "Greece" },
+  { code: "gl", name: "Greenland" },
+  { code: "gd", name: "Grenada" },
+  { code: "gp", name: "Guadeloupe" },
+  { code: "gu", name: "Guam" },
+  { code: "gt", name: "Guatemala" },
+  { code: "gg", name: "Guernsey" },
+  { code: "gn", name: "Guinea" },
+  { code: "gw", name: "Guinea-Bissau" },
+  { code: "gy", name: "Guyana" },
+  { code: "ht", name: "Haiti" },
+  { code: "hn", name: "Honduras" },
+  { code: "hk", name: "Hong Kong" },
+  { code: "hu", name: "Hungary" },
+  { code: "is", name: "Iceland" },
+  { code: "in", name: "India" },
+  { code: "id", name: "Indonesia" },
+  { code: "ir", name: "Iran" },
+  { code: "iq", name: "Iraq" },
+  { code: "ie", name: "Ireland" },
+  { code: "im", name: "Isle of Man" },
+  { code: "il", name: "Israel" },
+  { code: "it", name: "Italy" },
+  { code: "jm", name: "Jamaica" },
+  { code: "jp", name: "Japan" },
+  { code: "je", name: "Jersey" },
+  { code: "jo", name: "Jordan" },
+  { code: "kz", name: "Kazakhstan" },
+  { code: "ke", name: "Kenya" },
+  { code: "ki", name: "Kiribati" },
+  { code: "kp", name: "Korea (North)" },
+  { code: "kr", name: "Korea (South)" },
+  { code: "kw", name: "Kuwait" },
+  { code: "kg", name: "Kyrgyzstan" },
+  { code: "la", name: "Laos" },
+  { code: "lv", name: "Latvia" },
+  { code: "lb", name: "Lebanon" },
+  { code: "ls", name: "Lesotho" },
+  { code: "lr", name: "Liberia" },
+  { code: "ly", name: "Libya" },
+  { code: "li", name: "Liechtenstein" },
+  { code: "lt", name: "Lithuania" },
+  { code: "lu", name: "Luxembourg" },
+  { code: "mo", name: "Macao" },
+  { code: "mg", name: "Madagascar" },
+  { code: "mw", name: "Malawi" },
+  { code: "my", name: "Malaysia" },
+  { code: "mv", name: "Maldives" },
+  { code: "ml", name: "Mali" },
+  { code: "mt", name: "Malta" },
+  { code: "mh", name: "Marshall Islands" },
+  { code: "mq", name: "Martinique" },
+  { code: "mr", name: "Mauritania" },
+  { code: "mu", name: "Mauritius" },
+  { code: "yt", name: "Mayotte" },
+  { code: "mx", name: "Mexico" },
+  { code: "fm", name: "Micronesia" },
+  { code: "md", name: "Moldova" },
+  { code: "mc", name: "Monaco" },
+  { code: "mn", name: "Mongolia" },
+  { code: "me", name: "Montenegro" },
+  { code: "ms", name: "Montserrat" },
+  { code: "ma", name: "Morocco" },
+  { code: "mz", name: "Mozambique" },
+  { code: "mm", name: "Myanmar" },
+  { code: "na", name: "Namibia" },
+  { code: "nr", name: "Nauru" },
+  { code: "np", name: "Nepal" },
+  { code: "nl", name: "Netherlands" },
+  { code: "nc", name: "New Caledonia" },
+  { code: "nz", name: "New Zealand" },
+  { code: "ni", name: "Nicaragua" },
+  { code: "ne", name: "Niger" },
+  { code: "ng", name: "Nigeria" },
+  { code: "nu", name: "Niue" },
+  { code: "nf", name: "Norfolk Island" },
+  { code: "mk", name: "North Macedonia" },
+  { code: "mp", name: "Northern Mariana Islands" },
+  { code: "no", name: "Norway" },
+  { code: "om", name: "Oman" },
+  { code: "pk", name: "Pakistan" },
+  { code: "pw", name: "Palau" },
+  { code: "ps", name: "Palestine" },
+  { code: "pa", name: "Panama" },
+  { code: "pg", name: "Papua New Guinea" },
+  { code: "py", name: "Paraguay" },
+  { code: "pe", name: "Peru" },
+  { code: "ph", name: "Philippines" },
+  { code: "pn", name: "Pitcairn" },
+  { code: "pl", name: "Poland" },
+  { code: "pt", name: "Portugal" },
+  { code: "pr", name: "Puerto Rico" },
+  { code: "qa", name: "Qatar" },
+  { code: "re", name: "Réunion" },
+  { code: "ro", name: "Romania" },
+  { code: "ru", name: "Russia" },
+  { code: "rw", name: "Rwanda" },
+  { code: "bl", name: "Saint Barthélemy" },
+  { code: "sh", name: "Saint Helena" },
+  { code: "kn", name: "Saint Kitts and Nevis" },
+  { code: "lc", name: "Saint Lucia" },
+  { code: "mf", name: "Saint Martin" },
+  { code: "pm", name: "Saint Pierre and Miquelon" },
+  { code: "vc", name: "Saint Vincent and the Grenadines" },
+  { code: "ws", name: "Samoa" },
+  { code: "sm", name: "San Marino" },
+  { code: "st", name: "São Tomé and Príncipe" },
+  { code: "sa", name: "Saudi Arabia" },
+  { code: "sn", name: "Senegal" },
+  { code: "rs", name: "Serbia" },
+  { code: "sc", name: "Seychelles" },
+  { code: "sl", name: "Sierra Leone" },
+  { code: "sg", name: "Singapore" },
+  { code: "sx", name: "Sint Maarten" },
+  { code: "sk", name: "Slovakia" },
+  { code: "si", name: "Slovenia" },
+  { code: "sb", name: "Solomon Islands" },
+  { code: "so", name: "Somalia" },
+  { code: "za", name: "South Africa" },
+  { code: "gs", name: "South Georgia and the South Sandwich Islands" },
+  { code: "ss", name: "South Sudan" },
+  { code: "es", name: "Spain" },
+  { code: "lk", name: "Sri Lanka" },
+  { code: "sd", name: "Sudan" },
+  { code: "sr", name: "Suriname" },
+  { code: "sj", name: "Svalbard and Jan Mayen" },
+  { code: "se", name: "Sweden" },
+  { code: "ch", name: "Switzerland" },
+  { code: "sy", name: "Syria" },
+  { code: "tw", name: "Taiwan" },
+  { code: "tj", name: "Tajikistan" },
+  { code: "tz", name: "Tanzania" },
+  { code: "th", name: "Thailand" },
+  { code: "tl", name: "Timor-Leste" },
+  { code: "tg", name: "Togo" },
+  { code: "tk", name: "Tokelau" },
+  { code: "to", name: "Tonga" },
+  { code: "tt", name: "Trinidad and Tobago" },
+  { code: "tn", name: "Tunisia" },
+  { code: "tr", name: "Turkey" },
+  { code: "tm", name: "Turkmenistan" },
+  { code: "tc", name: "Turks and Caicos Islands" },
+  { code: "tv", name: "Tuvalu" },
+  { code: "ug", name: "Uganda" },
+  { code: "ua", name: "Ukraine" },
+  { code: "ae", name: "United Arab Emirates" },
+  { code: "gb", name: "United Kingdom" },
+  { code: "us", name: "United States" },
+  { code: "um", name: "United States Minor Outlying Islands" },
+  { code: "uy", name: "Uruguay" },
+  { code: "uz", name: "Uzbekistan" },
+  { code: "vu", name: "Vanuatu" },
+  { code: "va", name: "Vatican City" },
+  { code: "ve", name: "Venezuela" },
+  { code: "vn", name: "Vietnam" },
+  { code: "vg", name: "Virgin Islands (British)" },
+  { code: "vi", name: "Virgin Islands (U.S.)" },
+  { code: "wf", name: "Wallis and Futuna" },
+  { code: "eh", name: "Western Sahara" },
+  { code: "ye", name: "Yemen" },
+  { code: "zm", name: "Zambia" },
+  { code: "zw", name: "Zimbabwe" },
 ]
 
 const detectCountryCode = (phoneNumber: string, currentCountryCode: string = '+971'): string => {
@@ -145,6 +396,24 @@ export function CourseRegistrationForm({ course, schedules, selectedScheduleId, 
   const [stripePaymentIntentId, setStripePaymentIntentId] = useState<string | null>(null)
   const [showStripeForm, setShowStripeForm] = useState(false)
   const [paymentAmount, setPaymentAmount] = useState(0)
+  const [captchaValue, setCaptchaValue] = useState<string>('')
+  const [countrySearchOpen, setCountrySearchOpen] = useState(false)
+  const [countrySearch, setCountrySearch] = useState('')
+
+  // Generate random CAPTCHA on mount and when needed
+  const generateCaptcha = () => {
+    const num1 = Math.floor(Math.random() * 10)
+    const num2 = Math.floor(Math.random() * 10)
+    const num3 = Math.floor(Math.random() * 10)
+    const value = `${num1}${num2}${num3}`
+    setCaptchaValue(value)
+    // Clear the captcha input when generating new one
+    setFormData(prev => ({ ...prev, captcha: '' }))
+  }
+
+  useEffect(() => {
+    generateCaptcha()
+  }, [])
   
   // Show loading state while checking authentication
   if (isLoading) {
@@ -178,7 +447,12 @@ export function CourseRegistrationForm({ course, schedules, selectedScheduleId, 
     paymentMethod: '',
     differentBilling: false,
     acceptTerms: false,
-    captcha: ''
+    captcha: '',
+    // Invoice request specific fields
+    contactPerson: '',
+    department: '',
+    invoiceEmail: '',
+    invoiceAddress: ''
   })
 
   // Update scheduleId when selectedScheduleId prop changes
@@ -234,8 +508,29 @@ export function CourseRegistrationForm({ course, schedules, selectedScheduleId, 
       }
       if (!formData.captcha.trim()) {
         newErrors.captcha = 'Please complete CAPTCHA verification'
-      } else if (formData.captcha.trim() !== '386') {
+      } else if (formData.captcha.trim() !== captchaValue) {
         newErrors.captcha = 'CAPTCHA verification failed'
+      }
+    }
+
+    if (stepNumber === 3) {
+      // Step 3 validation for invoice requests
+      if (!formData.contactPerson.trim()) {
+        newErrors.contactPerson = 'Contact Person is required'
+      }
+      if (!formData.department.trim()) {
+        newErrors.department = 'Department is required'
+      }
+      if (!formData.invoiceEmail.trim()) {
+        newErrors.invoiceEmail = 'Email Address is required'
+      } else if (!validateEmail(formData.invoiceEmail)) {
+        newErrors.invoiceEmail = 'Please enter a valid email address'
+      }
+      if (!formData.invoiceAddress.trim()) {
+        newErrors.invoiceAddress = 'Address is required'
+      }
+      if (!formData.mobile.trim()) {
+        newErrors.mobile = 'Mobile number is required'
       }
     }
 
@@ -249,11 +544,16 @@ export function CourseRegistrationForm({ course, schedules, selectedScheduleId, 
     // Validate all steps before submission
     const isStep1Valid = validateStep(1)
     const isStep2Valid = validateStep(2)
+    const isStep3Valid = formData.paymentMethod === 'Invoice' ? validateStep(3) : true
     
-    if (!isStep1Valid || !isStep2Valid) {
-      // If step 1 has errors, go back to step 1
+    if (!isStep1Valid || !isStep2Valid || !isStep3Valid) {
+      // Navigate to the first step with errors
       if (!isStep1Valid) {
         setStep(1)
+      } else if (!isStep2Valid) {
+        setStep(2)
+      } else if (!isStep3Valid) {
+        setStep(3)
       }
       return
     }
@@ -311,6 +611,50 @@ export function CourseRegistrationForm({ course, schedules, selectedScheduleId, 
       return
     }
 
+    // For invoice payment method, submit invoice request
+    if (formData.paymentMethod === 'Invoice') {
+      setIsSubmitting(true)
+      setSubmitError(null)
+
+      try {
+        const selectedSchedule = schedules.find(s => s.id === formData.scheduleId)
+        
+        const response = await fetch('/api/forms/course-registration', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            ...formData,
+            paymentMethod: 'invoice', // API expects lowercase 'invoice'
+            courseId: course.id,
+            courseTitle: course.title,
+            // Use invoice-specific fields if provided, otherwise fall back to regular fields
+            email: formData.invoiceEmail || formData.email,
+            address: formData.invoiceAddress || formData.address,
+            // Include additional invoice fields
+            contactPerson: formData.contactPerson,
+            department: formData.department,
+          }),
+        })
+
+        const result = await response.json()
+
+        if (!response.ok) {
+          throw new Error(result.error || 'Failed to submit invoice request')
+        }
+
+        alert(`✅ Invoice request submitted successfully!\n\nYour request will be reviewed by our team. Once approved, an order will be created and you will receive an invoice via email.`)
+        onClose()
+      } catch (error) {
+        console.error('Error submitting invoice request:', error)
+        setSubmitError(error instanceof Error ? error.message : 'Failed to submit invoice request. Please try again.')
+      } finally {
+        setIsSubmitting(false)
+      }
+      return
+    }
+
     // For other payment methods, submit normally
     setIsSubmitting(true)
     setSubmitError(null)
@@ -336,12 +680,7 @@ export function CourseRegistrationForm({ course, schedules, selectedScheduleId, 
         throw new Error(result.error || 'Failed to submit registration')
       }
 
-      // Show appropriate message based on payment method
-      if (formData.paymentMethod === 'invoice') {
-        alert(`✅ Invoice request submitted successfully!\n\nYour request will be reviewed by our team. Once approved, an order will be created and you will receive an invoice via email.`)
-      } else {
-        alert('Thank you! Your registration has been submitted successfully.')
-      }
+      alert('Thank you! Your registration has been submitted successfully.')
       onClose()
     } catch (error) {
       console.error('Error submitting registration:', error)
@@ -353,7 +692,14 @@ export function CourseRegistrationForm({ course, schedules, selectedScheduleId, 
 
   const nextStep = () => {
     if (validateStep(step)) {
-      if (step < 2) setStep(step + 1)
+      // If invoice payment method is selected and we're on step 2, go to step 3
+      // Otherwise, if we're on step 1, go to step 2
+      // For Stripe, max step is 2
+      if (formData.paymentMethod === 'Invoice' && step === 2) {
+        setStep(3)
+      } else if (step < 2) {
+        setStep(step + 1)
+      }
     }
   }
 
@@ -380,7 +726,16 @@ export function CourseRegistrationForm({ course, schedules, selectedScheduleId, 
              formData.telephone.trim() &&
              formData.paymentMethod.trim() &&
              formData.acceptTerms &&
-             formData.captcha.trim() === '386'
+             formData.captcha.trim() === captchaValue
+    }
+    if (step === 3) {
+      // Step 3 validation for invoice requests
+      return formData.contactPerson.trim() &&
+             formData.department.trim() &&
+             formData.invoiceEmail.trim() &&
+             validateEmail(formData.invoiceEmail) &&
+             formData.invoiceAddress.trim() &&
+             formData.mobile.trim()
     }
     return true
   }
@@ -504,6 +859,14 @@ export function CourseRegistrationForm({ course, schedules, selectedScheduleId, 
               <div className={`flex items-center justify-center w-8 h-8 rounded-full font-semibold text-xs transition-all ${step >= 2 ? 'bg-blue-600 text-white' : 'bg-slate-200 text-slate-600'}`}>
                 2
               </div>
+              {formData.paymentMethod === 'Invoice' && (
+                <>
+                  <div className={`h-1 w-12 rounded transition-all ${step >= 3 ? 'bg-blue-600' : 'bg-slate-200'}`}></div>
+                  <div className={`flex items-center justify-center w-8 h-8 rounded-full font-semibold text-xs transition-all ${step >= 3 ? 'bg-blue-600 text-white' : 'bg-slate-200 text-slate-600'}`}>
+                    3
+                  </div>
+                </>
+              )}
             </div>
           </div>
         </CardHeader>
@@ -638,20 +1001,58 @@ export function CourseRegistrationForm({ course, schedules, selectedScheduleId, 
 
                   <div className="space-y-1.5">
                     <Label htmlFor="country" className="text-xs font-semibold text-slate-700">Country *</Label>
-                    <Select value={formData.country} onValueChange={(value) => handleFieldChange('country', value)}>
-                      <SelectTrigger className={`h-9 text-sm ${errors.country ? 'border-red-500' : ''}`}>
-                        <SelectValue placeholder="Select country" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="us">United States</SelectItem>
-                        <SelectItem value="uk">United Kingdom</SelectItem>
-                        <SelectItem value="ca">Canada</SelectItem>
-                        <SelectItem value="au">Australia</SelectItem>
-                        <SelectItem value="ae">United Arab Emirates</SelectItem>
-                        <SelectItem value="sa">Saudi Arabia</SelectItem>
-                        <SelectItem value="in">India</SelectItem>
-                      </SelectContent>
-                    </Select>
+                    <Popover open={countrySearchOpen} onOpenChange={setCountrySearchOpen}>
+                      <PopoverTrigger asChild>
+                        <Button
+                          variant="outline"
+                          role="combobox"
+                          aria-expanded={countrySearchOpen}
+                          className={`w-full justify-between h-9 text-sm font-normal ${errors.country ? 'border-red-500' : ''}`}
+                        >
+                          {formData.country
+                            ? allCountries.find((country) => country.code === formData.country)?.name
+                            : "Select country..."}
+                          <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-full p-0" align="start">
+                        <Command shouldFilter={false}>
+                          <CommandInput
+                            placeholder="Search country..."
+                            value={countrySearch}
+                            onValueChange={setCountrySearch}
+                          />
+                          <CommandList>
+                            <CommandEmpty>No country found.</CommandEmpty>
+                            <CommandGroup>
+                              {allCountries
+                                .filter((country) =>
+                                  country.name.toLowerCase().includes(countrySearch.toLowerCase())
+                                )
+                                .map((country) => (
+                                  <CommandItem
+                                    key={country.code}
+                                    value={country.name}
+                                    onSelect={() => {
+                                      handleFieldChange('country', country.code)
+                                      setCountrySearchOpen(false)
+                                      setCountrySearch('')
+                                    }}
+                                    className="cursor-pointer"
+                                  >
+                                    <Check
+                                      className={`mr-2 h-4 w-4 ${
+                                        formData.country === country.code ? "opacity-100" : "opacity-0"
+                                      }`}
+                                    />
+                                    {country.name}
+                                  </CommandItem>
+                                ))}
+                            </CommandGroup>
+                          </CommandList>
+                        </Command>
+                      </PopoverContent>
+                    </Popover>
                     {errors.country && <p className="text-xs text-red-600 mt-1">{errors.country}</p>}
                   </div>
                 </div>
@@ -767,13 +1168,17 @@ export function CourseRegistrationForm({ course, schedules, selectedScheduleId, 
                     handleFieldChange('paymentMethod', value)
                     setShowStripeForm(false)
                     setStripeClientSecret(null)
+                    // If switching payment method away from Invoice while on step 3, go back to step 2
+                    if (value !== 'Invoice' && step === 3) {
+                      setStep(2)
+                    }
                   }}>
                     <SelectTrigger className={`h-9 text-sm ${errors.paymentMethod ? 'border-red-500' : ''}`}>
                       <SelectValue placeholder="Select Payment Method" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="stripe">Stripe</SelectItem>                      <SelectItem value="invoice">Pay via Invoice</SelectItem>
-                      <SelectItem value="purchase">Invoice to Company</SelectItem>
+                      <SelectItem value="stripe">Stripe</SelectItem>                    
+                      <SelectItem value="Invoice">Invoice to Company</SelectItem>
                     </SelectContent>
                     </Select>
                     {errors.paymentMethod && <p className="text-xs text-red-600 mt-1">{errors.paymentMethod}</p>}
@@ -801,10 +1206,17 @@ export function CourseRegistrationForm({ course, schedules, selectedScheduleId, 
                     <Label htmlFor="captcha" className="text-xs font-semibold text-slate-700">CAPTCHA Verification</Label>
                     <div className="flex gap-3 items-center">
                       <div className="bg-slate-100 border-2 border-slate-300 px-3 py-2 rounded text-xl font-bold tracking-wider text-slate-700 select-none">
-                        3 8 6
+                        {captchaValue.split('').join(' ')}
                       </div>
-                      <Button type="button" variant="outline" size="icon" className="shrink-0 h-9 w-9">
-                        <ChevronRight className="w-4 h-4" />
+                      <Button 
+                        type="button" 
+                        variant="outline" 
+                        size="icon" 
+                        className="shrink-0 h-9 w-9"
+                        onClick={generateCaptcha}
+                        title="Refresh CAPTCHA"
+                      >
+                        <RotateCcw className="w-4 h-4" />
                       </Button>
                     </div>
                     <Input
@@ -816,6 +1228,131 @@ export function CourseRegistrationForm({ course, schedules, selectedScheduleId, 
                     />
                     {errors.captcha && <p className="text-xs text-red-600 mt-1">{errors.captcha}</p>}
                   </div>
+              </div>
+            )}
+
+            {step === 3 && (
+              <div className="space-y-3 animate-fade-in flex-1 flex flex-col">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  {/* Left Column */}
+                  <div className="space-y-3">
+                    <div className="space-y-1.5">
+                      <Label htmlFor="contactPerson" className="text-xs font-semibold text-slate-700">Contact Person *</Label>
+                      <Input
+                        id="contactPerson"
+                        placeholder="Enter Contact Person"
+                        className={`h-9 text-sm ${errors.contactPerson ? 'border-red-500' : ''}`}
+                        value={formData.contactPerson}
+                        onChange={(e) => handleFieldChange('contactPerson', e.target.value)}
+                      />
+                      {errors.contactPerson && <p className="text-xs text-red-600 mt-1">{errors.contactPerson}</p>}
+                    </div>
+
+                    <div className="space-y-1.5">
+                      <Label htmlFor="invoiceDesignation" className="text-xs font-semibold text-slate-700">Your Designation *</Label>
+                      <Input
+                        id="invoiceDesignation"
+                        placeholder="Enter Your Designation"
+                        className={`h-9 text-sm ${errors.designation ? 'border-red-500' : ''}`}
+                        value={formData.designation}
+                        onChange={(e) => handleFieldChange('designation', e.target.value)}
+                      />
+                      {errors.designation && <p className="text-xs text-red-600 mt-1">{errors.designation}</p>}
+                    </div>
+
+                    <div className="space-y-1.5">
+                      <Label htmlFor="department" className="text-xs font-semibold text-slate-700">Department *</Label>
+                      <Input
+                        id="department"
+                        placeholder="Enter Department"
+                        className={`h-9 text-sm ${errors.department ? 'border-red-500' : ''}`}
+                        value={formData.department}
+                        onChange={(e) => handleFieldChange('department', e.target.value)}
+                      />
+                      {errors.department && <p className="text-xs text-red-600 mt-1">{errors.department}</p>}
+                    </div>
+                  </div>
+
+                  {/* Right Column */}
+                  <div className="space-y-3">
+                    <div className="space-y-1.5">
+                      <Label htmlFor="invoiceMobile" className="text-xs font-semibold text-slate-700">Mobile *</Label>
+                      <div className={`flex border rounded-md overflow-hidden focus-within:ring-2 focus-within:ring-blue-500 focus-within:border-blue-500 ${errors.mobile ? 'border-red-500' : 'border-slate-300'}`}>
+                        <Select
+                          value={formData.mobileCountryCode}
+                          onValueChange={(value) => handleFieldChange('mobileCountryCode', value)}
+                        >
+                          <SelectTrigger className="w-auto min-w-[100px] h-9 border-0 rounded-none border-r border-slate-300 bg-transparent focus:ring-0 px-2">
+                            <div className="flex items-center gap-1.5">
+                              <div className="relative w-5 h-4 rounded-sm overflow-hidden shrink-0">
+                                <Image
+                                  src={getFlagImageUrl(formData.mobileCountryCode)}
+                                  alt={countries.find(c => c.code === formData.mobileCountryCode)?.name || "Country flag"}
+                                  fill
+                                  className="object-cover"
+                                  onError={(e) => { e.currentTarget.style.display = 'none' }}
+                                />
+                              </div>
+                              <span className="text-xs font-medium text-slate-700">{formData.mobileCountryCode}</span>
+                            </div>
+                          </SelectTrigger>
+                          <SelectContent className="max-h-[300px]">
+                            {countries.map((country) => (
+                              <SelectItem key={country.code} value={country.code}>
+                                <div className="flex items-center gap-2">
+                                  <div className="relative w-5 h-4 rounded-sm overflow-hidden shrink-0">
+                                    <Image src={getFlagImageUrl(country.code)} alt={country.name} fill className="object-cover" onError={(e) => { e.currentTarget.style.display = 'none' }} />
+                                  </div>
+                                  <span className="text-sm">{country.name}</span>
+                                  <span className="text-xs text-slate-500 ml-auto">{country.code}</span>
+                                </div>
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <Input
+                          id="invoiceMobile"
+                          type="tel"
+                          placeholder="Phone Number"
+                          className={`h-9 text-sm border-0 rounded-none focus-visible:ring-0 flex-1`}
+                          value={formData.mobile}
+                          onChange={(e) => {
+                            const phoneValue = e.target.value
+                            const detectedCode = detectCountryCode(phoneValue, formData.mobileCountryCode)
+                            handleFieldChange('mobileCountryCode', detectedCode)
+                            handleFieldChange('mobile', phoneValue)
+                          }}
+                        />
+                      </div>
+                      {errors.mobile && <p className="text-xs text-red-600 mt-1">{errors.mobile}</p>}
+                    </div>
+
+                    <div className="space-y-1.5">
+                      <Label htmlFor="invoiceEmail" className="text-xs font-semibold text-slate-700">Email Address *</Label>
+                      <Input
+                        id="invoiceEmail"
+                        type="email"
+                        placeholder="Enter Email Address"
+                        className={`h-9 text-sm ${errors.invoiceEmail ? 'border-red-500' : ''}`}
+                        value={formData.invoiceEmail}
+                        onChange={(e) => handleFieldChange('invoiceEmail', e.target.value)}
+                      />
+                      {errors.invoiceEmail && <p className="text-xs text-red-600 mt-1">{errors.invoiceEmail}</p>}
+                    </div>
+
+                    <div className="space-y-1.5">
+                      <Label htmlFor="invoiceAddress" className="text-xs font-semibold text-slate-700">Address *</Label>
+                      <Input
+                        id="invoiceAddress"
+                        placeholder="Address"
+                        className={`h-9 text-sm ${errors.invoiceAddress ? 'border-red-500' : ''}`}
+                        value={formData.invoiceAddress}
+                        onChange={(e) => handleFieldChange('invoiceAddress', e.target.value)}
+                      />
+                      {errors.invoiceAddress && <p className="text-xs text-red-600 mt-1">{errors.invoiceAddress}</p>}
+                    </div>
+                  </div>
+                </div>
               </div>
             )}
 
@@ -850,13 +1387,20 @@ export function CourseRegistrationForm({ course, schedules, selectedScheduleId, 
                 Cancel
               </Button>
               <Button
-                type={step === 2 ? 'submit' : 'button'}
-                onClick={step === 2 ? undefined : nextStep}
+                type={step === 2 && formData.paymentMethod !== 'Invoice' ? 'submit' : step === 3 ? 'submit' : 'button'}
+                onClick={step === 2 && formData.paymentMethod === 'Invoice' ? nextStep : step === 3 ? undefined : step === 2 && formData.paymentMethod !== 'Invoice' ? undefined : nextStep}
                 disabled={!canProceed() || isSubmitting}
                 className="flex-1 bg-blue-600 hover:bg-blue-700 font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
                 size="sm"
               >
-                {step === 2 ? (
+                {step === 3 ? (
+                  isSubmitting ? 'Submitting...' : 'Submit Registration'
+                ) : step === 2 && formData.paymentMethod === 'Invoice' ? (
+                  <>
+                    Next
+                    <ChevronRight className="w-4 h-4 ml-1" />
+                  </>
+                ) : step === 2 && formData.paymentMethod !== 'Invoice' ? (
                   isSubmitting ? 'Submitting...' : 'Submit Registration'
                 ) : (
                   <>

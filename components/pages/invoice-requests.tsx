@@ -35,8 +35,16 @@ interface InvoiceRequest {
   telephone: string
   telephoneCountryCode: string
   mobile?: string
+  mobileCountryCode?: string
   scheduleId?: string
   courseId?: string
+  title?: string
+  designation?: string
+  // Additional fields that might be in the database
+  contactPerson?: string
+  department?: string
+  invoiceEmail?: string
+  invoiceAddress?: string
 }
 
 export default function InvoiceRequests() {
@@ -47,6 +55,7 @@ export default function InvoiceRequests() {
   const [statusFilter, setStatusFilter] = useState<string>("PENDING")
   const [selectedRequest, setSelectedRequest] = useState<InvoiceRequest | null>(null)
   const [actionDialogOpen, setActionDialogOpen] = useState(false)
+  const [previewDialogOpen, setPreviewDialogOpen] = useState(false)
   const [actionType, setActionType] = useState<"approve" | "reject" | null>(null)
   const [rejectionReason, setRejectionReason] = useState("")
   const [processing, setProcessing] = useState(false)
@@ -382,7 +391,7 @@ export default function InvoiceRequests() {
                           size="sm"
                           onClick={() => {
                             setSelectedRequest(request)
-                            // Show details in a dialog or navigate to detail view
+                            setPreviewDialogOpen(true)
                           }}
                           className="h-8 w-8 p-0"
                           title="View Details"
@@ -560,6 +569,182 @@ export default function InvoiceRequests() {
                 "Reject"
               )}
             </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Preview/Details Dialog */}
+      <Dialog open={previewDialogOpen} onOpenChange={setPreviewDialogOpen}>
+        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Invoice Request Details</DialogTitle>
+            <DialogDescription>
+              Complete information for invoice request #{selectedRequest?.id.slice(-8).toUpperCase()}
+            </DialogDescription>
+          </DialogHeader>
+          {selectedRequest && (
+            <div className="space-y-6 py-4">
+              {/* Status Badge */}
+              <div className="flex items-center justify-between">
+                <Badge className={getStatusColor(selectedRequest.status)}>
+                  {selectedRequest.status}
+                </Badge>
+                <span className="text-sm theme-muted">
+                  Submitted: {format(new Date(selectedRequest.submittedAt), "MMM dd, yyyy 'at' h:mm a")}
+                </span>
+              </div>
+
+              {/* Course Information */}
+              <div className="space-y-3">
+                <h3 className="text-lg font-semibold theme-text border-b border-border pb-2">Course Information</h3>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <span className="text-sm theme-muted">Course Title:</span>
+                    <p className="font-medium theme-text">{selectedRequest.courseTitle || "N/A"}</p>
+                  </div>
+                  <div>
+                    <span className="text-sm theme-muted">Number of Participants:</span>
+                    <p className="font-medium theme-text">{selectedRequest.participants || 1}</p>
+                  </div>
+                  <div>
+                    <span className="text-sm theme-muted">Amount per Participant:</span>
+                    <p className="font-medium theme-text">
+                      ${((selectedRequest.amount) / (selectedRequest.participants || 1)).toFixed(2)}
+                    </p>
+                  </div>
+                  <div>
+                    <span className="text-sm theme-muted">Total Amount:</span>
+                    <p className="font-medium theme-text text-lg">
+                      ${selectedRequest.amount.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* User Details */}
+              <div className="space-y-3">
+                <h3 className="text-lg font-semibold theme-text border-b border-border pb-2">User Details</h3>
+                <div className="grid grid-cols-2 gap-4">
+                  {selectedRequest.title && (
+                    <div>
+                      <span className="text-sm theme-muted">Title:</span>
+                      <p className="font-medium theme-text">{selectedRequest.title}</p>
+                    </div>
+                  )}
+                  <div>
+                    <span className="text-sm theme-muted">Full Name:</span>
+                    <p className="font-medium theme-text">{selectedRequest.name}</p>
+                  </div>
+                  <div>
+                    <span className="text-sm theme-muted">Email:</span>
+                    <p className="font-medium theme-text">{selectedRequest.email}</p>
+                  </div>
+                  {selectedRequest.designation && (
+                    <div>
+                      <span className="text-sm theme-muted">Designation:</span>
+                      <p className="font-medium theme-text">{selectedRequest.designation}</p>
+                    </div>
+                  )}
+                  <div>
+                    <span className="text-sm theme-muted">Address:</span>
+                    <p className="font-medium theme-text">{selectedRequest.address}</p>
+                  </div>
+                  <div>
+                    <span className="text-sm theme-muted">City:</span>
+                    <p className="font-medium theme-text">{selectedRequest.city}</p>
+                  </div>
+                  <div>
+                    <span className="text-sm theme-muted">Country:</span>
+                    <p className="font-medium theme-text">{selectedRequest.country}</p>
+                  </div>
+                  <div>
+                    <span className="text-sm theme-muted">Telephone:</span>
+                    <p className="font-medium theme-text">
+                      {selectedRequest.telephoneCountryCode} {selectedRequest.telephone}
+                    </p>
+                  </div>
+                  {selectedRequest.mobile && (
+                    <div>
+                      <span className="text-sm theme-muted">Mobile:</span>
+                      <p className="font-medium theme-text">
+                        {selectedRequest.mobileCountryCode || selectedRequest.telephoneCountryCode} {selectedRequest.mobile}
+                      </p>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Company Details (if available) */}
+              {(selectedRequest.company || selectedRequest.contactPerson || selectedRequest.department) && (
+                <div className="space-y-3">
+                  <h3 className="text-lg font-semibold theme-text border-b border-border pb-2">Company Details</h3>
+                  <div className="grid grid-cols-2 gap-4">
+                    {selectedRequest.company && (
+                      <div>
+                        <span className="text-sm theme-muted">Company Name:</span>
+                        <p className="font-medium theme-text">{selectedRequest.company}</p>
+                      </div>
+                    )}
+                    {selectedRequest.contactPerson && (
+                      <div>
+                        <span className="text-sm theme-muted">Contact Person:</span>
+                        <p className="font-medium theme-text">{selectedRequest.contactPerson}</p>
+                      </div>
+                    )}
+                    {selectedRequest.department && (
+                      <div>
+                        <span className="text-sm theme-muted">Department:</span>
+                        <p className="font-medium theme-text">{selectedRequest.department}</p>
+                      </div>
+                    )}
+                    {selectedRequest.invoiceEmail && (
+                      <div>
+                        <span className="text-sm theme-muted">Company Email:</span>
+                        <p className="font-medium theme-text">{selectedRequest.invoiceEmail}</p>
+                      </div>
+                    )}
+                    {selectedRequest.invoiceAddress && (
+                      <div className="col-span-2">
+                        <span className="text-sm theme-muted">Company Address:</span>
+                        <p className="font-medium theme-text">{selectedRequest.invoiceAddress}</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* Rejection Reason (if rejected) */}
+              {selectedRequest.status === "REJECTED" && selectedRequest.rejectionReason && (
+                <div className="space-y-3">
+                  <h3 className="text-lg font-semibold theme-text border-b border-border pb-2">Rejection Information</h3>
+                  <div className="p-3 bg-red-50 dark:bg-red-900/20 rounded-lg border border-red-200 dark:border-red-800">
+                    <span className="text-sm theme-muted">Rejection Reason:</span>
+                    <p className="font-medium theme-text mt-1">{selectedRequest.rejectionReason}</p>
+                  </div>
+                  {selectedRequest.approvedAt && (
+                    <p className="text-sm theme-muted">
+                      Rejected on: {format(new Date(selectedRequest.approvedAt), "MMM dd, yyyy 'at' h:mm a")}
+                    </p>
+                  )}
+                </div>
+              )}
+
+              {/* Approval Information (if approved) */}
+              {selectedRequest.status === "APPROVED" && selectedRequest.approvedAt && (
+                <div className="space-y-3">
+                  <h3 className="text-lg font-semibold theme-text border-b border-border pb-2">Approval Information</h3>
+                  <p className="text-sm theme-muted">
+                    Approved on: {format(new Date(selectedRequest.approvedAt), "MMM dd, yyyy 'at' h:mm a")}
+                  </p>
+                </div>
+              )}
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setPreviewDialogOpen(false)}>
+              Close
+            </Button>
+           
           </DialogFooter>
         </DialogContent>
       </Dialog>

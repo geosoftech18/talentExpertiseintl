@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent } from "@/components/ui/card"
@@ -18,7 +19,6 @@ import {
   CheckCircle,
   ArrowRight,
 } from "lucide-react"
-import router from "next/router"
 
 const testimonials = [
   {
@@ -151,6 +151,7 @@ const stats = [
 
 
 export default function TestimonialsSection() {
+  const router = useRouter()
   const [currentSlide, setCurrentSlide] = useState(0)
   const [selectedCategory, setSelectedCategory] = useState("All Categories")
   const [isAutoPlaying, setIsAutoPlaying] = useState(true)

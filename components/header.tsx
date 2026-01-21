@@ -54,13 +54,13 @@ import Image from 'next/image'
 
 // Categories from courses data - dynamically imported or matched from courses
 const courseCategories = [
-  'Admin & Secretarial',
+  'Administration & Secretarial',
   'Contracts Management',
   'Customer Service',
   'Electrical Engineering',
-  'Finance & Accounting',
-  'Health & Safety',
-  'HR Management',
+  'Banking, Finance & Accounting',
+  'Quality, Health & Safety',
+  'Human Resources ',
   'Information Technology',
   'Maintenance Management',
   'Management & Leadership',
@@ -354,7 +354,7 @@ export default function Header() {
                           {courseCategories.map((category, index) => (
                             <Link
                               key={index}
-                              href={`/courses?category=${encodeURIComponent(category)}`}
+                              href={`/courses/category/${encodeURIComponent(category)}`}
                               className="block px-4 py-3 text-slate-700 hover:text-[#0A3049] hover:bg-[#0A3049]/5 rounded-lg transition-colors group"
                               onClick={() => setOpenDropdown(null)}
                             >

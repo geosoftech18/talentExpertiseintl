@@ -223,24 +223,42 @@ export async function generateInvoicePDF(
       opacity: 0.15,
     })
 
-    // Table header text - centered in colored container
-    const descriptionHeader = 'Description'
-    const amountHeader = 'Amount'
-    const descriptionHeaderWidth = helveticaBoldFont.widthOfTextAtSize(descriptionHeader, 10)
+    // Table header text - 3 columns: Course Name, Quantity, Total Amount
+    const courseNameHeader = 'Course Name'
+    const quantityHeader = 'Quantity'
+    const amountHeader = 'Total Amount'
+    
+    const courseNameHeaderWidth = helveticaBoldFont.widthOfTextAtSize(courseNameHeader, 10)
+    const quantityHeaderWidth = helveticaBoldFont.widthOfTextAtSize(quantityHeader, 10)
     const amountHeaderWidth = helveticaBoldFont.widthOfTextAtSize(amountHeader, 10)
     
-    // Center Description in left half
-    const descriptionX = margin + (contentWidth * 0.5 - descriptionHeaderWidth) / 2
-    page.drawText(descriptionHeader, {
-      x: descriptionX,
+    // Column widths: Course Name (50%), Quantity (20%), Total Amount (30%)
+    const courseNameColWidth = contentWidth * 0.5
+    const quantityColWidth = contentWidth * 0.2
+    const amountColWidth = contentWidth * 0.3
+    
+    // Course Name header (left column)
+    const courseNameX = margin + (courseNameColWidth - courseNameHeaderWidth) / 2
+    page.drawText(courseNameHeader, {
+      x: courseNameX,
       y: tableHeaderY - 8,
       size: 10,
       font: helveticaBoldFont,
       color: black,
     })
 
-    // Center Amount in right half
-    const amountX = margin + contentWidth * 0.5 + (contentWidth * 0.5 - amountHeaderWidth) / 2
+    // Quantity header (middle column)
+    const quantityX = margin + courseNameColWidth + (quantityColWidth - quantityHeaderWidth) / 2
+    page.drawText(quantityHeader, {
+      x: quantityX,
+      y: tableHeaderY - 8,
+      size: 10,
+      font: helveticaBoldFont,
+      color: black,
+    })
+
+    // Total Amount header (right column)
+    const amountX = margin + courseNameColWidth + quantityColWidth + (amountColWidth - amountHeaderWidth) / 2
     page.drawText(amountHeader, {
       x: amountX,
       y: tableHeaderY - 8,
@@ -262,7 +280,7 @@ export async function generateInvoicePDF(
     const courseTitle = invoiceData.courseTitle || 'Course Registration'
     
     // Wrap long course titles
-    const maxTitleWidth = contentWidth * 0.5 - 20
+    const maxTitleWidth = courseNameColWidth - 20
     const titleLines = wrapText(courseTitle, maxTitleWidth, helveticaFont, 10)
     
     let rowHeight = Math.max(30, titleLines.length * 15 + 10)
@@ -277,11 +295,11 @@ export async function generateInvoicePDF(
       opacity: 0.05,
     })
     
-    // Draw course title (centered in left half)
+    // Draw course title (left column - Course Name)
     let titleY = currentY - 10
     for (const line of titleLines) {
       const lineWidth = helveticaFont.widthOfTextAtSize(line, 10)
-      const lineX = margin + (contentWidth * 0.5 - lineWidth) / 2
+      const lineX = margin + (courseNameColWidth - lineWidth) / 2
       page.drawText(line, {
         x: lineX,
         y: titleY,
@@ -292,10 +310,22 @@ export async function generateInvoicePDF(
       titleY -= 15
     }
 
-    // Amount (centered in right half)
+    // Quantity (middle column)
+    const quantityText = participants.toString()
+    const quantityTextWidth = helveticaFont.widthOfTextAtSize(quantityText, 10)
+    const quantityTextX = margin + courseNameColWidth + (quantityColWidth - quantityTextWidth) / 2
+    page.drawText(quantityText, {
+      x: quantityTextX,
+      y: currentY - 10,
+      size: 10,
+      font: helveticaFont,
+      color: darkGray,
+    })
+
+    // Total Amount (right column) - calculated as unitPrice × quantity
     const amountText = formatCurrency(totalAmount)
     const amountTextWidth = helveticaBoldFont.widthOfTextAtSize(amountText, 10)
-    const amountTextX = margin + contentWidth * 0.5 + (contentWidth * 0.5 - amountTextWidth) / 2
+    const amountTextX = margin + courseNameColWidth + quantityColWidth + (amountColWidth - amountTextWidth) / 2
     page.drawText(amountText, {
       x: amountTextX,
       y: currentY - 10,
@@ -303,20 +333,6 @@ export async function generateInvoicePDF(
       font: helveticaBoldFont,
       color: darkGray,
     })
-    
-    // Show participants if more than 1
-    if (participants > 1) {
-      const participantsText = `${participants} × ${formatCurrency(unitPrice)}`
-      const participantsTextWidth = helveticaFont.widthOfTextAtSize(participantsText, 8)
-      const participantsTextX = margin + contentWidth * 0.5 + (contentWidth * 0.5 - participantsTextWidth) / 2
-      page.drawText(participantsText, {
-        x: participantsTextX,
-        y: currentY - 25,
-        size: 8,
-        font: helveticaFont,
-        color: mediumGray,
-      })
-    }
 
     // Row bottom line
     currentY -= rowHeight

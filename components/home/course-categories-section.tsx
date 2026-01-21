@@ -35,7 +35,10 @@ import {
   MapPin,
   X,
   Calendar,
+  Loader2,
 } from "lucide-react"
+import { CourseRegistrationForm } from "@/components/course-registration-form"
+import type { Course as CourseType, CourseSchedule } from "@/lib/supabase"
 
 const courseCategories = [
   {
@@ -343,6 +346,28 @@ export default function CourseCategoriesSection() {
   const [loadingCourses, setLoadingCourses] = useState(false)
   const sliderRef = useRef<HTMLDivElement>(null)
   const selectedCategoryRef = useRef<HTMLDivElement>(null)
+  const [showRegistration, setShowRegistration] = useState(false)
+  const [selectedCourse, setSelectedCourse] = useState<CourseType | null>(null)
+  const [selectedSchedules, setSelectedSchedules] = useState<CourseSchedule[]>([])
+  const [selectedScheduleId, setSelectedScheduleId] = useState<string | null>(null)
+  const [loadingCourseData, setLoadingCourseData] = useState(false)
+
+  // Function to strip HTML tags from description
+  const stripHtml = (html: string): string => {
+    if (!html) return ''
+    // Remove HTML tags
+    let text = html.replace(/<[^>]*>/g, '')
+    // Decode common HTML entities
+    text = text
+      .replace(/&nbsp;/g, ' ')
+      .replace(/&amp;/g, '&')
+      .replace(/&lt;/g, '<')
+      .replace(/&gt;/g, '>')
+      .replace(/&quot;/g, '"')
+      .replace(/&#39;/g, "'")
+      .replace(/&apos;/g, "'")
+    return text.trim()
+  }
 
   const filteredCategories = courseCategories.filter((category) =>
     category.title.toLowerCase().includes(searchTerm.toLowerCase()),
@@ -481,7 +506,73 @@ export default function CourseCategoriesSection() {
     }
   }, [selectedCategory])
 
+  const handleCardClick = (course: Course) => {
+    router.push(`/courses/${course.slug}`)
+  }
+
+  const handleBookNowClick = async (e: React.MouseEvent, course: Course) => {
+    e.stopPropagation() // Prevent card click
+    setLoadingCourseData(true)
+    
+    try {
+      // Fetch full course details with schedules
+      const response = await fetch(`/api/courses/${course.slug}`)
+      const result = await response.json()
+      
+      if (result.success && result.data) {
+        const courseData = result.data.course as CourseType
+        const schedules = result.data.schedules as CourseSchedule[]
+        
+        // Try to find matching schedule based on the course row's date/venue
+        let matchingScheduleId: string | null = null
+        if (course.startDate && schedules.length > 0) {
+          const matchingSchedule = schedules.find(s => {
+            const scheduleStart = s.start_date ? new Date(s.start_date).toISOString().split('T')[0] : null
+            const rowStart = course.startDate ? new Date(course.startDate).toISOString().split('T')[0] : null
+            return scheduleStart === rowStart && 
+                   (s.venue === course.venue || (!s.venue && !course.venue))
+          })
+          if (matchingSchedule) {
+            matchingScheduleId = matchingSchedule.id
+          } else if (schedules.length > 0) {
+            // If no exact match, use first schedule
+            matchingScheduleId = schedules[0].id
+          }
+        } else if (schedules.length > 0) {
+          matchingScheduleId = schedules[0].id
+        }
+        
+        setSelectedCourse(courseData)
+        setSelectedSchedules(schedules)
+        setSelectedScheduleId(matchingScheduleId)
+        setShowRegistration(true)
+      } else {
+        alert('Failed to load course details. Please try again.')
+      }
+    } catch (error) {
+      console.error('Error fetching course details:', error)
+      alert('Failed to load course details. Please try again.')
+    } finally {
+      setLoadingCourseData(false)
+    }
+  }
+
   return (
+    <>
+      {showRegistration && selectedCourse && (
+        <CourseRegistrationForm
+          course={selectedCourse}
+          schedules={selectedSchedules}
+          selectedScheduleId={selectedScheduleId}
+          onClose={() => {
+            setShowRegistration(false)
+            setSelectedCourse(null)
+            setSelectedSchedules([])
+            setSelectedScheduleId(null)
+          }}
+        />
+      )}
+
     <section className="py-10 sm:py-16 lg:py-20 bg-gradient-to-br from-gray-50 via-white to-blue-50 relative overflow-hidden">
       {/* Background Elements */}
       <div className="absolute top-0 left-0 w-64 h-64 sm:w-96 sm:h-96 bg-purple-200 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-pulse"></div>
@@ -825,7 +916,8 @@ export default function CourseCategoriesSection() {
                               {categoryCourses.map((course) => (
                                 <Card
                                   key={course.id}
-                                  className="flex-shrink-0 w-[280px] sm:w-72 lg:w-80 hover:shadow-xl transition-all duration-300 hover:-translate-y-1 border-2 border-gray-200 hover:border-gray-300 snap-start"
+                                  onClick={() => handleCardClick(course)}
+                                  className="flex-shrink-0 w-[280px] sm:w-72 lg:w-80 hover:shadow-xl transition-all duration-300 hover:-translate-y-1 border-2 border-gray-200 hover:border-gray-300 snap-start cursor-pointer"
                                 >
                                   <CardContent className="p-4 sm:p-5 lg:p-6">
                                     <div className="flex items-start justify-between mb-3 sm:mb-4">
@@ -844,13 +936,11 @@ export default function CourseCategoriesSection() {
                                       </div>
                                     </div>
 
-                                    <Link href={`/courses/${course.slug}`}>
-                                      <h4 className="text-base sm:text-lg font-bold text-gray-900 mb-2 line-clamp-2 hover:text-blue-600 transition-colors cursor-pointer">
-                                        {course.title}
-                                      </h4>
-                                    </Link>
+                                    <h4 className="text-base sm:text-lg font-bold text-gray-900 mb-2 line-clamp-2 hover:text-blue-600 transition-colors">
+                                      {course.title}
+                                    </h4>
                                     <p className="text-gray-600 mb-3 sm:mb-4 text-xs sm:text-sm leading-relaxed line-clamp-3">
-                                      {course.description || 'No description available'}
+                                      {stripHtml(course.description || 'No description available')}
                                     </p>
 
                                     <div className="space-y-1.5 sm:space-y-2 text-xs sm:text-sm text-gray-600 mb-3 sm:mb-4">
@@ -878,20 +968,30 @@ export default function CourseCategoriesSection() {
                                       )}
                                     </div>
 
-                                    <div className="flex gap-2">
-                                      <Link href={`/courses/${course.slug}`} className="flex-1">
-                                        <Button
-                                          size="sm"
-                                          className={`w-full bg-gradient-to-r ${category.color} text-white hover:opacity-90 text-xs sm:text-sm`}
-                                        >
-                                          Book Now
-                                        </Button>
-                                      </Link>
-                                      <Link href={`/courses/${course.slug}`}>
-                                        <Button variant="outline" size="sm" className="px-2 sm:px-3">
-                                          <BookOpen className="w-3 h-3 sm:w-4 sm:h-4" />
-                                        </Button>
-                                      </Link>
+                                    <div className="flex gap-2" onClick={(e) => e.stopPropagation()}>
+                                      <Button
+                                        onClick={(e) => handleBookNowClick(e, course)}
+                                        disabled={loadingCourseData}
+                                        size="sm"
+                                        className={`flex-1 bg-gradient-to-r ${category.color} text-white hover:opacity-90 text-xs sm:text-sm`}
+                                      >
+                                        {loadingCourseData ? (
+                                          <>
+                                            <Loader2 className="w-3 h-3 sm:w-4 sm:h-4 mr-2 animate-spin" />
+                                            Loading...
+                                          </>
+                                        ) : (
+                                          'Book Now'
+                                        )}
+                                      </Button>
+                                      <Button 
+                                        onClick={() => router.push(`/courses/${course.slug}`)}
+                                        variant="outline" 
+                                        size="sm" 
+                                        className="px-2 sm:px-3"
+                                      >
+                                        <BookOpen className="w-3 h-3 sm:w-4 sm:h-4" />
+                                      </Button>
                                     </div>
                                   </CardContent>
                                 </Card>
@@ -1414,7 +1514,6 @@ export default function CourseCategoriesSection() {
         </div>
       </div>
     </section>
+    </>
   )
-    
-  
 }

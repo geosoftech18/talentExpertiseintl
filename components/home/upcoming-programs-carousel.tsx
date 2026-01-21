@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { format } from "date-fns"
-import { Calendar, MapPin, DollarSign, ArrowRight } from "lucide-react"
+import { Calendar, MapPin, DollarSign, ArrowRight, Loader2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import {
@@ -14,6 +14,8 @@ import {
   CarouselPrevious,
   type CarouselApi,
 } from "@/components/ui/carousel"
+import { CourseRegistrationForm } from "@/components/course-registration-form"
+import type { Course, CourseSchedule } from "@/lib/supabase"
 
 interface UpcomingProgram {
   id: string
@@ -34,6 +36,11 @@ export default function UpcomingProgramsCarousel() {
   const [loading, setLoading] = useState(true)
   const [api, setApi] = useState<CarouselApi>()
   const [isHovered, setIsHovered] = useState(false)
+  const [showRegistration, setShowRegistration] = useState(false)
+  const [selectedCourse, setSelectedCourse] = useState<Course | null>(null)
+  const [selectedSchedules, setSelectedSchedules] = useState<CourseSchedule[]>([])
+  const [selectedScheduleId, setSelectedScheduleId] = useState<string | null>(null)
+  const [loadingCourseData, setLoadingCourseData] = useState(false)
 
   // Cache keys for upcoming schedules
   const CACHE_KEY = 'upcoming_schedules_cache'
@@ -153,8 +160,59 @@ export default function UpcomingProgramsCarousel() {
     return `$ ${price.toLocaleString()}`
   }
 
-  const handleRegister = (program: UpcomingProgram) => {
+  const handleCardClick = (program: UpcomingProgram) => {
     router.push(`/courses/${program.slug}`)
+  }
+
+  const handleRegisterClick = async (e: React.MouseEvent, program: UpcomingProgram) => {
+    e.stopPropagation() // Prevent card click
+    setLoadingCourseData(true)
+    
+    try {
+      // Fetch full course details with schedules
+      const response = await fetch(`/api/courses/${program.slug}`)
+      const result = await response.json()
+      
+      if (result.success && result.data) {
+        const courseData = result.data.course as Course
+        const schedules = result.data.schedules as CourseSchedule[]
+        
+        // Find matching schedule based on scheduleId
+        let matchingScheduleId: string | null = program.scheduleId || null
+        
+        // If scheduleId doesn't match, try to find by date/venue
+        if (!matchingScheduleId || !schedules.find(s => s.id === matchingScheduleId)) {
+          if (program.startDate && schedules.length > 0) {
+            const matchingSchedule = schedules.find(s => {
+              const scheduleStart = s.start_date ? new Date(s.start_date).toISOString().split('T')[0] : null
+              const rowStart = program.startDate ? new Date(program.startDate).toISOString().split('T')[0] : null
+              return scheduleStart === rowStart && 
+                     (s.venue === program.venue || (!s.venue && !program.venue))
+            })
+            if (matchingSchedule) {
+              matchingScheduleId = matchingSchedule.id
+            } else if (schedules.length > 0) {
+              // If no exact match, use first schedule
+              matchingScheduleId = schedules[0].id
+            }
+          } else if (schedules.length > 0) {
+            matchingScheduleId = schedules[0].id
+          }
+        }
+        
+        setSelectedCourse(courseData)
+        setSelectedSchedules(schedules)
+        setSelectedScheduleId(matchingScheduleId)
+        setShowRegistration(true)
+      } else {
+        alert('Failed to load course details. Please try again.')
+      }
+    } catch (error) {
+      console.error('Error fetching course details:', error)
+      alert('Failed to load course details. Please try again.')
+    } finally {
+      setLoadingCourseData(false)
+    }
   }
 
   // Auto-scroll functionality
@@ -177,6 +235,20 @@ export default function UpcomingProgramsCarousel() {
 
   return (
     <section className="py-16 bg-gradient-to-b from-white to-slate-50">
+      {showRegistration && selectedCourse && (
+        <CourseRegistrationForm
+          course={selectedCourse}
+          schedules={selectedSchedules}
+          selectedScheduleId={selectedScheduleId}
+          onClose={() => {
+            setShowRegistration(false)
+            setSelectedCourse(null)
+            setSelectedSchedules([])
+            setSelectedScheduleId(null)
+          }}
+        />
+      )}
+
       <div className="container mx-auto px-6 lg:px-8 max-w-7xl">
         {/* Section Header */}
         <div className="text-center mb-12">
@@ -218,7 +290,10 @@ export default function UpcomingProgramsCarousel() {
               <CarouselContent className="-ml-2 md:-ml-4">
                 {programs.map((program) => (
                   <CarouselItem key={program.id} className="pl-2 md:pl-4 basis-full md:basis-1/2 lg:basis-1/4">
-                    <Card className="h-full shadow-lg hover:shadow-xl transition-all duration-300 border-2 border-transparent hover:border-blue-300">
+                    <Card 
+                      className="h-full shadow-lg hover:shadow-xl transition-all duration-300 border-2 border-transparent hover:border-blue-300 cursor-pointer"
+                      onClick={() => handleCardClick(program)}
+                    >
                       <CardContent className="p-6 flex flex-col h-full">
                         {/* Ref Code Badge */}
                         <div className="mb-4">
@@ -234,26 +309,22 @@ export default function UpcomingProgramsCarousel() {
 
                         {/* Program Details */}
                         <div className="space-y-3 mb-6 flex-grow">
-                          <div className="flex items-start gap-2">
-                          {/* Start Date */}
+                          {/* Date */}
                           <div className="flex items-start gap-2">
                             <Calendar className="w-4 h-4 text-blue-600 mt-0.5 shrink-0" />
                             <div className="text-sm">
-                              <div className="font-medium text-slate-700">Starts</div>
-                              <div className="text-slate-600">{formatDate(program.startDate)}</div>
-                            </div>
-                          </div>
-
-                          {/* End Date */}
-                          {program.endDate && (
-                            <div className="flex items-start gap-2">
-                              <Calendar className="w-4 h-4 text-blue-600 mt-0.5 shrink-0" />
-                              <div className="text-sm">
-                                <div className="font-medium text-slate-700">Ends</div>
-                                <div className="text-slate-600">{formatDate(program.endDate)}</div>
+                              <div className="font-medium text-slate-700">Date</div>
+                              <div className="text-slate-600">
+                                {program.startDate ? (
+                                  <>
+                                    {format(new Date(program.startDate), 'MMM dd')}
+                                    {program.endDate && ` - ${format(new Date(program.endDate), 'MMM dd, yyyy')}`}
+                                  </>
+                                ) : (
+                                  'TBD'
+                                )}
                               </div>
                             </div>
-                          )}
                           </div>
                           {/* Venue */}
                           <div className="flex items-start gap-2">
@@ -278,11 +349,21 @@ export default function UpcomingProgramsCarousel() {
 
                         {/* Register Button */}
                         <Button
-                          onClick={() => handleRegister(program)}
+                          onClick={(e) => handleRegisterClick(e, program)}
+                          disabled={loadingCourseData}
                           className="w-full bg-[#0A3049] hover:bg-[#0A3049]/90 text-white font-semibold"
                         >
-                          Register Now
-                          <ArrowRight className="w-4 h-4 ml-2" />
+                          {loadingCourseData ? (
+                            <>
+                              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                              Loading...
+                            </>
+                          ) : (
+                            <>
+                              Register Now
+                              <ArrowRight className="w-4 h-4 ml-2" />
+                            </>
+                          )}
                         </Button>
                       </CardContent>
                     </Card>

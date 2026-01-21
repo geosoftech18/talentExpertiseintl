@@ -1,12 +1,13 @@
 'use client'
 
 import { useState, useEffect, useMemo } from 'react'
-import { Calendar as CalendarIcon, Clock, MapPin, ChevronLeft, ChevronRight, Filter, Loader2, X } from 'lucide-react'
+import { Calendar as CalendarIcon, MapPin, ChevronLeft, ChevronRight, Filter, Loader2, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { useRouter } from 'next/navigation'
 import { generateSlug } from '@/lib/utils/slug'
+import { format } from 'date-fns'
 
 const months = [
   'January', 'February', 'March', 'April', 'May', 'June',
@@ -17,6 +18,7 @@ interface CourseEvent {
   id: string
   title: string
   date: Date
+  endDate?: Date | null
   duration: string
   venue: string | null
   category: string
@@ -66,7 +68,8 @@ export default function CalendarPage() {
               // Convert date strings back to Date objects
               const eventsWithDates = parsedData.map((event: any) => ({
                 ...event,
-                date: new Date(event.date)
+                date: new Date(event.date),
+                endDate: event.endDate ? new Date(event.endDate) : null,
               }))
               if (!cancelled) {
                 setCourseEvents(eventsWithDates)
@@ -79,18 +82,35 @@ export default function CalendarPage() {
 
         // No cache or cache expired - fetch fresh data
         setLoading(true)
-        // Fetch all courses including expired ones for calendar view
-        const response = await fetch('/api/courses?limit=10000&includeExpired=true')
+        // Fetch only active/upcoming courses (not expired)
+        const response = await fetch('/api/courses?limit=10000')
         const result = await response.json()
 
         if (!cancelled && result.success) {
-          // Transform API data to calendar events format
+          const today = new Date()
+          today.setHours(0, 0, 0, 0)
+          
+          // Transform API data to calendar events format and filter out expired courses
           const events: CourseEvent[] = result.data
-            .filter((course: any) => course.startDate) // Only include courses with dates
+            .filter((course: any) => {
+              // Only include courses with dates
+              if (!course.startDate) return false
+              
+              // Filter out expired courses (where both startDate and endDate are in the past)
+              const startDate = new Date(course.startDate)
+              startDate.setHours(0, 0, 0, 0)
+              
+              const endDate = course.endDate ? new Date(course.endDate) : startDate
+              endDate.setHours(0, 0, 0, 0)
+              
+              // Only show courses that haven't ended yet
+              return endDate >= today
+            })
             .map((course: any) => ({
               id: course.id,
               title: course.title,
               date: new Date(course.startDate),
+              endDate: course.endDate ? new Date(course.endDate) : null,
               duration: course.duration || 'N/A',
               venue: course.venue || null,
               category: course.category || 'Uncategorized',
@@ -121,7 +141,8 @@ export default function CalendarPage() {
                 // Convert date strings back to Date objects
                 const eventsWithDates = parsedData.map((event: any) => ({
                   ...event,
-                  date: new Date(event.date)
+                  date: new Date(event.date),
+                  endDate: event.endDate ? new Date(event.endDate) : null,
                 }))
                 setCourseEvents(eventsWithDates)
               } catch (e) {
@@ -357,12 +378,11 @@ export default function CalendarPage() {
             <table className="w-full border-collapse min-w-[800px]">
               <thead className="bg-gradient-to-r from-[#0A3049] to-[#0A3049] text-white">
                 <tr>
-                  <th className="px-3 sm:px-4 py-3 text-left text-xs sm:text-sm font-semibold">Date</th>
                   <th className="px-3 sm:px-4 py-3 text-left text-xs sm:text-sm font-semibold">Course Title</th>
+                  <th className="px-3 sm:px-4 py-3 text-left text-xs sm:text-sm font-semibold">Course Date</th>
                   <th className="px-3 sm:px-4 py-3 text-left text-xs sm:text-sm font-semibold hidden sm:table-cell">Category</th>
-                  <th className="px-3 sm:px-4 py-3 text-left text-xs sm:text-sm font-semibold hidden md:table-cell">Duration</th>
                   <th className="px-3 sm:px-4 py-3 text-left text-xs sm:text-sm font-semibold hidden lg:table-cell">Venue</th>
-                  <th className="px-3 sm:px-4 py-3 text-left text-xs sm:text-sm font-semibold">Price</th>
+                  <th className="px-3 sm:px-4 py-3 text-left text-xs sm:text-sm font-semibold">Fee</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-200">
@@ -372,14 +392,6 @@ export default function CalendarPage() {
                     className="hover:bg-slate-50 transition-colors cursor-pointer"
                     onClick={() => router.push(`/courses/${event.slug}`)}
                   >
-                    <td className="px-3 sm:px-4 py-3 sm:py-4 text-xs sm:text-sm">
-                      <div className="flex items-center gap-1 sm:gap-2">
-                        <CalendarIcon className="w-3 h-3 sm:w-4 sm:h-4 text-slate-500 shrink-0" />
-                        <span className="text-slate-900 font-medium whitespace-nowrap">
-                          {event.date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
-                        </span>
-                      </div>
-                    </td>
                     <td className="px-3 sm:px-4 py-3 sm:py-4">
                       <div className="text-xs sm:text-sm font-semibold text-slate-900 hover:text-blue-600 transition-colors line-clamp-2">
                         {event.title}
@@ -388,23 +400,30 @@ export default function CalendarPage() {
                         <Badge variant="secondary" className="text-xs">{event.category}</Badge>
                       </div>
                     </td>
+                    <td className="px-3 sm:px-4 py-3 sm:py-4 text-xs sm:text-sm">
+                      {event.date ? (
+                        <div className="flex items-center gap-1 sm:gap-2 text-slate-700">
+                          <CalendarIcon className="w-3 h-3 sm:w-4 sm:h-4 text-slate-400 shrink-0" />
+                          <span className="whitespace-nowrap">
+                            {format(event.date, 'MMM dd')}
+                            {event.endDate && ` - ${format(event.endDate, 'MMM dd, yyyy')}`}
+                          </span>
+                        </div>
+                      ) : (
+                        <span className="text-slate-400">TBD</span>
+                      )}
+                    </td>
                     <td className="px-3 sm:px-4 py-3 sm:py-4 hidden sm:table-cell">
                       <Badge variant="secondary" className="text-xs">{event.category}</Badge>
-                    </td>
-                    <td className="px-3 sm:px-4 py-3 sm:py-4 text-xs sm:text-sm text-slate-600 hidden md:table-cell">
-                      <div className="flex items-center gap-1 sm:gap-2">
-                        <Clock className="w-3 h-3 sm:w-4 sm:h-4 text-slate-500 shrink-0" />
-                        <span>{event.duration}</span>
-                      </div>
                     </td>
                     <td className="px-3 sm:px-4 py-3 sm:py-4 text-xs sm:text-sm text-slate-600 hidden lg:table-cell">
                       {event.venue ? (
                         <div className="flex items-center gap-1 sm:gap-2">
-                          <MapPin className="w-3 h-3 sm:w-4 sm:h-4 text-slate-500 shrink-0" />
+                          <MapPin className="w-3 h-3 sm:w-4 sm:h-4 text-slate-400 shrink-0" />
                           <span className="break-words">{event.venue}</span>
                         </div>
                       ) : (
-                        <span className="text-slate-400">N/A</span>
+                        <span className="text-slate-400">TBD</span>
                       )}
                     </td>
                     <td className="px-3 sm:px-4 py-3 sm:py-4 text-xs sm:text-sm">

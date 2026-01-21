@@ -307,7 +307,7 @@ export default function VenuesPage() {
                     return (
                       <div
                         key={venue.id}
-                        onClick={() => router.push(`/courses?venue=${encodeURIComponent(venueDisplay)}`)}
+                        onClick={() => router.push(`/courses/venue/${encodeURIComponent(venueDisplay)}`)}
                         className="flex items-center gap-3 p-4 bg-slate-50 rounded-lg hover:bg-blue-50 transition-colors group cursor-pointer"
                       >
                         <div className="w-10 h-10 rounded-full bg-white shadow-sm border-2 border-slate-200 flex items-center justify-center shrink-0 group-hover:border-blue-400 transition-colors overflow-hidden">

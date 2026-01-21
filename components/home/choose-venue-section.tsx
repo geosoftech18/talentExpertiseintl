@@ -310,7 +310,7 @@ export default function ChooseVenueSection() {
   const handleVenueClick = (city: string, country: string) => {
     // Format venue as "City, Country" to match the courses page filter format
     const venueFilter = `${city}, ${country}`
-    router.push(`/courses?venue=${encodeURIComponent(venueFilter)}`)
+    router.push(`/courses/venue/${encodeURIComponent(venueFilter)}`)
   }
 
   return (

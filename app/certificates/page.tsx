@@ -114,7 +114,7 @@ export default function CertificatesPage() {
               return (
                 <Link
                   key={certificate.id}
-                  href={`/courses?certificate=${encodeURIComponent(certificate.id)}`}
+                  href={`/courses/certificate/${encodeURIComponent(certificate.id)}`}
                   className="flex gap-6 items-start p-6 rounded-lg border border-slate-200 bg-white hover:shadow-lg hover:border-blue-300 transition-all duration-300 cursor-pointer group"
                 >
                   {/* Logo/Image Section */}
