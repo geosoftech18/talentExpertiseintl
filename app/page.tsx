@@ -1,11 +1,9 @@
 "use client"
-import HeroSection from "@/components/home/hero-section"
 import ModernHeroSection from "@/components/home/modern-hero-section"
 import CourseFilterSection from "@/components/home/course-filter-section"
 import CourseCategoriesSection from "@/components/home/course-categories-section"
 import TestimonialsSection from "@/components/home/testimonials-section"
 import CTASection from "@/components/home/cta-section"
-import HeroSliderDemo from "@/components/home/hero-slider-demo"
 import UpcomingProgramsSection from "@/components/home/upcoming-programs-section"
 import UpcomingProgramsCarousel from "@/components/home/upcoming-programs-carousel"
 import AffiliationsSection from "@/components/home/affiliations-section"
@@ -16,8 +14,8 @@ export default function Page() {
   return (
     <>
     <ModernHeroSection />
-    <HeroSliderDemo/>
-      {/* <HeroSection /> */}
+ 
+   
       <CourseFilterSection />
       {/* Table View - Uncomment to use */}
       {/* <UpcomingProgramsSection /> */}

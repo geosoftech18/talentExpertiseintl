@@ -3,6 +3,7 @@
 import { useState, useEffect, useMemo } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { Calendar, MapPin, Award, Filter, X, Loader2, ChevronLeft, ChevronRight, RotateCcw } from 'lucide-react'
+import Image from 'next/image'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
@@ -33,6 +34,7 @@ interface CourseListItem {
 interface Certificate {
   id: string
   name: string
+  imageUrl?: string | null
 }
 
 export default function CertificateCoursesPage() {
@@ -43,6 +45,7 @@ export default function CertificateCoursesPage() {
   const [allCourses, setAllCourses] = useState<CourseListItem[]>([])
   const [availableCertificates, setAvailableCertificates] = useState<Certificate[]>([])
   const [certificateName, setCertificateName] = useState<string>('')
+  const [certificateImageUrl, setCertificateImageUrl] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
   const [loadingCertificates, setLoadingCertificates] = useState(true)
   const [showFilters, setShowFilters] = useState(false)
@@ -65,10 +68,11 @@ export default function CertificateCoursesPage() {
           const certificates = result.data || []
           setAvailableCertificates(certificates)
           
-          // Find the certificate name by ID
+          // Find the certificate by ID
           const cert = certificates.find((c: Certificate) => c.id === certificateId)
           if (cert) {
             setCertificateName(cert.name)
+            setCertificateImageUrl(cert.imageUrl || null)
           }
         }
       } catch (error) {
@@ -235,9 +239,27 @@ export default function CertificateCoursesPage() {
             <Badge className="bg-blue-500/20 text-white border-blue-400/30 mb-6">
               Professional Certification
             </Badge>
-            <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-5xl font-bold mb-4 sm:mb-6 leading-tight">
-              {certificateName || 'Certificate Courses'}
-            </h1>
+            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-6 mb-4 sm:mb-6">
+              {certificateImageUrl && (
+                <div className="relative w-20 h-20 sm:w-24 sm:h-24 md:w-28 md:h-28 rounded-lg overflow-hidden bg-white/10 backdrop-blur-sm border-2 border-white/20 flex-shrink-0 shadow-lg">
+                  <Image
+                    src={certificateImageUrl}
+                    alt={certificateName || 'Certificate'}
+                    fill
+                    className="object-contain p-2"
+                    onError={(e) => {
+                      // Hide image on error
+                      e.currentTarget.style.display = 'none'
+                    }}
+                  />
+                </div>
+              )}
+              <div className="flex-1">
+                <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-5xl font-bold leading-tight">
+                  {certificateName || 'Certificate Courses'}
+                </h1>
+              </div>
+            </div>
             <p className="text-base sm:text-lg md:text-xl text-blue-100 leading-relaxed">
               {certificateName 
                 ? `Explore our comprehensive training programs that lead to ${certificateName} certification.`

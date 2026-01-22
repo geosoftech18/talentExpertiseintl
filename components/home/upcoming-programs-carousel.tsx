@@ -2,10 +2,19 @@
 
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
+import { useSession } from "next-auth/react"
 import { format } from "date-fns"
-import { Calendar, MapPin, DollarSign, ArrowRight, Loader2 } from "lucide-react"
+import { Calendar, MapPin, DollarSign, ArrowRight, Loader2, LogIn } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
 import {
   Carousel,
   CarouselContent,
@@ -32,6 +41,7 @@ interface UpcomingProgram {
 
 export default function UpcomingProgramsCarousel() {
   const router = useRouter()
+  const { data: session, status } = useSession()
   const [programs, setPrograms] = useState<UpcomingProgram[]>([])
   const [loading, setLoading] = useState(true)
   const [api, setApi] = useState<CarouselApi>()
@@ -41,6 +51,7 @@ export default function UpcomingProgramsCarousel() {
   const [selectedSchedules, setSelectedSchedules] = useState<CourseSchedule[]>([])
   const [selectedScheduleId, setSelectedScheduleId] = useState<string | null>(null)
   const [loadingCourseData, setLoadingCourseData] = useState(false)
+  const [showLoginDialog, setShowLoginDialog] = useState(false)
 
   // Cache keys for upcoming schedules
   const CACHE_KEY = 'upcoming_schedules_cache'
@@ -166,6 +177,20 @@ export default function UpcomingProgramsCarousel() {
 
   const handleRegisterClick = async (e: React.MouseEvent, program: UpcomingProgram) => {
     e.stopPropagation() // Prevent card click
+    
+    // Check if user is authenticated
+    if (status === "loading") {
+      // Still loading, wait a bit
+      return
+    }
+    
+    if (status === "unauthenticated" || !session?.user) {
+      // User is not logged in, show login dialog
+      setShowLoginDialog(true)
+      return
+    }
+    
+    // User is logged in, proceed with registration flow
     setLoadingCourseData(true)
     
     try {
@@ -235,6 +260,44 @@ export default function UpcomingProgramsCarousel() {
 
   return (
     <section className="py-16 bg-gradient-to-b from-white to-slate-50">
+      {/* Login Required Dialog */}
+      <Dialog open={showLoginDialog} onOpenChange={setShowLoginDialog}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <div className="flex items-center gap-3 mb-2">
+              <div className="p-2 bg-blue-100 rounded-full">
+                <LogIn className="w-6 h-6 text-blue-600" />
+              </div>
+              <DialogTitle className="text-2xl font-bold text-[#0A3049]">
+                Login Required
+              </DialogTitle>
+            </div>
+            <DialogDescription className="text-base text-slate-600 pt-2">
+              To register for this course, you need to be logged in. Please log in to your account to continue with the registration process.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="flex-col sm:flex-row gap-2 sm:gap-0">
+            <Button
+              variant="outline"
+              onClick={() => setShowLoginDialog(false)}
+              className="w-full sm:w-auto"
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={() => {
+                setShowLoginDialog(false)
+                router.push('/auth')
+              }}
+              className="w-full sm:w-auto bg-[#0A3049] hover:bg-[#0A3049]/90 text-white"
+            >
+              <LogIn className="w-4 h-4 mr-2" />
+              Go to Login
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       {showRegistration && selectedCourse && (
         <CourseRegistrationForm
           course={selectedCourse}

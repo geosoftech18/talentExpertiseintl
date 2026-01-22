@@ -83,71 +83,187 @@ const getFlagImageUrl = (countryCode: string): string => {
   return `https://flagcdn.com/w40/${countryCode.toLowerCase()}.png`
 }
 
+// Comprehensive country to continent mapping
+const countryToContinent: { [key: string]: string } = {
+  // Asia
+  'indonesia': 'Asia', 'id': 'Asia',
+  'india': 'Asia', 'in': 'Asia',
+  'thailand': 'Asia', 'th': 'Asia',
+  'uae': 'Asia', 'united arab emirates': 'Asia', 'ae': 'Asia',
+  'malaysia': 'Asia', 'my': 'Asia',
+  'saudi arabia': 'Asia', 'ksa': 'Asia', 'sa': 'Asia',
+  'qatar': 'Asia', 'qa': 'Asia',
+  'bahrain': 'Asia', 'bh': 'Asia',
+  'oman': 'Asia', 'om': 'Asia',
+  'china': 'Asia', 'cn': 'Asia',
+  'japan': 'Asia', 'jp': 'Asia',
+  'south korea': 'Asia', 'korea': 'Asia', 'kr': 'Asia',
+  'philippines': 'Asia', 'ph': 'Asia',
+  'vietnam': 'Asia', 'vn': 'Asia',
+  'singapore': 'Asia', 'sg': 'Asia',
+  'hong kong': 'Asia', 'hongkong': 'Asia', 'hk': 'Asia',
+  'taiwan': 'Asia', 'tw': 'Asia',
+  'bangladesh': 'Asia', 'bd': 'Asia',
+  'pakistan': 'Asia', 'pk': 'Asia',
+  'sri lanka': 'Asia', 'lk': 'Asia',
+  'nepal': 'Asia', 'np': 'Asia',
+  'myanmar': 'Asia', 'mm': 'Asia',
+  'cambodia': 'Asia', 'kh': 'Asia',
+  'laos': 'Asia', 'la': 'Asia',
+  'kuwait': 'Asia', 'kw': 'Asia',
+  'jordan': 'Asia', 'jo': 'Asia',
+  'lebanon': 'Asia', 'lb': 'Asia',
+  'israel': 'Asia', 'il': 'Asia',
+  'iraq': 'Asia', 'iq': 'Asia',
+  'iran': 'Asia', 'ir': 'Asia',
+  'afghanistan': 'Asia', 'af': 'Asia',
+  'kazakhstan': 'Asia', 'kz': 'Asia',
+  'uzbekistan': 'Asia', 'uz': 'Asia',
+  'mongolia': 'Asia', 'mn': 'Asia',
+  'yemen': 'Asia', 'ye': 'Asia',
+  'syria': 'Asia', 'sy': 'Asia',
+  
+  // Africa
+  'ghana': 'Africa', 'gh': 'Africa',
+  'south africa': 'Africa', 'za': 'Africa',
+  'uganda': 'Africa', 'ug': 'Africa',
+  'zimbabwe': 'Africa', 'zw': 'Africa',
+  'rwanda': 'Africa', 'rw': 'Africa',
+  'morocco': 'Africa', 'ma': 'Africa',
+  'kenya': 'Africa', 'ke': 'Africa',
+  'mauritius': 'Africa', 'mu': 'Africa',
+  'egypt': 'Africa', 'eg': 'Africa',
+  'seychelles': 'Africa', 'sc': 'Africa',
+  'tanzania': 'Africa', 'tz': 'Africa',
+  'ethiopia': 'Africa', 'et': 'Africa',
+  'nigeria': 'Africa', 'ng': 'Africa',
+  'algeria': 'Africa', 'dz': 'Africa',
+  'tunisia': 'Africa', 'tn': 'Africa',
+  'libya': 'Africa', 'ly': 'Africa',
+  'sudan': 'Africa', 'sd': 'Africa',
+  'senegal': 'Africa', 'sn': 'Africa',
+  'ivory coast': 'Africa', 'cote d\'ivoire': 'Africa', 'ci': 'Africa',
+  'cameroon': 'Africa', 'cm': 'Africa',
+  'angola': 'Africa', 'ao': 'Africa',
+  'mozambique': 'Africa', 'mz': 'Africa',
+  'madagascar': 'Africa', 'mg': 'Africa',
+  'botswana': 'Africa', 'bw': 'Africa',
+  'namibia': 'Africa', 'na': 'Africa',
+  'zambia': 'Africa', 'zm': 'Africa',
+  'malawi': 'Africa', 'mw': 'Africa',
+  
+  // Europe
+  'netherlands': 'Europe', 'nl': 'Europe',
+  'spain': 'Europe', 'sp': 'Europe', 'es': 'Europe',
+  'uk': 'Europe', 'united kingdom': 'Europe', 'gb': 'Europe', 'great britain': 'Europe',
+  'germany': 'Europe', 'de': 'Europe',
+  'switzerland': 'Europe', 'ch': 'Europe',
+  'turkey': 'Europe', 'tr': 'Europe',
+  'italy': 'Europe', 'it': 'Europe',
+  'france': 'Europe', 'fr': 'Europe',
+  'czech republic': 'Europe', 'czechia': 'Europe', 'cz': 'Europe',
+  'austria': 'Europe', 'at': 'Europe',
+  'greece': 'Europe', 'gr': 'Europe',
+  'azerbaijan': 'Europe', 'az': 'Europe',
+  'portugal': 'Europe', 'pt': 'Europe',
+  'belgium': 'Europe', 'be': 'Europe',
+  'poland': 'Europe', 'pl': 'Europe',
+  'sweden': 'Europe', 'se': 'Europe',
+  'norway': 'Europe', 'no': 'Europe',
+  'denmark': 'Europe', 'dk': 'Europe',
+  'finland': 'Europe', 'fi': 'Europe',
+  'ireland': 'Europe', 'ie': 'Europe',
+  'romania': 'Europe', 'ro': 'Europe',
+  'hungary': 'Europe', 'hu': 'Europe',
+  'slovakia': 'Europe', 'sk': 'Europe',
+  'croatia': 'Europe', 'hr': 'Europe',
+  'serbia': 'Europe', 'rs': 'Europe',
+  'bulgaria': 'Europe', 'bg': 'Europe',
+  'ukraine': 'Europe', 'ua': 'Europe',
+  'russia': 'Europe', 'ru': 'Europe',
+  
+  // North America
+  'usa': 'North America', 'united states': 'North America', 'united states of america': 'North America', 'us': 'North America',
+  'canada': 'North America', 'ca': 'North America',
+  'mexico': 'North America', 'mx': 'North America',
+  'costa rica': 'North America', 'cr': 'North America',
+  'panama': 'North America', 'pa': 'North America',
+  'jamaica': 'North America', 'jm': 'North America',
+  'cuba': 'North America', 'cu': 'North America',
+  
+  // South America
+  'brazil': 'South America', 'br': 'South America',
+  'argentina': 'South America', 'ar': 'South America',
+  'chile': 'South America', 'cl': 'South America',
+  'colombia': 'South America', 'co': 'South America',
+  'peru': 'South America', 'pe': 'South America',
+  'ecuador': 'South America', 'ec': 'South America',
+  'venezuela': 'South America', 've': 'South America',
+  'uruguay': 'South America', 'uy': 'South America',
+  'paraguay': 'South America', 'py': 'South America',
+  'bolivia': 'South America', 'bo': 'South America',
+  
+  // Oceania
+  'australia': 'Oceania', 'au': 'Oceania',
+  'new zealand': 'Oceania', 'nz': 'Oceania',
+  'fiji': 'Oceania', 'fj': 'Oceania',
+  'papua new guinea': 'Oceania', 'pg': 'Oceania',
+}
+
 // Function to determine continent from country name
 const getContinent = (country: string): string => {
   if (!country) return 'Other'
   
   const normalizedCountry = country.trim().toLowerCase()
   
-  // Asia
-  const asiaCountries = [
-    'indonesia', 'india', 'thailand', 'uae', 'united arab emirates', 'malaysia', 'saudi arabia',
-    'qatar', 'bahrain', 'oman', 'china', 'japan', 'south korea', 'philippines', 'vietnam',
-    'singapore', 'hongkong', 'taiwan', 'bangladesh', 'pakistan', 'sri lanka', 'nepal', 'myanmar',
-    'cambodia', 'laos', 'kuwait', 'jordan', 'lebanon', 'israel', 'iraq', 'iran', 'afghanistan',
-    'kazakhstan', 'uzbekistan', 'mongolia','hk','sg','KSA','SN'
-  ]
-  
-  // Africa
-  const africaCountries = [
-    'ghana', 'south africa', 'uganda', 'zimbabwe', 'rwanda', 'morocco', 'kenya', 'mauritius',
-    'egypt', 'seychelles', 'tanzania', 'ethiopia', 'nigeria', 'algeria', 'tunisia', 'libya',
-    'sudan', 'senegal', 'ivory coast', 'cameroon', 'angola', 'mozambique', 'madagascar',
-    'botswana', 'namibia', 'zambia', 'malawi','SA','TZ','SE','MA','RW','KE','EG'
-  ]
-  
-  // Europe
-  const europeCountries = [
-    'netherlands', 'spain', 'uk', 'united kingdom', 'germany', 'switzerland', 'turkey', 'italy',
-    'france', 'czech republic', 'austria', 'greece', 'azerbaijan', 'portugal', 'belgium', 'poland',
-    'sweden', 'norway', 'denmark', 'finland', 'ireland', 'romania', 'hungary', 'slovakia',
-    'croatia', 'serbia', 'bulgaria', 'ukraine', 'russia','SP','CH','TR','PT','IT'
-  ]
-  
-  // North America
-  const northAmericaCountries = [
-    'usa', 'united states', 'united states of america', 'canada', 'mexico', 'costa rica',
-    'panama', 'jamaica', 'cuba','US'
-  ]
-  
-  // South America
-  const southAmericaCountries = [
-    'brazil', 'argentina', 'chile', 'colombia', 'peru', 'ecuador', 'venezuela', 'uruguay',
-    'paraguay', 'bolivia',
-  ]
-  
-  // Oceania
-  const oceaniaCountries = [
-    'australia', 'new zealand', 'fiji', 'papua new guinea'
-  ]
-  
-  if (asiaCountries.some(c => normalizedCountry.includes(c) || c.includes(normalizedCountry))) {
-    return 'Asia'
+  // Direct lookup first (exact match)
+  if (countryToContinent[normalizedCountry]) {
+    return countryToContinent[normalizedCountry]
   }
-  if (africaCountries.some(c => normalizedCountry.includes(c) || c.includes(normalizedCountry))) {
-    return 'Africa'
+  
+  // Try with common variations
+  const variations: { [key: string]: string } = {
+    'united states': 'usa',
+    'united states of america': 'usa',
+    'u.s.': 'usa',
+    'u.s.a.': 'usa',
+    'united kingdom': 'uk',
+    'great britain': 'uk',
+    'britain': 'uk',
+    'hong kong': 'hong kong',
+    'hongkong': 'hong kong',
+    'south korea': 'south korea',
+    'korea': 'south korea',
+    'czech republic': 'czech republic',
+    'czechia': 'czech republic',
+    'ivory coast': 'ivory coast',
+    'cote d\'ivoire': 'ivory coast',
   }
-  if (europeCountries.some(c => normalizedCountry.includes(c) || c.includes(normalizedCountry))) {
-    return 'Europe'
+  
+  // Check variations
+  for (const [variation, standard] of Object.entries(variations)) {
+    if (normalizedCountry.includes(variation) || variation.includes(normalizedCountry)) {
+      const standardKey = standard.toLowerCase()
+      if (countryToContinent[standardKey]) {
+        return countryToContinent[standardKey]
+      }
+    }
   }
-  if (northAmericaCountries.some(c => normalizedCountry.includes(c) || c.includes(normalizedCountry))) {
-    return 'North America'
-  }
-  if (southAmericaCountries.some(c => normalizedCountry.includes(c) || c.includes(normalizedCountry))) {
-    return 'South America'
-  }
-  if (oceaniaCountries.some(c => normalizedCountry.includes(c) || c.includes(normalizedCountry))) {
-    return 'Oceania'
+  
+  // Try partial match (but be careful with abbreviations)
+  for (const [key, continent] of Object.entries(countryToContinent)) {
+    // Only match if it's a full word match or exact abbreviation
+    if (key.length <= 3) {
+      // For abbreviations, require exact match
+      if (normalizedCountry === key) {
+        return continent
+      }
+    } else {
+      // For full country names, check if country contains the key or vice versa
+      if (normalizedCountry === key || normalizedCountry.includes(key) || key.includes(normalizedCountry)) {
+        return continent
+      }
+    }
   }
   
   return 'Other'

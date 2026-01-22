@@ -123,7 +123,7 @@ export default function ModernHeroSection() {
             <Button
               size="lg"
               className="bg-[#06b6d4] hover:bg-[#06b6d4]/90 text-white font-semibold px-8 py-6 text-base group shadow-xl hover:shadow-2xl hover:scale-105 transition-all duration-300"
-              onClick={() => router.push('/courses')}
+              onClick={() => router.push('/public-program')}
             >
               Explore Courses
               <ArrowRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />
