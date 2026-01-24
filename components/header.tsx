@@ -138,7 +138,7 @@ export default function Header() {
               </div>
               <div className="flex items-center gap-2">
                 <Mail className="w-4 h-4" />
-                <span>info@talenexpertiseintl.com</span>
+                <span>info@talentexpertiseintl.com</span>
               </div>
             </div>
             <div className="hidden md:flex items-center gap-4">

@@ -15,7 +15,7 @@ const offices = [
     address: 'P. O. Box 213984, Dubai UAE',
     phone: '+971-4-5473010',
     
-    email: 'info@talenexpertiseintl.com',
+    email: 'info@talentexpertiseintl.com',
     hours: 'Monday - Friday: 10:00 AM - 6:00 PM',
   },
   {
