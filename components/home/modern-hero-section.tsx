@@ -114,7 +114,7 @@ export default function ModernHeroSection() {
             </h1>
             
             <p className="text-lg md:text-xl text-white/90 leading-relaxed max-w-2xl mx-auto">
-              Exceptional provider of world-class training, coaching & consulting services across 36+ global cities.
+              Exceptional provider of world-class training, coaching & consulting services across 70+ global cities.
             </p>
           </div>
 
@@ -142,7 +142,7 @@ export default function ModernHeroSection() {
           <div className={`grid grid-cols-2 md:grid-cols-4 gap-6 md:gap-8 pt-12 border-t border-white/10 transition-all duration-1000 delay-600 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}>
             {[
               { value: "100+", label: "Expert Consultants" },
-              { value: "36+", label: "Global Cities" },
+              { value: "70+", label: "Global Cities" },
               { value: "40+", label: "Years Experience" },
               { value: "50K+", label: "Professionals Trained" },
             ].map((stat, index) => (

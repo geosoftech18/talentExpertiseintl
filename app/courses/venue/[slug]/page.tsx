@@ -2,12 +2,13 @@
 
 import { useState, useEffect, useMemo } from 'react'
 import { useParams, useRouter } from 'next/navigation'
-import { Calendar, MapPin, Clock, Filter, X, Loader2, ChevronLeft, ChevronRight, RotateCcw } from 'lucide-react'
+import { Calendar, MapPin, Clock, Filter, X, Loader2, ChevronLeft, ChevronRight, RotateCcw, Download, FileSpreadsheet, FileText } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { format } from 'date-fns'
 import { generateSlug } from '@/lib/utils/slug'
+import * as XLSX from 'xlsx'
 
 const months = [
   'January', 'February', 'March', 'April', 'May', 'June',
@@ -216,6 +217,189 @@ export default function VenueCoursesPage() {
     setCurrentPage(1)
   }
 
+  // Export to Excel
+  const exportToExcel = () => {
+    if (venueCourses.length === 0) {
+      alert('No courses available to export')
+      return
+    }
+
+    // Create header row with venue name
+    const headerData = [
+      { 'Venue': venueName },
+      { 'Export Date': format(new Date(), 'yyyy-MM-dd') },
+      { 'Total Courses': venueCourses.length },
+      {}, // Empty row
+    ]
+
+    const exportData = venueCourses.map(course => ({
+      'Course Title': course.title,
+      'Course Code': course.courseCode || 'N/A',
+      'Category': course.category,
+      'Start Date': course.startDate ? format(new Date(course.startDate), 'yyyy-MM-dd') : 'TBD',
+      'End Date': course.endDate ? format(new Date(course.endDate), 'yyyy-MM-dd') : 'TBD',
+      'Fee': course.price > 0 ? `$${course.price.toLocaleString()}` : 'Contact for pricing',
+    }))
+
+    // Combine header and data
+    const allData = [
+      ...headerData.map(row => ({ ...row, 'Course Title': '', 'Course Code': '', 'Category': '', 'Start Date': '', 'End Date': '', 'Fee': '' })),
+      ...exportData
+    ]
+
+    const worksheet = XLSX.utils.json_to_sheet(allData, { skipHeader: true })
+    const workbook = XLSX.utils.book_new()
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Courses')
+    
+    // Auto-size columns
+    const wscols = [
+      { wch: 30 }, // Venue/Header
+      { wch: 40 }, // Course Title
+      { wch: 15 }, // Course Code
+      { wch: 20 }, // Category
+      { wch: 12 }, // Start Date
+      { wch: 12 }, // End Date
+      { wch: 18 }, // Fee
+    ]
+    worksheet['!cols'] = wscols
+
+    // Add header row manually
+    const headerRow = ['Course Title', 'Course Code', 'Category', 'Start Date', 'End Date', 'Fee']
+    XLSX.utils.sheet_add_aoa(worksheet, [
+      ['Venue', venueName, '', '', '', ''],
+      ['Export Date', format(new Date(), 'yyyy-MM-dd'), '', '', '', ''],
+      ['Total Courses', venueCourses.length.toString(), '', '', '', ''],
+      [], // Empty row
+      headerRow, // Column headers
+    ], { origin: 'A1' })
+
+    const filename = `${venueName.replace(/[^a-z0-9]/gi, '_')}_courses_${format(new Date(), 'yyyy-MM-dd')}.xlsx`
+    XLSX.writeFile(workbook, filename)
+  }
+
+  // Export to Word
+  const exportToWord = () => {
+    if (venueCourses.length === 0) {
+      alert('No courses available to export')
+      return
+    }
+
+    // Create HTML content for Word document
+    let htmlContent = `
+      <html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
+      <head>
+        <meta charset='utf-8'>
+        <title>${venueName} - Courses</title>
+        <style>
+          body {
+            font-family: Arial, sans-serif;
+            margin: 40px;
+          }
+          h1 {
+            color: #0A3049;
+            border-bottom: 3px solid #0A3049;
+            padding-bottom: 10px;
+            margin-bottom: 30px;
+          }
+          h2 {
+            color: #0A3049;
+            margin-top: 30px;
+            margin-bottom: 15px;
+          }
+          table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            margin-bottom: 30px;
+          }
+          th {
+            background-color: #0A3049;
+            color: white;
+            padding: 12px;
+            text-align: left;
+            font-weight: bold;
+          }
+          td {
+            border: 1px solid #ddd;
+            padding: 10px;
+          }
+          tr:nth-child(even) {
+            background-color: #f9f9f9;
+          }
+          .course-title {
+            font-weight: bold;
+            color: #0A3049;
+          }
+          .course-code {
+            color: #666;
+            font-size: 0.9em;
+          }
+          .footer {
+            margin-top: 40px;
+            padding-top: 20px;
+            border-top: 1px solid #ddd;
+            color: #666;
+            font-size: 0.9em;
+          }
+        </style>
+      </head>
+      <body>
+        <h1>${venueName} - Training Courses</h1>
+        <p><strong>Venue:</strong> ${venueName}</p>
+        <p><strong>Total Courses:</strong> ${venueCourses.length}</p>
+        <p><strong>Export Date:</strong> ${format(new Date(), 'MMMM dd, yyyy')}</p>
+        
+        <table>
+          <thead>
+            <tr>
+              <th>Course Title</th>
+              <th>Course Code</th>
+              <th>Category</th>
+              <th>Start Date</th>
+              <th>End Date</th>
+              <th>Fee</th>
+            </tr>
+          </thead>
+          <tbody>
+    `
+
+    venueCourses.forEach((course, index) => {
+      htmlContent += `
+        <tr>
+          <td class="course-title">${course.title}</td>
+          <td class="course-code">${course.courseCode || 'N/A'}</td>
+          <td>${course.category}</td>
+          <td>${course.startDate ? format(new Date(course.startDate), 'MMM dd, yyyy') : 'TBD'}</td>
+          <td>${course.endDate ? format(new Date(course.endDate), 'MMM dd, yyyy') : 'TBD'}</td>
+          <td>${course.price > 0 ? `$${course.price.toLocaleString()}` : 'Contact for pricing'}</td>
+        </tr>
+      `
+    })
+
+    htmlContent += `
+          </tbody>
+        </table>
+        
+        <div class="footer">
+          <p>Generated on ${format(new Date(), 'MMMM dd, yyyy')} | Talent Expertise Institute</p>
+        </div>
+      </body>
+      </html>
+    `
+
+    // Create blob and download
+    const blob = new Blob(['\ufeff', htmlContent], { type: 'application/msword' })
+    const link = document.createElement('a')
+    const url = URL.createObjectURL(blob)
+    link.setAttribute('href', url)
+    link.setAttribute('download', `${venueName.replace(/[^a-z0-9]/gi, '_')}_courses_${format(new Date(), 'yyyy-MM-dd')}.doc`)
+    link.style.visibility = 'hidden'
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+    URL.revokeObjectURL(url)
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-slate-50 to-white">
       {/* Hero Section */}
@@ -229,9 +413,31 @@ export default function VenueCoursesPage() {
             <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-5xl font-bold mb-4 sm:mb-6 leading-tight">
               {venueName}
             </h1>
-            <p className="text-base sm:text-lg md:text-xl text-blue-100 leading-relaxed">
+            <p className="text-base sm:text-lg md:text-xl text-blue-100 leading-relaxed mb-6">
               Discover our comprehensive training programs available at {venueName}. Join us for world-class professional development courses.
             </p>
+            
+            {/* Download Buttons */}
+            {!loading && venueCourses.length > 0 && (
+              <div className="flex flex-wrap gap-3 mt-6">
+                <Button
+                  onClick={exportToExcel}
+                  className="bg-green-600 hover:bg-green-700 text-white border-0 shadow-lg"
+                  size="lg"
+                >
+                  <FileSpreadsheet className="w-5 h-5 mr-2" />
+                  Download Excel
+                </Button>
+                <Button
+                  onClick={exportToWord}
+                  className="bg-blue-600 hover:bg-blue-700 text-white border-0 shadow-lg"
+                  size="lg"
+                >
+                  <FileText className="w-5 h-5 mr-2" />
+                  Download Word
+                </Button>
+              </div>
+            )}
           </div>
         </div>
       </div>

@@ -3,11 +3,12 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { signIn } from 'next-auth/react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { Mail, Lock, Eye, EyeOff, User, Loader2 } from 'lucide-react';
 
 export default function DoubleSliderAuthForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [isSignUp, setIsSignUp] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -92,6 +93,39 @@ export default function DoubleSliderAuthForm() {
     return Object.keys(newErrors).length === 0;
   };
 
+  // Get callback URL from query params, window.location.search, or sessionStorage
+  const getCallbackUrl = (): string => {
+    // Priority 1: Check window.location.search (most reliable)
+    if (typeof window !== 'undefined') {
+      const urlParams = new URLSearchParams(window.location.search);
+      const callbackFromUrl = urlParams.get('callbackUrl');
+      if (callbackFromUrl) {
+        console.log('Callback URL from window.location.search:', callbackFromUrl);
+        return decodeURIComponent(callbackFromUrl);
+      }
+    }
+
+    // Priority 2: Check searchParams (Next.js)
+    const callbackFromSearchParams = searchParams?.get('callbackUrl');
+    if (callbackFromSearchParams) {
+      console.log('Callback URL from searchParams:', callbackFromSearchParams);
+      return decodeURIComponent(callbackFromSearchParams);
+    }
+
+    // Priority 3: Check sessionStorage
+    if (typeof window !== 'undefined') {
+      const callbackFromStorage = sessionStorage.getItem('callbackUrl');
+      if (callbackFromStorage) {
+        console.log('Callback URL from sessionStorage:', callbackFromStorage);
+        return callbackFromStorage;
+      }
+    }
+
+    // Default: redirect to home
+    console.log('No callback URL found, redirecting to home');
+    return '/';
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!validateForm()) return;
@@ -114,8 +148,15 @@ export default function DoubleSliderAuthForm() {
           return;
         }
 
-        router.push('/');
-        router.refresh();
+        // Get callback URL and redirect
+        const callbackUrl = getCallbackUrl();
+        console.log('Redirecting after login to:', callbackUrl);
+        
+        // Small delay to ensure session is established
+        setTimeout(() => {
+          router.push(callbackUrl);
+          router.refresh();
+        }, 200);
       } else {
         // Sign up
         const nameParts = formData.name.trim().split(' ');
@@ -156,8 +197,15 @@ export default function DoubleSliderAuthForm() {
           return;
         }
 
-        router.push('/');
-        router.refresh();
+        // Get callback URL and redirect
+        const callbackUrl = getCallbackUrl();
+        console.log('Redirecting after signup/login to:', callbackUrl);
+        
+        // Small delay to ensure session is established
+        setTimeout(() => {
+          router.push(callbackUrl);
+          router.refresh();
+        }, 200);
       }
     } catch (error) {
       console.error('Auth error:', error);
@@ -183,8 +231,16 @@ export default function DoubleSliderAuthForm() {
     setSocialLoading(provider);
     
     try {
+      // Get callback URL for OAuth redirect
+      const callbackUrl = getCallbackUrl();
+      const fullCallbackUrl = typeof window !== 'undefined' 
+        ? `${window.location.origin}${callbackUrl}`
+        : callbackUrl;
+      
+      console.log(`OAuth callback URL: ${fullCallbackUrl}`);
+      
       await signIn(provider, {
-        callbackUrl: window.location.origin,
+        callbackUrl: fullCallbackUrl,
         redirect: true,
       });
     } catch (error) {

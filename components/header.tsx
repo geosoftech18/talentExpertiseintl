@@ -52,27 +52,6 @@ import {
 import Image from 'next/image'
 // AuthModal removed - using full page auth instead
 
-// Categories from courses data - dynamically imported or matched from courses
-const courseCategories = [
-  'Administration & Secretarial',
-  'Contracts Management',
-  'Customer Service',
-  'Electrical Engineering',
-  'Banking, Finance & Accounting',
-  'Quality, Health & Safety',
-  'Human Resources ',
-  'Information Technology',
-  'Maintenance Management',
-  'Management & Leadership',
-  'Mechanical Engineering',
-  'Oil & Gas',
-  'Project Management',
-  'Public Relations',
-  'Purchasing Management',
-  'Urban Planning & Development',
-  
-]
-
 export default function Header() {
   const { data: session } = useSession()
   const [isScrolled, setIsScrolled] = useState(false)
@@ -81,7 +60,38 @@ export default function Header() {
   const [openDropdown, setOpenDropdown] = useState<string | null>(null)
   const dropdownTimeoutRef = useRef<NodeJS.Timeout | null>(null)
   const subjectsTimeoutRef = useRef<NodeJS.Timeout | null>(null)
+  const [courseCategories, setCourseCategories] = useState<string[]>([])
+  const [loadingCategories, setLoadingCategories] = useState(true)
   // Auth modal removed - using full page auth at /auth
+
+  // Fetch categories dynamically from courses API (same as course-filter-section)
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const response = await fetch('/api/courses?limit=1000')
+        const result = await response.json()
+        if (result.success && result.data) {
+          // Extract unique categories from courses data
+          const categorySet = new Set<string>()
+          result.data.forEach((course: any) => {
+            if (course.category) {
+              categorySet.add(course.category)
+            }
+          })
+          const uniqueCategories = Array.from(categorySet).sort()
+          setCourseCategories(uniqueCategories)
+        }
+      } catch (error) {
+        console.error('Error fetching categories:', error)
+        // Fallback to empty array or default categories if needed
+        setCourseCategories([])
+      } finally {
+        setLoadingCategories(false)
+      }
+    }
+
+    fetchCategories()
+  }, [])
 
   useEffect(() => {
     const handleScroll = () => {
@@ -240,12 +250,73 @@ export default function Header() {
                 Downloads
               </Link>
               <span className="text-slate-500">|</span>
-              <Link
-                href="/contact"
-                className="px-4 py-2 font-medium transition-colors rounded-lg "
+              {/* Contact Us Dropdown */}
+              <div
+                className="relative"
+                onMouseEnter={() => {
+                  if (dropdownTimeoutRef.current) {
+                    clearTimeout(dropdownTimeoutRef.current)
+                    dropdownTimeoutRef.current = null
+                  }
+                  setOpenDropdown('contact')
+                }}
+                onMouseLeave={() => {
+                  dropdownTimeoutRef.current = setTimeout(() => {
+                    setOpenDropdown(null)
+                  }, 300)
+                }}
               >
-                Contact Us
-              </Link>
+                <Link
+                  href="/contact"
+                  className="flex items-center gap-1 px-4 py-2 font-medium transition-colors rounded-lg "
+                >
+                  Contact Us
+                  <ChevronDown className="w-4 h-4" />
+                </Link>
+                {openDropdown === 'contact' && (
+                  <>
+                    {/* Invisible bridge to cover the gap */}
+                    <div 
+                      className="absolute top-full left-0 w-56 h-2"
+                      style={{ zIndex: 10000 }}
+                      onMouseEnter={() => {
+                        if (dropdownTimeoutRef.current) {
+                          clearTimeout(dropdownTimeoutRef.current)
+                          dropdownTimeoutRef.current = null
+                        }
+                        setOpenDropdown('contact')
+                      }}
+                    />
+                    <div 
+                      className="absolute top-full left-0 mt-2 w-56 animate-slide-down" 
+                      style={{ zIndex: 10000 }}
+                      onMouseEnter={() => {
+                        if (dropdownTimeoutRef.current) {
+                          clearTimeout(dropdownTimeoutRef.current)
+                          dropdownTimeoutRef.current = null
+                        }
+                        setOpenDropdown('contact')
+                      }}
+                      onMouseLeave={() => {
+                        dropdownTimeoutRef.current = setTimeout(() => {
+                          setOpenDropdown(null)
+                        }, 500)
+                      }}
+                    >
+                      <div className="bg-slate-50 rounded-xl shadow-2xl border border-slate-300 p-2">
+                      
+                        <Link
+                          href="/careers"
+                          className="block px-4 py-3 rounded-lg hover:bg-slate-200 transition-colors text-slate-700 hover:text-[#0A3049] font-medium"
+                          onClick={() => setOpenDropdown(null)}
+                        >
+                          International Freelance Training Consultants
+                        </Link>
+                      </div>
+                    </div>
+                  </>
+                )}
+              </div>
               {/* <span className="text-slate-500">|</span>
               <div className="flex items-center gap-2">
                 <Globe className="w-4 h-4" />
@@ -350,21 +421,27 @@ export default function Header() {
                       }}
                     >
                       <div className="bg-white rounded-xl shadow-2xl border border-slate-200 p-4">
-                        <div className="grid grid-cols-2 gap-2">
-                          {courseCategories.map((category, index) => (
-                            <Link
-                              key={index}
-                              href={`/courses/category/${encodeURIComponent(category)}`}
-                              className="block px-4 py-3 text-slate-700 hover:text-[#0A3049] hover:bg-[#0A3049]/5 rounded-lg transition-colors group"
-                              onClick={() => setOpenDropdown(null)}
-                            >
-                              <div className="flex items-center justify-between">
-                                <span className="font-medium group-hover:text-[#0A3049] text-sm">{category}</span>
-                                <ChevronRight className="w-4 h-4 opacity-0 group-hover:opacity-100 transition-opacity" />
-                              </div>
-                            </Link>
-                          ))}
-                        </div>
+                        {loadingCategories ? (
+                          <div className="p-8 text-center text-slate-500">Loading categories...</div>
+                        ) : courseCategories.length === 0 ? (
+                          <div className="p-8 text-center text-slate-500">No categories available</div>
+                        ) : (
+                          <div className="grid grid-cols-2 gap-2">
+                            {courseCategories.map((category, index) => (
+                              <Link
+                                key={index}
+                                href={`/courses/category/${encodeURIComponent(category)}`}
+                                className="block px-4 py-3 text-slate-700 hover:text-[#0A3049] hover:bg-[#0A3049]/5 rounded-lg transition-colors group"
+                                onClick={() => setOpenDropdown(null)}
+                              >
+                                <div className="flex items-center justify-between">
+                                  <span className="font-medium group-hover:text-[#0A3049] text-sm">{category}</span>
+                                  <ChevronRight className="w-4 h-4 opacity-0 group-hover:opacity-100 transition-opacity" />
+                                </div>
+                              </Link>
+                            ))}
+                          </div>
+                        )}
                       </div>
                     </div>
                   </>
@@ -576,6 +653,13 @@ export default function Header() {
                 >
                   Contact
                 </Link>
+                <Link
+                  href="/careers"
+                  className="block px-4 py-2 rounded-lg hover:bg-[#0A3049]/5 text-slate-700 font-medium transition-colors"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                >
+                  Careers
+                </Link>
                 <Button
                   asChild
                   className="w-full mt-4 bg-[#0A3049] hover:bg-[#0A3049]/90 text-white"
@@ -652,20 +736,26 @@ export default function Header() {
 
               {/* Categories List */}
               <div className="space-y-1">
-                {courseCategories.map((category, index) => (
-                  <Link
-                    key={index}
-                    href={`/courses?category=${encodeURIComponent(category)}`}
-                    className="flex items-center justify-between px-4 py-3 rounded-lg hover:bg-[#0A3049]/5 text-slate-700 font-medium transition-colors group"
-                    onClick={() => {
-                      setIsMobileMenuOpen(false)
-                      setIsTrainingSubjectsOpen(false)
-                    }}
-                  >
-                    <span className="group-hover:text-[#0A3049] transition-colors">{category}</span>
-                    <ChevronRight className="w-4 h-4 text-slate-400 group-hover:text-[#0A3049] transition-colors flex-shrink-0" />
-                  </Link>
-                ))}
+                {loadingCategories ? (
+                  <div className="px-4 py-8 text-center text-slate-500">Loading categories...</div>
+                ) : courseCategories.length === 0 ? (
+                  <div className="px-4 py-8 text-center text-slate-500">No categories available</div>
+                ) : (
+                  courseCategories.map((category, index) => (
+                    <Link
+                      key={index}
+                      href={`/courses?category=${encodeURIComponent(category)}`}
+                      className="flex items-center justify-between px-4 py-3 rounded-lg hover:bg-[#0A3049]/5 text-slate-700 font-medium transition-colors group"
+                      onClick={() => {
+                        setIsMobileMenuOpen(false)
+                        setIsTrainingSubjectsOpen(false)
+                      }}
+                    >
+                      <span className="group-hover:text-[#0A3049] transition-colors">{category}</span>
+                      <ChevronRight className="w-4 h-4 text-slate-400 group-hover:text-[#0A3049] transition-colors flex-shrink-0" />
+                    </Link>
+                  ))
+                )}
               </div>
             </div>
           </div>

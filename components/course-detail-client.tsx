@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react'
 import { useSession } from 'next-auth/react'
-import { useRouter } from 'next/navigation'
+import { useRouter, usePathname } from 'next/navigation'
 import {
   Calendar, Clock, MapPin, Users, GraduationCap,
   TrendingUp, Target, BookOpen, Award, Download,
@@ -106,6 +106,7 @@ export default function CourseDetailClient({
 }: CourseDetailClientProps) {
   const { data: session, status } = useSession()
   const router = useRouter()
+  const pathname = usePathname()
   const [activeTab, setActiveTab] = useState('overview')
   const [showRegistration, setShowRegistration] = useState(false)
   const [selectedScheduleId, setSelectedScheduleId] = useState<string | null>(null)
@@ -142,8 +143,13 @@ export default function CourseDetailClient({
     }
     
     if (status === 'unauthenticated' || !session?.user) {
-      // Redirect to auth page if not logged in
-      router.push('/auth')
+      // Store current path in sessionStorage for redirect after login
+      if (typeof window !== 'undefined' && pathname) {
+        sessionStorage.setItem('callbackUrl', pathname)
+      }
+      // Redirect to auth page with callback URL
+      const callbackUrl = pathname ? encodeURIComponent(pathname) : ''
+      router.push(`/auth${callbackUrl ? `?callbackUrl=${callbackUrl}` : ''}`)
       return
     }
     
@@ -158,8 +164,13 @@ export default function CourseDetailClient({
     }
     
     if (status === 'unauthenticated' || !session?.user) {
-      // Redirect to auth page if not logged in
-      router.push('/auth')
+      // Store current path in sessionStorage for redirect after login
+      if (typeof window !== 'undefined' && pathname) {
+        sessionStorage.setItem('callbackUrl', pathname)
+      }
+      // Redirect to auth page with callback URL
+      const callbackUrl = pathname ? encodeURIComponent(pathname) : ''
+      router.push(`/auth${callbackUrl ? `?callbackUrl=${callbackUrl}` : ''}`)
       return
     }
     

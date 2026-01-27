@@ -12,6 +12,7 @@ import CalendarView from "./calendar-view"
 
 interface Course {
   category: string
+  startDate?: string
 }
 
 // Comprehensive venues list matching the venues page
@@ -80,13 +81,9 @@ const venues = [
   { id: "virtual", name: "Virtual Training", flag: "🌐", upcoming: 30 },
 ]
 
-const months = [
-  { id: "jan", name: "January 2024", courses: 18 },
-  { id: "feb", name: "February 2024", courses: 22 },
-  { id: "mar", name: "March 2024", courses: 25 },
-  { id: "apr", name: "April 2024", courses: 20 },
-  { id: "may", name: "May 2024", courses: 28 },
-  { id: "jun", name: "June 2024", courses: 24 },
+const monthNames = [
+  "January", "February", "March", "April", "May", "June",
+  "July", "August", "September", "October", "November", "December"
 ]
 
 const popularSearches = [
@@ -107,7 +104,7 @@ export default function CourseFilterSection() {
   const [isAdvancedOpen, setIsAdvancedOpen] = useState(false)
   const [activeFilters, setActiveFilters] = useState<string[]>([])
   const [showCalendar, setShowCalendar] = useState(false)
-  const [courses, setCourses] = useState<Course[]>([])
+  const [courses, setCourses] = useState<any[]>([])
   const [loadingCategories, setLoadingCategories] = useState(true)
 
   // Fetch courses to get available categories
@@ -140,6 +137,32 @@ export default function CourseFilterSection() {
     return Array.from(categorySet).sort()
   }, [courses])
 
+  // Generate months with dynamic course counts
+  const months = useMemo(() => {
+    const today = new Date()
+    const currentYear = today.getFullYear()
+    
+    return monthNames.map((monthName, index) => {
+      // Count courses for this month (check if startDate falls in this month)
+      const courseCount = courses.filter((course) => {
+        if (!course.startDate) return false
+        try {
+          const courseDate = new Date(course.startDate)
+          return courseDate.getMonth() === index && courseDate.getFullYear() >= currentYear
+        } catch {
+          return false
+        }
+      }).length
+
+      return {
+        id: monthName.toLowerCase().substring(0, 3),
+        name: monthName,
+        monthIndex: index,
+        courses: courseCount,
+      }
+    })
+  }, [courses])
+
   // Category color mapping (fallback if category doesn't match)
   const getCategoryColor = (categoryName: string) => {
     const colorMap: Record<string, string> = {
@@ -164,7 +187,10 @@ export default function CourseFilterSection() {
     const filters = []
     if (selectedCategory) filters.push(`Category: ${selectedCategory}`)
     if (selectedVenue) filters.push(`Venue: ${venues.find((v) => v.id === selectedVenue)?.name}`)
-    if (selectedMonth) filters.push(`Month: ${months.find((m) => m.id === selectedMonth)?.name}`)
+    if (selectedMonth) {
+      const month = months.find((m) => m.id === selectedMonth)
+      if (month) filters.push(`Month: ${month.name}`)
+    }
     if (searchQuery) filters.push(`Search: ${searchQuery}`)
 
     setActiveFilters(filters)
@@ -252,12 +278,12 @@ export default function CourseFilterSection() {
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
               <div className="text-center p-4 bg-gradient-to-br from-purple-50 to-purple-100 rounded-xl">
                 <BookOpen className="w-8 h-8 text-purple-600 mx-auto mb-2" />
-                <div className="text-2xl font-bold text-purple-900">246</div>
+                <div className="text-2xl font-bold text-purple-900">650+</div>
                 <div className="text-sm text-purple-700">Total Courses</div>
               </div>
               <div className="text-center p-4 bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl">
                 <MapPin className="w-8 h-8 text-blue-600 mx-auto mb-2" />
-                <div className="text-2xl font-bold text-blue-900">36+</div>
+                <div className="text-2xl font-bold text-blue-900">70+</div>
                 <div className="text-sm text-blue-700">Global Cities</div>
               </div>
               <div className="text-center p-4 bg-gradient-to-br from-green-50 to-green-100 rounded-xl">
@@ -365,9 +391,11 @@ export default function CourseFilterSection() {
                       <SelectItem key={month.id} value={month.id}>
                         <div className="flex items-center justify-between w-full">
                           <span>{month.name}</span>
-                          <Badge variant="outline" className="ml-2">
-                            {month.courses} courses
-                          </Badge>
+                          {month.courses > 0 && (
+                            <Badge variant="outline" className="ml-2">
+                              {month.courses} courses
+                            </Badge>
+                          )}
                         </div>
                       </SelectItem>
                     ))}
