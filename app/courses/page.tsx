@@ -177,11 +177,12 @@ function CourseFinderPageContent() {
     fetchCertificates()
   }, [])
 
-  // Read venue, category, search, and certificate from URL params and update when they change
+  // Read venue, category, search, month, and certificate from URL params and update when they change
   useEffect(() => {
     const venueParam = searchParams.get('venue')
     const categoryParam = searchParams.get('category')
     const searchParam = searchParams.get('search')
+    const monthParam = searchParams.get('month')
     const certificateParam = searchParams.get('certificate')
     
     // Update venue filter from URL param
@@ -213,6 +214,21 @@ function CourseFinderPageContent() {
     } else {
       // Reset search if no search param
       setSearchTerm('')
+    }
+    
+    // Update month filter from URL param
+    if (monthParam) {
+      const monthIndex = parseInt(monthParam)
+      // Validate month index (0-11)
+      if (!isNaN(monthIndex) && monthIndex >= 0 && monthIndex <= 11) {
+        setSelectedMonth(monthIndex.toString())
+        setCurrentPage(1)
+      } else {
+        setSelectedMonth('all')
+      }
+    } else {
+      // Reset to 'all' if no month param
+      setSelectedMonth('all')
     }
     
     // Update certificate filter from URL param
@@ -300,14 +316,46 @@ function CourseFinderPageContent() {
       })
     }
 
-    // Search filter
+    // Keyword search filter - primarily based on course name
     if (searchTerm) {
-      filtered = filtered.filter(
-        course =>
-          course.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          course.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          course.courseCode.toLowerCase().includes(searchTerm.toLowerCase())
-      )
+      const searchLower = searchTerm.toLowerCase().trim()
+      // Split search term into individual keywords (words)
+      const keywords = searchLower.split(/\s+/).filter(keyword => keyword.length > 0)
+      
+      filtered = filtered.filter(course => {
+        const titleLower = course.title.toLowerCase()
+        const descriptionLower = (course.description || '').toLowerCase()
+        const courseCodeLower = (course.courseCode || '').toLowerCase()
+        
+        // If multiple keywords, check if ALL keywords match in course name (title)
+        // This provides more precise matching for course names
+        if (keywords.length > 1) {
+          // Check if all keywords are present in the course title
+          const allKeywordsInTitle = keywords.every(keyword => titleLower.includes(keyword))
+          
+          if (allKeywordsInTitle) {
+            return true // All keywords found in course name
+          }
+          
+          // Fallback: check if all keywords appear anywhere (title, description, or code)
+          const allKeywordsFound = keywords.every(keyword => 
+            titleLower.includes(keyword) || 
+            descriptionLower.includes(keyword) || 
+            courseCodeLower.includes(keyword)
+          )
+          
+          return allKeywordsFound
+        } else {
+          // Single keyword or phrase - check course name first, then fallback to description/code
+          // Prioritize course name matches
+          if (titleLower.includes(searchLower)) {
+            return true
+          }
+          
+          // Fallback to description and course code
+          return descriptionLower.includes(searchLower) || courseCodeLower.includes(searchLower)
+        }
+      })
     }
 
     // Category filter
@@ -502,9 +550,9 @@ function CourseFinderPageContent() {
       }
     } catch (error) {
       console.error('Error fetching course details:', error)
-      alert('Failed to load course details. Please try again.')
+      alert('Failed to load course details.  Please try again.')
     } finally {
-      setLoadingCourseData(false)
+      setLoadingCourseData(false) 
     }
   }
 
@@ -545,7 +593,7 @@ function CourseFinderPageContent() {
             <div className="relative">
               <Search className="absolute left-3 sm:left-4 top-1/2 transform -translate-y-1/2 text-slate-400 w-4 h-4 sm:w-5 sm:h-5" />
               <Input
-                placeholder="Search courses..."
+                placeholder="Search by course name, keywords..."
                 value={searchTerm}
                 onChange={(e) => {
                   setSearchTerm(e.target.value)

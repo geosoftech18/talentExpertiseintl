@@ -46,7 +46,7 @@ const programCategories = [
   },
   {
     id: "hr",
-    title: "Human Resources ",
+    title: "Human Resources",
     image: "/categories/human-resources.jpg",
   },
   {
@@ -101,7 +101,7 @@ const programCategories = [
   },
   {
     id: "law",
-    title: "Law & Legel Training Programs",
+    title: "Law & Legal Training Programs",
     image: "/categories/urban-planning-development.jpg",
   },
   {
@@ -110,8 +110,8 @@ const programCategories = [
     image: "/categories/urban-planning-development.jpg",
   },
   {
-    id: "police & law enforcement",
-    title: "Police & Law Enforcement",
+    id: "police and law enforcement",
+    title: "Police and Law Enforcement",
     image: "/categories/urban-planning-development.jpg",
   },
   {

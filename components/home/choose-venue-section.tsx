@@ -12,107 +12,134 @@ interface Venue {
   city: string
   country: string
   image: string
+  imageLoading?: boolean
 }
 
-// Hash function to generate consistent hash from string
-const hashString = (str: string): number => {
-  let hash = 0
-  for (let i = 0; i < str.length; i++) {
-    const char = str.charCodeAt(i)
-    hash = ((hash << 5) - hash) + char
-    hash = hash & hash // Convert to 32bit integer
-  }
-  return Math.abs(hash)
-}
+// Cache for Wikipedia images to avoid duplicate API calls
+const wikipediaImageCache = new Map<string, string>()
 
-// Collection of high-quality Unsplash image IDs for cityscapes/landmarks
-const unsplashImageIds = [
-  '1512453979798-5ea266f8880c', // Dubai
-  '1578662996442-48f60103fc96', // Cityscape
-  '1513635269975-59663e0ac1ad', // London
-  '1596422846543-75c6fc197f07', // Kuala Lumpur
-  '1587474260584-136574028703', // New Delhi
-  '1496442226666-8d4d0e62e6e9', // New York
-  '1523059623039-a9ed027e7fad', // Nairobi
-  '1502602898657-3e91760cbb34', // Paris
-  '1449824913935-59a10b8d2000', // Cityscape
-  '1477959858617-67f85cf4f1df', // Cityscape
-  '1469854523086-cc02fe5d8800', // Cityscape
-  '1480714378408-67cf0d13bc1b', // Cityscape
-  '1506905925346-21bda4d32df4', // Cityscape
-  '1514565131-fce0801e5785', // Cityscape
-  '1502602898536-47eb22548b3b', // Cityscape
-  '1514565131-fce0801e5785', // Cityscape
-  '1449824913935-59a10b8d2000', // Cityscape
-  '1477959858617-67f85cf4f1df', // Cityscape
-  '1469854523086-cc02fe5d8800', // Cityscape
-  '1480714378408-67cf0d13bc1b', // Cityscape
-  '1506905925346-21bda4d32df4', // Cityscape
-  '1514565131-fce0801e5785', // Cityscape
-  '1502602898536-47eb22548b3b', // Cityscape
-  '1449824913935-59a10b8d2000', // Cityscape
-  '1477959858617-67f85cf4f1df', // Cityscape
-  '1469854523086-cc02fe5d8800', // Cityscape
-  '1480714378408-67cf0d13bc1b', // Cityscape
-  '1506905925346-21bda4d32df4', // Cityscape
-  '1514565131-fce0801e5785', // Cityscape
-  '1502602898536-47eb22548b3b', // Cityscape
-]
-
-// Map of known cities to specific Unsplash image IDs for better quality
-const cityImageMap: { [key: string]: string } = {
-  'Dubai': '1512453979798-5ea266f8880c',
-  'Abuja': '1578662996442-48f60103fc96',
-  'London': '1513635269975-59663e0ac1ad',
-  'Kuala Lumpur': '1596422846543-75c6fc197f07',
-  'New Delhi': '1587474260584-136574028703',
-  'New York': '1496442226666-8d4d0e62e6e9',
-  'Nairobi': '1523059623039-a9ed027e7fad',
-  'Paris': '1502602898657-3e91760cbb34',
-  'Singapore': '1525625293377-297ff1838b2d',
-  'Bangkok': '1552465014-bf7e97f20ab2',
-  'Hong Kong': '1525625293377-297ff1838b2d',
-  'Tokyo': '1540959733332-6abbd3f60f67',
-  'Sydney': '1506905925346-21bda4d32df4',
-  'Toronto': '1514565131-fce0801e5785',
-  'Mumbai': '1587474260584-136574028703',
-  'Barcelona': '1502602898536-47eb22548b3b',
-  'Rome': '1515542622366-27f52759c930',
-  'Amsterdam': '1534351590666-13e3e2b0a8c8',
-  'Berlin': '1469854523086-cc02fe5d8800',
-  'Madrid': '1539037116277-4b91258ad7f3',
-  'Vienna': '1514565131-fce0801e5785',
-  'Prague': '1541432901042-2d8bd35b38a3',
-  'Istanbul': '1524231757912-21f17c2b6f79',
-  'Cairo': '1578662996442-48f60103fc96',
-  'Cape Town': '1506905925346-21bda4d32df4',
-  'Johannesburg': '1523059623039-a9ed027e7fad',
-  'Lagos': '1578662996442-48f60103fc96',
-  'Accra': '1578662996442-48f60103fc96',
-  'Casablanca': '1502602898536-47eb22548b3b',
-  'Riyadh': '1512453979798-5ea266f8880c',
-  'Doha': '1512453979798-5ea266f8880c',
-  'Manama': '1512453979798-5ea266f8880c',
-  'Muscat': '1512453979798-5ea266f8880c',
-  'Jeddah': '1512453979798-5ea266f8880c',
-  'Al Khobar': '1512453979798-5ea266f8880c',
-}
-
-// Function to get unique image for each city
-const getCityImageUrlEnhanced = (city: string, country: string): string => {
-  const cityKey = city.trim()
+// Helper function to clean city name by removing hyphens and suffixes
+const cleanCityName = (city: string): string => {
+  // Remove everything after hyphen (e.g., "Madrid-SP" -> "Madrid")
+  // Also handle cases with multiple hyphens
+  const cleaned = city.trim().split('-')[0].trim()
   
-  // Check if we have a specific image ID for this city
-  if (cityImageMap[cityKey]) {
-    return `https://images.unsplash.com/photo-${cityImageMap[cityKey]}?w=1200&h=800&fit=crop&q=90`
+  // Remove any trailing numbers or codes (e.g., "Tokyo1" -> "Tokyo")
+  // But keep spaces and normal city names
+  return cleaned
+}
+
+// Function to get Wikipedia image URL for a city
+const getWikipediaImageUrl = async (city: string, country: string): Promise<string> => {
+  const cacheKey = `${city}, ${country}`.toLowerCase()
+  
+  // Check cache first
+  if (wikipediaImageCache.has(cacheKey)) {
+    return wikipediaImageCache.get(cacheKey)!
   }
   
-  // Generate consistent hash from city name to select an image
-  const hash = hashString(`${city}${country}`)
-  const imageIndex = hash % unsplashImageIds.length
-  const imageId = unsplashImageIds[imageIndex]
+  // Default placeholder image
+  const defaultImage = 'https://upload.wikimedia.org/wikipedia/commons/thumb/8/8f/Wikipedia-logo-v2-en.svg/1200px-Wikipedia-logo-v2-en.svg.png'
   
-  return `https://images.unsplash.com/photo-${imageId}?w=1200&h=800&fit=crop&q=90`
+  // Clean city name to remove hyphens and suffixes
+  const cleanedCity = cleanCityName(city)
+  
+  try {
+    // Try cleaned city name first (without hyphen suffix)
+    let cityName = encodeURIComponent(cleanedCity)
+    let apiUrl = `https://en.wikipedia.org/api/rest_v1/page/summary/${cityName}`
+    
+    let response = await fetch(apiUrl, {
+      method: 'GET',
+      headers: {
+        'Accept': 'application/json',
+      },
+    })
+    
+    // If cleaned city not found, try original city name (with hyphen)
+    if (!response.ok && cleanedCity !== city.trim()) {
+      cityName = encodeURIComponent(city.trim())
+      apiUrl = `https://en.wikipedia.org/api/rest_v1/page/summary/${cityName}`
+      response = await fetch(apiUrl, {
+        method: 'GET',
+        headers: {
+          'Accept': 'application/json',
+        },
+      })
+    }
+    
+    // If city not found, try "City, Country" format with cleaned city
+    if (!response.ok) {
+      const cityCountryName = encodeURIComponent(`${cleanedCity}, ${country}`.trim())
+      apiUrl = `https://en.wikipedia.org/api/rest_v1/page/summary/${cityCountryName}`
+      response = await fetch(apiUrl, {
+        method: 'GET',
+        headers: {
+          'Accept': 'application/json',
+        },
+      })
+    }
+    
+    // If still not found, try original "City, Country" format
+    if (!response.ok && cleanedCity !== city.trim()) {
+      const cityCountryName = encodeURIComponent(`${city}, ${country}`.trim())
+      apiUrl = `https://en.wikipedia.org/api/rest_v1/page/summary/${cityCountryName}`
+      response = await fetch(apiUrl, {
+        method: 'GET',
+        headers: {
+          'Accept': 'application/json',
+        },
+      })
+    }
+    
+    // If still not found, try country name
+    if (!response.ok) {
+      const countryName = encodeURIComponent(country.trim())
+      apiUrl = `https://en.wikipedia.org/api/rest_v1/page/summary/${countryName}`
+      response = await fetch(apiUrl, {
+        method: 'GET',
+        headers: {
+          'Accept': 'application/json',
+        },
+      })
+    }
+    
+    if (response.ok) {
+      const data = await response.json()
+      
+      // Prefer originalimage, fallback to thumbnail, then default
+      let imageUrl = data.originalimage?.source || data.thumbnail?.source || defaultImage
+      
+      // If thumbnail, try to get higher resolution version
+      if (imageUrl && imageUrl.includes('/thumb/')) {
+        // Convert thumbnail URL to full size (remove /thumb/ and size suffix)
+        imageUrl = imageUrl.replace(/\/thumb\//, '/').replace(/\/\d+px-.*$/, '')
+      }
+      
+      // Cache the result
+      wikipediaImageCache.set(cacheKey, imageUrl)
+      return imageUrl
+    }
+  } catch (error) {
+    console.error(`Error fetching Wikipedia image for ${city}, ${country}:`, error)
+  }
+  
+  // Cache default image to avoid repeated failed requests
+  wikipediaImageCache.set(cacheKey, defaultImage)
+  return defaultImage
+}
+
+// Function to get Wikipedia image URL synchronously (returns placeholder, will be updated)
+const getCityImageUrl = (city: string, country: string): string => {
+  const cacheKey = `${city}, ${country}`.toLowerCase()
+  
+  // Return cached image if available
+  if (wikipediaImageCache.has(cacheKey)) {
+    return wikipediaImageCache.get(cacheKey)!
+  }
+  
+  // Return placeholder that will be replaced when image loads
+  return `https://upload.wikimedia.org/wikipedia/commons/thumb/8/8f/Wikipedia-logo-v2-en.svg/1200px-Wikipedia-logo-v2-en.svg.png`
 }
 
 export default function ChooseVenueSection() {
@@ -123,7 +150,7 @@ export default function ChooseVenueSection() {
   const isPausedRef = useRef(false)
   const autoScrollRef = useRef<{ pause: () => void; resume: () => void } | null>(null)
 
-  // Fetch venues from API
+  // Fetch venues from API and Wikipedia images
   useEffect(() => {
     const fetchVenues = async () => {
       try {
@@ -139,11 +166,37 @@ export default function ChooseVenueSection() {
               id: String(v.id),
               city: v.city || '',
               country: v.country || '',
-              image: getCityImageUrlEnhanced(v.city || '', v.country || '')
+              image: getCityImageUrl(v.city || '', v.country || ''),
+              imageLoading: true
             }))
             .filter((v: Venue) => v.city && v.country) // Only include venues with both city and country
           
           setVenues(activeVenues)
+          
+          // Fetch Wikipedia images for all venues
+          const imagePromises = activeVenues.map(async (venue: Venue) => {
+            try {
+              const imageUrl = await getWikipediaImageUrl(venue.city, venue.country)
+              return { id: venue.id, image: imageUrl }
+            } catch (error) {
+              console.error(`Error fetching image for ${venue.city}:`, error)
+              return { id: venue.id, image: venue.image }
+            }
+          })
+          
+          const imageResults = await Promise.all(imagePromises)
+          
+          // Update venues with fetched images
+          setVenues(prevVenues => 
+            prevVenues.map(venue => {
+              const imageResult = imageResults.find(r => r.id === venue.id)
+              return {
+                ...venue,
+                image: imageResult?.image || venue.image,
+                imageLoading: false
+              }
+            })
+          )
         }
       } catch (err) {
         console.error('Error fetching venues:', err)
@@ -391,6 +444,11 @@ export default function ChooseVenueSection() {
                 >
                   {/* Image Container */}
                   <div className="relative h-[180px] sm:h-[200px] overflow-hidden bg-slate-200">
+                    {venue.imageLoading && (
+                      <div className="absolute inset-0 flex items-center justify-center bg-slate-100">
+                        <div className="animate-pulse text-slate-400 text-xs">Loading image...</div>
+                      </div>
+                    )}
                     <Image
                       src={venue.image}
                       alt={`${venue.city}, ${venue.country}`}
@@ -399,6 +457,11 @@ export default function ChooseVenueSection() {
                       sizes="(max-width: 640px) 280px, 300px"
                       quality={95}
                       priority={false}
+                      onError={(e) => {
+                        // Fallback to a default placeholder if image fails to load
+                        const target = e.currentTarget as HTMLImageElement
+                        target.src = 'https://upload.wikimedia.org/wikipedia/commons/thumb/8/8f/Wikipedia-logo-v2-en.svg/1200px-Wikipedia-logo-v2-en.svg.png'
+                      }}
                     />
                     
                     {/* Venue Name - Solid background for readability */}

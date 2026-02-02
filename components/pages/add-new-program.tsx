@@ -54,13 +54,13 @@ interface FAQ {
 
 // Category to Reference Code mapping
 const categoryToRefCode: Record<string, string> = {
-  "Admin & Secretarial": "AD",
+  "Administration & Secretarial": "AD",
   "Contracts Management": "CM",
   "Customer Service": "CS",
   "Electrical Engineering": "EE",
-  "Finance & Accounting": "FI",
-  "Health & Safety": "HS",
-  "HR Management": "HR",
+  "Banking, Finance & Accounting": "FI",
+  "Quality, Health & Safety": "HS",
+  "Human Resources": "HR",
   "Information Technology": "IT",
   "Maintenance Management": "MN",
   "Management & Leadership": "ML",
@@ -70,6 +70,7 @@ const categoryToRefCode: Record<string, string> = {
   "Public Relations": "PR",
   "Purchasing Management": "MM",
   "Urban Planning & Development": "UP",
+  "Police and Law Enforcement": "PL"
 }
 
 export default function AddNewProgram({ onBack, editId }: { onBack?: () => void; editId?: string | null }) {

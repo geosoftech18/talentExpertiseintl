@@ -15,71 +15,92 @@ interface Course {
   startDate?: string
 }
 
-// Comprehensive venues list matching the venues page
-const venues = [
-  // Asia
-  { id: "bali", name: "Bali, Indonesia", flag: "🇮🇩", upcoming: 8 },
-  { id: "bangalore", name: "Bangalore, India", flag: "🇮🇳", upcoming: 12 },
-  { id: "bangkok", name: "Bangkok, Thailand", flag: "🇹🇭", upcoming: 10 },
-  { id: "dubai", name: "Dubai, UAE", flag: "🇦🇪", upcoming: 15 },
-  { id: "hongkong", name: "Hong Kong", flag: "🇭🇰", upcoming: 9 },
-  { id: "kualalumpur", name: "Kuala Lumpur, Malaysia", flag: "🇲🇾", upcoming: 11 },
-  { id: "newdelhi", name: "New Delhi, India", flag: "🇮🇳", upcoming: 13 },
-  { id: "singapore", name: "Singapore", flag: "🇸🇬", upcoming: 18 },
-  { id: "alkhobar", name: "Al Khobar, Saudi Arabia", flag: "🇸🇦", upcoming: 7 },
-  { id: "doha", name: "Doha, Qatar", flag: "🇶🇦", upcoming: 10 },
-  { id: "jeddah", name: "Jeddah, Saudi Arabia", flag: "🇸🇦", upcoming: 8 },
-  { id: "manama", name: "Manama, Bahrain", flag: "🇧🇭", upcoming: 6 },
-  { id: "muscat", name: "Muscat, Oman", flag: "🇴🇲", upcoming: 7 },
-  { id: "riyadh", name: "Riyadh, Saudi Arabia", flag: "🇸🇦", upcoming: 14 },
+interface Venue {
+  id: string
+  name: string
+  flag: string
+}
+
+// Country to ISO code mapping for flag emojis
+const countryToISOCode: { [key: string]: string } = {
+  'Indonesia': 'id', 'India': 'in', 'Thailand': 'th', 'UAE': 'ae', 'United Arab Emirates': 'ae',
+  'Malaysia': 'my', 'Saudi Arabia': 'sa', 'Qatar': 'qa', 'Bahrain': 'bh', 'Oman': 'om',
+  'China': 'cn', 'Japan': 'jp', 'South Korea': 'kr', 'Philippines': 'ph', 'Vietnam': 'vn',
+  'Singapore': 'sg', 'Hong Kong': 'hk', 'Taiwan': 'tw', 'Bangladesh': 'bd', 'Pakistan': 'pk',
+  'Sri Lanka': 'lk', 'Nepal': 'np', 'Myanmar': 'mm', 'Cambodia': 'kh', 'Laos': 'la',
+  'Kuwait': 'kw', 'Jordan': 'jo', 'Lebanon': 'lb', 'Israel': 'il', 'Iraq': 'iq',
+  'Iran': 'ir', 'Afghanistan': 'af', 'Kazakhstan': 'kz', 'Uzbekistan': 'uz', 'Mongolia': 'mn',
   // Africa
-  { id: "accra", name: "Accra, Ghana", flag: "🇬🇭", upcoming: 5 },
-  { id: "capetown", name: "Cape Town, South Africa", flag: "🇿🇦", upcoming: 9 },
-  { id: "entebbe", name: "Entebbe, Uganda", flag: "🇺🇬", upcoming: 4 },
-  { id: "harare", name: "Harare, Zimbabwe", flag: "🇿🇼", upcoming: 3 },
-  { id: "kigali", name: "Kigali, Rwanda", flag: "🇷🇼", upcoming: 5 },
-  { id: "marrakesh", name: "Marrakesh, Morocco", flag: "🇲🇦", upcoming: 6 },
-  { id: "nairobi", name: "Nairobi, Kenya", flag: "🇰🇪", upcoming: 8 },
-  { id: "portlouis", name: "Port Louis, Mauritius", flag: "🇲🇺", upcoming: 4 },
-  { id: "sharmelsheikh", name: "Sharm El Sheikh, Egypt", flag: "🇪🇬", upcoming: 7 },
-  { id: "victoria", name: "Victoria, Seychelles", flag: "🇸🇨", upcoming: 3 },
-  { id: "zanzibar", name: "Zanzibar, Tanzania", flag: "🇹🇿", upcoming: 4 },
-  { id: "casablanca", name: "Casablanca, Morocco", flag: "🇲🇦", upcoming: 8 },
-  { id: "addisababa", name: "Addis Ababa, Ethiopia", flag: "🇪🇹", upcoming: 5 },
-  { id: "cairo", name: "Cairo, Egypt", flag: "🇪🇬", upcoming: 12 },
-  { id: "abuja", name: "Abuja, Nigeria", flag: "🇳🇬", upcoming: 7 },
+  'Ghana': 'gh', 'South Africa': 'za', 'Uganda': 'ug', 'Zimbabwe': 'zw', 'Rwanda': 'rw',
+  'Morocco': 'ma', 'Kenya': 'ke', 'Mauritius': 'mu', 'Egypt': 'eg', 'Seychelles': 'sc',
+  'Tanzania': 'tz', 'Ethiopia': 'et', 'Nigeria': 'ng', 'Algeria': 'dz', 'Tunisia': 'tn',
+  'Libya': 'ly', 'Sudan': 'sd', 'Senegal': 'sn', 'Ivory Coast': 'ci',
+  'Cameroon': 'cm', 'Angola': 'ao', 'Mozambique': 'mz', 'Madagascar': 'mg', 'Botswana': 'bw',
+  'Namibia': 'na', 'Zambia': 'zm', 'Malawi': 'mw',
   // Europe
-  { id: "amsterdam", name: "Amsterdam, Netherlands", flag: "🇳🇱", upcoming: 10 },
-  { id: "barcelona", name: "Barcelona, Spain", flag: "🇪🇸", upcoming: 11 },
-  { id: "edinburgh", name: "Edinburgh, UK", flag: "🇬🇧", upcoming: 9 },
-  { id: "frankfurt", name: "Frankfurt, Germany", flag: "🇩🇪", upcoming: 12 },
-  { id: "geneva", name: "Geneva, Switzerland", flag: "🇨🇭", upcoming: 8 },
-  { id: "istanbul", name: "Istanbul, Turkey", flag: "🇹🇷", upcoming: 13 },
-  { id: "london", name: "London, UK", flag: "🇬🇧", upcoming: 20 },
-  { id: "marbella", name: "Marbella, Spain", flag: "🇪🇸", upcoming: 6 },
-  { id: "milan", name: "Milan, Italy", flag: "🇮🇹", upcoming: 10 },
-  { id: "munich", name: "Munich, Germany", flag: "🇩🇪", upcoming: 11 },
-  { id: "paris", name: "Paris, France", flag: "🇫🇷", upcoming: 16 },
-  { id: "prague", name: "Prague, Czech Republic", flag: "🇨🇿", upcoming: 8 },
-  { id: "rome", name: "Rome, Italy", flag: "🇮🇹", upcoming: 9 },
-  { id: "vienna", name: "Vienna, Austria", flag: "🇦🇹", upcoming: 10 },
-  { id: "oxford", name: "Oxford, UK", flag: "🇬🇧", upcoming: 7 },
-  { id: "athens", name: "Athens, Greece", flag: "🇬🇷", upcoming: 8 },
-  { id: "baku", name: "Baku, Azerbaijan", flag: "🇦🇿", upcoming: 5 },
-  { id: "lisbon", name: "Lisbon, Portugal", flag: "🇵🇹", upcoming: 9 },
-  { id: "liverpool", name: "Liverpool, UK", flag: "🇬🇧", upcoming: 6 },
+  'Netherlands': 'nl', 'Spain': 'es', 'UK': 'gb', 'United Kingdom': 'gb', 'Germany': 'de',
+  'Switzerland': 'ch', 'Turkey': 'tr', 'Italy': 'it', 'France': 'fr', 'Czech Republic': 'cz',
+  'Austria': 'at', 'Greece': 'gr', 'Azerbaijan': 'az', 'Portugal': 'pt', 'Belgium': 'be',
+  'Poland': 'pl', 'Sweden': 'se', 'Norway': 'no', 'Denmark': 'dk', 'Finland': 'fi',
+  'Ireland': 'ie', 'Romania': 'ro', 'Hungary': 'hu', 'Slovakia': 'sk',
+  'Croatia': 'hr', 'Serbia': 'rs', 'Bulgaria': 'bg', 'Ukraine': 'ua', 'Russia': 'ru',
   // North America
-  { id: "maryland", name: "Maryland, USA", flag: "🇺🇸", upcoming: 8 },
-  { id: "boston", name: "Boston, USA", flag: "🇺🇸", upcoming: 14 },
-  { id: "california", name: "California, USA", flag: "🇺🇸", upcoming: 16 },
-  { id: "chicago", name: "Chicago, USA", flag: "🇺🇸", upcoming: 12 },
-  { id: "miami", name: "Miami, USA", flag: "🇺🇸", upcoming: 10 },
-  { id: "houston", name: "Houston, USA", flag: "🇺🇸", upcoming: 11 },
-  { id: "toronto", name: "Toronto, Canada", flag: "🇨🇦", upcoming: 13 },
-  { id: "newyork", name: "New York, USA", flag: "🇺🇸", upcoming: 18 },
-  // Virtual
-  { id: "virtual", name: "Virtual Training", flag: "🌐", upcoming: 30 },
-]
+  'USA': 'us', 'US': 'us', 'United States of America': 'us', 'United States': 'us', 'Canada': 'ca',
+  'Mexico': 'mx', 'Costa Rica': 'cr', 'Panama': 'pa', 'Jamaica': 'jm', 'Cuba': 'cu',
+  // South America
+  'Brazil': 'br', 'Argentina': 'ar', 'Chile': 'cl', 'Colombia': 'co', 'Peru': 'pe',
+  'Ecuador': 'ec', 'Venezuela': 've', 'Uruguay': 'uy', 'Paraguay': 'py', 'Bolivia': 'bo',
+  // Oceania
+  'Australia': 'au', 'New Zealand': 'nz', 'Fiji': 'fj', 'Papua New Guinea': 'pg',
+}
+
+// Function to get country ISO code from country name
+const getCountryCode = (country: string): string => {
+  if (!country) return 'xx'
+  
+  const normalizedCountry = country.trim()
+  
+  // Direct lookup
+  if (countryToISOCode[normalizedCountry]) {
+    return countryToISOCode[normalizedCountry]
+  }
+  
+  // Case-insensitive lookup
+  const lowerCountry = normalizedCountry.toLowerCase()
+  for (const [key, code] of Object.entries(countryToISOCode)) {
+    if (key.toLowerCase() === lowerCountry) {
+      return code
+    }
+  }
+  
+  // Partial match for common variations
+  if (lowerCountry.includes('united states') || lowerCountry.includes('usa') || lowerCountry.includes('u.s.')) {
+    return 'us'
+  }
+  if (lowerCountry.includes('united kingdom') || lowerCountry.includes('uk') || lowerCountry.includes('britain')) {
+    return 'gb'
+  }
+  if (lowerCountry.includes('uae') || lowerCountry.includes('emirates')) {
+    return 'ae'
+  }
+  
+  return 'xx' // Unknown country
+}
+
+// Function to convert ISO country code to flag emoji
+const getFlagEmoji = (isoCode: string): string => {
+  if (isoCode === 'xx' || !isoCode) return '🌐'
+  
+  // Convert ISO code to flag emoji using regional indicator symbols
+  const code = isoCode.toLowerCase().slice(0, 2)
+  if (code.length !== 2) return '🌐'
+  
+  const codePoints = code
+    .split('')
+    .map(char => 127397 + char.charCodeAt(0)) // Regional Indicator Symbol Letter A (0x1F1E6) - 'A' (0x41) = 127397
+  
+  return String.fromCodePoint(...codePoints)
+}
 
 const monthNames = [
   "January", "February", "March", "April", "May", "June",
@@ -106,6 +127,8 @@ export default function CourseFilterSection() {
   const [showCalendar, setShowCalendar] = useState(false)
   const [courses, setCourses] = useState<any[]>([])
   const [loadingCategories, setLoadingCategories] = useState(true)
+  const [venues, setVenues] = useState<Venue[]>([])
+  const [loadingVenues, setLoadingVenues] = useState(true)
 
   // Fetch courses to get available categories
   useEffect(() => {
@@ -124,6 +147,59 @@ export default function CourseFilterSection() {
     }
 
     fetchCategories()
+  }, [])
+
+  // Fetch venues from database
+  useEffect(() => {
+    const fetchVenues = async () => {
+      try {
+        setLoadingVenues(true)
+        const response = await fetch('/api/admin/venues?limit=1000')
+        const result = await response.json()
+        
+        if (result.success && result.data) {
+          // Filter only active venues and map to our format
+          const activeVenues: Venue[] = result.data
+            .filter((v: any) => v.status === 'Active')
+            .map((v: any) => {
+              const countryCode = getCountryCode(v.country || '')
+              const flag = getFlagEmoji(countryCode)
+              const name = v.name || `${v.city || ''}, ${v.country || ''}`.trim()
+              const id = v.city 
+                ? `${v.city.toLowerCase().replace(/\s+/g, '')}-${v.country?.toLowerCase().replace(/\s+/g, '') || 'unknown'}`
+                : String(v.id)
+              
+              return {
+                id,
+                name,
+                flag,
+              }
+            })
+            .filter((v: Venue) => v.name) // Only include venues with a name
+          
+          // Add Virtual Training option
+          activeVenues.push({
+            id: 'virtual',
+            name: 'Virtual Training',
+            flag: '🌐',
+          })
+          
+          setVenues(activeVenues)
+        }
+      } catch (err) {
+        console.error('Error fetching venues:', err)
+        // Fallback to empty array or add Virtual Training only
+        setVenues([{
+          id: 'virtual',
+          name: 'Virtual Training',
+          flag: '🌐',
+        }])
+      } finally {
+        setLoadingVenues(false)
+      }
+    }
+
+    fetchVenues()
   }, [])
 
   // Extract unique categories from courses data
@@ -208,6 +284,14 @@ export default function CourseFilterSection() {
       const venueName = venues.find((v) => v.id === selectedVenue)?.name
       if (venueName) {
         params.append('venue', venueName)
+      }
+    }
+    
+    // Add month filter - convert month ID (e.g., "jan") to month index (0-11)
+    if (selectedMonth) {
+      const month = months.find((m) => m.id === selectedMonth)
+      if (month && month.monthIndex !== undefined) {
+        params.append('month', month.monthIndex.toString())
       }
     }
     
@@ -339,9 +423,9 @@ export default function CourseFilterSection() {
                         <SelectItem key={categoryName} value={categoryName}>
                           <div className="flex items-center justify-between w-full">
                             <span>{categoryName}</span>
-                            <Badge className={`ml-2 ${getCategoryColor(categoryName)}`}>
+                            {/* <Badge className={`ml-2 ${getCategoryColor(categoryName)}`}>
                               {getCategoryCount(categoryName)}
-                            </Badge>
+                            </Badge> */}
                           </div>
                         </SelectItem>
                       ))
@@ -357,22 +441,29 @@ export default function CourseFilterSection() {
                 </label>
                 <Select value={selectedVenue} onValueChange={setSelectedVenue}>
                   <SelectTrigger className="h-12 w-full border-2 border-gray-200 focus:border-purple-500 rounded-xl bg-white/50">
-                    <SelectValue placeholder="Choose Venue" />
+                    <SelectValue placeholder={loadingVenues ? "Loading venues..." : "Choose Venue"} />
                   </SelectTrigger>
                   <SelectContent className="bg-white border border-gray-200 shadow-lg">
-                    {venues.map((venue) => (
-                      <SelectItem key={venue.id} value={venue.id}>
-                        <div className="flex items-center justify-between w-full">
-                          <span className="flex items-center">
-                            <span className="mr-2">{venue.flag}</span>
-                            {venue.name}
-                          </span>
-                          <Badge variant="secondary" className="ml-2">
-                            {venue.upcoming} upcoming
-                          </Badge>
-                        </div>
+                    {loadingVenues ? (
+                      <SelectItem value="loading" disabled>
+                        Loading venues...
                       </SelectItem>
-                    ))}
+                    ) : venues.length === 0 ? (
+                      <SelectItem value="no-venues" disabled>
+                        No venues available
+                      </SelectItem>
+                    ) : (
+                      venues.map((venue) => (
+                        <SelectItem key={venue.id} value={venue.id}>
+                          <div className="flex items-center justify-between w-full">
+                            <span className="flex items-center">
+                             
+                              {venue.name}
+                            </span>
+                          </div>
+                        </SelectItem>
+                      ))
+                    )}
                   </SelectContent>
                 </Select>
               </div>
@@ -391,11 +482,7 @@ export default function CourseFilterSection() {
                       <SelectItem key={month.id} value={month.id}>
                         <div className="flex items-center justify-between w-full">
                           <span>{month.name}</span>
-                          {month.courses > 0 && (
-                            <Badge variant="outline" className="ml-2">
-                              {month.courses} courses
-                            </Badge>
-                          )}
+                         
                         </div>
                       </SelectItem>
                     ))}

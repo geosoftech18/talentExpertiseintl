@@ -9,11 +9,134 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { format } from 'date-fns'
 import { generateSlug } from '@/lib/utils/slug'
 import * as XLSX from 'xlsx'
+import Image from 'next/image'
 
 const months = [
   'January', 'February', 'March', 'April', 'May', 'June',
   'July', 'August', 'September', 'October', 'November', 'December'
 ]
+
+// Cache for Wikipedia images
+const wikipediaImageCache = new Map<string, string>()
+
+// Helper function to clean city name by removing hyphens and suffixes
+const cleanCityName = (city: string): string => {
+  return city.trim().split('-')[0].trim()
+}
+
+// Parse venue name to extract city and country
+const parseVenueName = (venueName: string): { city: string; country: string } => {
+  // Try "City, Country" format first
+  if (venueName.includes(',')) {
+    const parts = venueName.split(',').map(p => p.trim())
+    return {
+      city: cleanCityName(parts[0]),
+      country: parts[1] || ''
+    }
+  }
+  
+  // Try "City-Country" format
+  if (venueName.includes('-')) {
+    const parts = venueName.split('-').map(p => p.trim())
+    return {
+      city: cleanCityName(parts[0]),
+      country: parts.slice(1).join(' ') || ''
+    }
+  }
+  
+  // Default: use entire name as city
+  return {
+    city: cleanCityName(venueName),
+    country: ''
+  }
+}
+
+// Function to get Wikipedia image URL for a venue
+const getWikipediaImageUrl = async (city: string, country: string): Promise<string> => {
+  const cacheKey = `${city}, ${country}`.toLowerCase()
+  
+  // Check cache first
+  if (wikipediaImageCache.has(cacheKey)) {
+    return wikipediaImageCache.get(cacheKey)!
+  }
+  
+  // Default placeholder image
+  const defaultImage = 'https://upload.wikimedia.org/wikipedia/commons/thumb/8/8f/Wikipedia-logo-v2-en.svg/1200px-Wikipedia-logo-v2-en.svg.png'
+  
+  // Clean city name
+  const cleanedCity = cleanCityName(city)
+  
+  try {
+    // Try cleaned city name first
+    let cityName = encodeURIComponent(cleanedCity)
+    let apiUrl = `https://en.wikipedia.org/api/rest_v1/page/summary/${cityName}`
+    
+    let response = await fetch(apiUrl, {
+      method: 'GET',
+      headers: {
+        'Accept': 'application/json',
+      },
+    })
+    
+    // If cleaned city not found, try original city name
+    if (!response.ok && cleanedCity !== city.trim()) {
+      cityName = encodeURIComponent(city.trim())
+      apiUrl = `https://en.wikipedia.org/api/rest_v1/page/summary/${cityName}`
+      response = await fetch(apiUrl, {
+        method: 'GET',
+        headers: {
+          'Accept': 'application/json',
+        },
+      })
+    }
+    
+    // If city not found, try "City, Country" format
+    if (!response.ok && country) {
+      const cityCountryName = encodeURIComponent(`${cleanedCity}, ${country}`.trim())
+      apiUrl = `https://en.wikipedia.org/api/rest_v1/page/summary/${cityCountryName}`
+      response = await fetch(apiUrl, {
+        method: 'GET',
+        headers: {
+          'Accept': 'application/json',
+        },
+      })
+    }
+    
+    // If still not found, try country name
+    if (!response.ok && country) {
+      const countryName = encodeURIComponent(country.trim())
+      apiUrl = `https://en.wikipedia.org/api/rest_v1/page/summary/${countryName}`
+      response = await fetch(apiUrl, {
+        method: 'GET',
+        headers: {
+          'Accept': 'application/json',
+        },
+      })
+    }
+    
+    if (response.ok) {
+      const data = await response.json()
+      
+      // Prefer originalimage, fallback to thumbnail
+      let imageUrl = data.originalimage?.source || data.thumbnail?.source || defaultImage
+      
+      // Convert thumbnail URL to full size if needed
+      if (imageUrl && imageUrl.includes('/thumb/')) {
+        imageUrl = imageUrl.replace(/\/thumb\//, '/').replace(/\/\d+px-.*$/, '')
+      }
+      
+      // Cache the result
+      wikipediaImageCache.set(cacheKey, imageUrl)
+      return imageUrl
+    }
+  } catch (error) {
+    console.error(`Error fetching Wikipedia image for ${city}, ${country}:`, error)
+  }
+  
+  // Cache default image
+  wikipediaImageCache.set(cacheKey, defaultImage)
+  return defaultImage
+}
 
 interface CourseListItem {
   id: string
@@ -53,6 +176,8 @@ export default function VenueCoursesPage() {
   const [selectedYear, setSelectedYear] = useState<string>('all')
   const [currentPage, setCurrentPage] = useState(1)
   const itemsPerPage = 50
+  const [venueImage, setVenueImage] = useState<string | null>(null)
+  const [imageLoading, setImageLoading] = useState(true)
 
   // Fetch courses
   useEffect(() => {
@@ -122,6 +247,27 @@ export default function VenueCoursesPage() {
 
     fetchCertificates()
   }, [])
+
+  // Fetch Wikipedia image for venue
+  useEffect(() => {
+    const fetchVenueImage = async () => {
+      try {
+        setImageLoading(true)
+        const { city, country } = parseVenueName(venueName)
+        const imageUrl = await getWikipediaImageUrl(city, country)
+        setVenueImage(imageUrl)
+      } catch (error) {
+        console.error('Error fetching venue image:', error)
+        setVenueImage(null)
+      } finally {
+        setImageLoading(false)
+      }
+    }
+
+    if (venueName) {
+      fetchVenueImage()
+    }
+  }, [venueName])
 
   // Filter courses by venue and exclude expired courses
   const venueCourses = useMemo(() => {
@@ -403,9 +549,39 @@ export default function VenueCoursesPage() {
   return (
     <div className="min-h-screen bg-gradient-to-b from-slate-50 to-white">
       {/* Hero Section */}
-      <div className="relative bg-gradient-to-r from-[#0A3049] via-[#0A3049] to-[#0A3049] text-white overflow-hidden">
+      <div className="relative bg-gradient-to-r from-[#0A3049] via-[#0A3049] to-[#0A3049]  text-white overflow-hidden min-h-[400px] sm:min-h-[500px] md:min-h-[500px]">
+        {/* Background Image */}
+        {venueImage && !imageLoading && (
+          <div className="absolute inset-0">
+            <Image
+              src={venueImage}
+              alt={venueName}
+              fill
+              className="object-cover"
+              priority
+              quality={90}
+              sizes="100vw"
+              onError={(e) => {
+                // Hide image on error, fallback to gradient background
+                const target = e.currentTarget as HTMLImageElement
+                target.style.display = 'none'
+              }}
+            />
+            {/* Light gradient overlay */}
+            <div className="absolute inset-0 opacity-90 bg-gradient-to-r from-[#0A3049]/95 via-[#0A3049]/85 to-[#0A3049]/95" />
+          </div>
+        )}
+        
+        {/* Fallback gradient background if no image */}
+        {(!venueImage || imageLoading) && (
+          <div className="absolute inset-0 bg-gradient-to-r from-[#0A3049] via-[#0A3049] to-[#0A3049]" />
+        )}
+        
+        {/* Grid pattern overlay */}
         <div className="absolute inset-0 bg-grid-white/[0.05] bg-[size:30px_30px]" />
-        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 py-12 sm:py-16 md:py-20">
+        
+        {/* Content */}
+        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 py-12 sm:py-16 md:py-20 z-10">
           <div className="max-w-3xl">
             <Badge className="bg-blue-500/20 text-white border-blue-400/30 mb-6">
               Training Venue

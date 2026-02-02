@@ -618,7 +618,7 @@ export default function CareersPage() {
                         </SelectTrigger>
                         <SelectContent className="max-h-[300px]">
                           {countryCodes.map((cc) => (
-                            <SelectItem key={cc.code} value={cc.code}>
+                            <SelectItem key={`${cc.code}-${cc.iso}`} value={cc.code}>
                               <div className="flex items-center gap-2">
                                 <div className="relative w-5 h-4 rounded-sm overflow-hidden shrink-0">
                                   <Image
@@ -676,7 +676,7 @@ export default function CareersPage() {
                         </SelectTrigger>
                         <SelectContent className="max-h-[300px]">
                           {countryCodes.map((cc) => (
-                            <SelectItem key={cc.code} value={cc.code}>
+                            <SelectItem key={`${cc.code}-${cc.iso}`} value={cc.code}>
                               <div className="flex items-center gap-2">
                                 <div className="relative w-5 h-4 rounded-sm overflow-hidden shrink-0">
                                   <Image

@@ -250,6 +250,10 @@ export default function Header() {
                 Downloads
               </Link>
               <span className="text-slate-500">|</span>
+              <Link href="/gallery" className="font-medium transition-colors">
+                Gallery
+              </Link>
+              <span className="text-slate-500">|</span>
               {/* Contact Us Dropdown */}
               <div
                 className="relative"
@@ -303,14 +307,14 @@ export default function Header() {
                         }, 500)
                       }}
                     >
-                      <div className="bg-slate-50 rounded-xl shadow-2xl border border-slate-300 p-2">
+                      <div className="bg-[#0A3049]  rounded-xl shadow-2xl border border-slate-300 p-2">
                       
                         <Link
                           href="/careers"
-                          className="block px-4 py-3 rounded-lg hover:bg-slate-200 transition-colors text-slate-700 hover:text-[#0A3049] font-medium"
+                          className="block px-4 py-3 rounded-lg hover:bg-slate-200 transition-colors text-white hover:text-[#0A3049] font-medium"
                           onClick={() => setOpenDropdown(null)}
                         >
-                          International Freelance Training Consultants
+                          Careers
                         </Link>
                       </div>
                     </div>
@@ -659,6 +663,13 @@ export default function Header() {
                   onClick={() => setIsMobileMenuOpen(false)}
                 >
                   Careers
+                </Link>
+                <Link
+                  href="/gallery"
+                  className="block px-4 py-2 rounded-lg hover:bg-[#0A3049]/5 text-slate-700 font-medium transition-colors"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                >
+                  Gallery
                 </Link>
                 <Button
                   asChild

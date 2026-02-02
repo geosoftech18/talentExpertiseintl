@@ -6,33 +6,34 @@ import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import Image from "next/image"
 import { useEffect, useRef, useState } from "react"
+import { useRouter } from "next/navigation"
 
 const affiliations = [
-  { id: 1, name: "Accreditation Partner 1", image: "/Affiliations/1.png" },
-  { id: 2, name: "Accreditation Partner 2", image: "/Affiliations/2.png" },
-  { id: 3, name: "Accreditation Partner 3", image: "/Affiliations/3.png" },
-  { id: 4, name: "Accreditation Partner 4", image: "/Affiliations/4.png" },
-  { id: 5, name: "Accreditation Partner 5", image: "/Affiliations/5.png" },
-  { id: 6, name: "Accreditation Partner 6", image: "/Affiliations/1.jpg" },
-  { id: 7, name: "Accreditation Partner 7", image: "/Affiliations/2.jpg" },
-  { id: 8, name: "Accreditation Partner 8", image: "/Affiliations/3.jpg" },
-  { id: 9, name: "Accreditation Partner 9", image: "/Affiliations/4.jpg" },
-  { id: 10, name: "Accreditation Partner 10", image: "/Affiliations/5.jpg" },
-  { id: 11, name: "Accreditation Partner 11", image: "/Affiliations/6.jpg" },
-  { id: 12, name: "Accreditation Partner 12", image: "/Affiliations/7.jpg" },
-  { id: 13, name: "Accreditation Partner 13", image: "/Affiliations/8.jpg" },
-  { id: 14, name: "Accreditation Partner 14", image: "/Affiliations/9.jpg" },
-  { id: 15, name: "Accreditation Partner 15", image: "/Affiliations/10.jpg" },
-  { id: 16, name: "Accreditation Partner 16", image: "/Affiliations/11.jpg" },
-  { id: 17, name: "Accreditation Partner 17", image: "/Affiliations/12.jpg" },
-  { id: 18, name: "Accreditation Partner 18", image: "/Affiliations/13.jpg" },
+  { id: 1, name: "Accreditation Partner 1", image: "/Affiliations/1.png" ,url: "#"},
+  { id: 2, name: "Accreditation Partner 2", image: "/Affiliations/2.png" ,url: "#"},
+  { id: 3, name: "Accreditation Partner 3", image: "/Affiliations/3.png" ,url: "#"},
+  { id: 4, name: "Accreditation Partner 4", image: "/Affiliations/4.png" ,url: "/courses/certificate/696e0459612d640dea16b6ba"},
+  { id: 5, name: "Accreditation Partner 5", image: "/Affiliations/5.png" ,url: "#"},
+  { id: 6, name: "Accreditation Partner 6", image: "/Affiliations/1.jpg" ,url: "#"},
+  { id: 7, name: "Accreditation Partner 7", image: "/Affiliations/2.jpg" ,url: "#"},
+  { id: 8, name: "Accreditation Partner 8", image: "/Affiliations/3.jpg" ,url: "#"},
+  { id: 9, name: "Accreditation Partner 9", image: "/Affiliations/4.jpg" ,url: "#"},
+  { id: 10, name: "Accreditation Partner 10", image: "/Affiliations/5.jpg" ,url: "#"},
+  { id: 11, name: "Accreditation Partner 11", image: "/Affiliations/6.jpg" ,url: "#"},
+  { id: 12, name: "Accreditation Partner 12", image: "/Affiliations/7.jpg" ,url: "#"},
+  { id: 13, name: "Accreditation Partner 13", image: "/Affiliations/8.jpg" ,url: "#"  },
+  { id: 14, name: "Accreditation Partner 14", image: "/Affiliations/9.jpg" ,url: "#" },
+  { id: 15, name: "Accreditation Partner 15", image: "/Affiliations/10.jpg" ,url: "/courses/certificate/696e060364e06418a46a3a4f" },
+  { id: 16, name: "Accreditation Partner 16", image: "/Affiliations/11.jpg" ,url: "#" },
+  { id: 17, name: "Accreditation Partner 17", image: "/Affiliations/12.jpg" ,url: "/courses/certificate/696e06f264e06418a46a3a50"},
+  { id: 18, name: "Accreditation Partner 18", image: "/Affiliations/13.jpg" ,url: "#" },
 ]
 
 export default function AffiliationsSection() {
   const carouselRef = useRef<HTMLDivElement>(null)
   const isPausedRef = useRef(false)
   const autoScrollRef = useRef<{ pause: () => void; resume: () => void } | null>(null)
-
+  const router = useRouter()
   // Auto-scroll animation
   useEffect(() => {
     const carousel = carouselRef.current
@@ -269,6 +270,7 @@ export default function AffiliationsSection() {
                   key={`${affiliation.id}-${index}`}
                   data-affiliation-item={index < affiliations.length ? '' : 'clone'}
                   className="group flex-shrink-0 w-36 h-32 sm:w-40 sm:h-36 md:w-48 md:h-40 lg:w-56 lg:h-48 relative overflow-hidden border-2 border-gray-200 hover:border-[#0A3049]/40 transition-all duration-300 bg-white shadow-md hover:shadow-2xl rounded-lg sm:rounded-xl p-3 sm:p-4 md:p-5 lg:p-6 cursor-pointer transform hover:scale-105"
+                  onClick={() => router.push(affiliation.url)}
                 >
                   {/* Hover Overlay */}
                   <div className="absolute inset-0 bg-gradient-to-br from-blue-600/10 to-indigo-600/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-lg sm:rounded-xl"></div>
