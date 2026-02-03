@@ -45,8 +45,85 @@ const countryToISOCode: { [key: string]: string } = {
   'Australia': 'au', 'New Zealand': 'nz', 'Fiji': 'fj', 'Papua New Guinea': 'pg',
 }
 
+// Map country codes to full country names
+const countryCodeToName: { [key: string]: string } = {
+  'NL': 'Netherlands',
+  'SP': 'Spain',
+  'DE': 'Germany',
+  'FR': 'France',
+  'CA': 'Canada',
+  'US': 'United States',
+  'IT': 'Italy',
+  'CH': 'Switzerland',
+  'PT': 'Portugal',
+  'TR': 'Turkey',
+  'GB': 'United Kingdom',
+  'UK': 'United Kingdom',
+  'AU': 'Australia',
+  'NZ': 'New Zealand',
+  'SG': 'Singapore',
+  'MY': 'Malaysia',
+  'TH': 'Thailand',
+  'ID': 'Indonesia',
+  'IN': 'India',
+  'CN': 'China',
+  'JP': 'Japan',
+  'KR': 'South Korea',
+  'AE': 'UAE',
+  'SA': 'Saudi Arabia',
+  'ZA': 'South Africa',
+  'EG': 'Egypt',
+  'KE': 'Kenya',
+  'MA': 'Morocco',
+  'TZ': 'Tanzania',
+}
+
+// Function to extract country code from venue name (e.g., "Amsterdam-NL" -> "NL")
+const extractCountryFromVenueName = (venueName: string): string | null => {
+  if (!venueName) return null
+  
+  // Match patterns like "City-Code" or "City - Code"
+  const match = venueName.match(/[- ]([A-Z]{2})$/i)
+  if (match && match[1]) {
+    return match[1].toUpperCase()
+  }
+  
+  return null
+}
+
+// Function to get country name from venue name or country field
+const getCountryFromVenue = (venue: { name: string; country: string }): string => {
+  // First, try to extract country code from venue name
+  const countryCode = extractCountryFromVenueName(venue.name)
+  if (countryCode && countryCodeToName[countryCode]) {
+    return countryCodeToName[countryCode]
+  }
+  
+  // Fallback to country field
+  return venue.country || ''
+}
+
 // Function to get country ISO code from country name
-const getCountryCode = (country: string): string => {
+const getCountryCode = (country: string, venueName?: string): string => {
+  // First, try to extract country code from venue name if provided
+  if (venueName) {
+    const extractedCode = extractCountryFromVenueName(venueName)
+    if (extractedCode) {
+      // Map common country codes to ISO codes
+      const codeMap: { [key: string]: string } = {
+        'NL': 'nl', 'SP': 'es', 'DE': 'de', 'FR': 'fr', 'CA': 'ca',
+        'US': 'us', 'IT': 'it', 'CH': 'ch', 'PT': 'pt', 'TR': 'tr',
+        'GB': 'gb', 'UK': 'gb', 'AU': 'au', 'NZ': 'nz', 'SG': 'sg',
+        'MY': 'my', 'TH': 'th', 'ID': 'id', 'IN': 'id', 'CN': 'cn',
+        'JP': 'jp', 'KR': 'kr', 'AE': 'ae', 'SA': 'sa', 'ZA': 'za',
+        'EG': 'eg', 'KE': 'ke', 'MA': 'ma', 'TZ': 'tz',
+      }
+      if (codeMap[extractedCode]) {
+        return codeMap[extractedCode]
+      }
+    }
+  }
+  
   if (!country) return 'xx'
   
   const normalizedCountry = country.trim()
@@ -210,8 +287,20 @@ const countryToContinent: { [key: string]: string } = {
   'papua new guinea': 'Oceania', 'pg': 'Oceania',
 }
 
-// Function to determine continent from country name
-const getContinent = (country: string): string => {
+// Function to determine continent from country name or venue
+const getContinent = (country: string, venueName?: string): string => {
+  // First, try to extract country code from venue name if provided
+  if (venueName) {
+    const extractedCode = extractCountryFromVenueName(venueName)
+    if (extractedCode && countryCodeToName[extractedCode]) {
+      const countryName = countryCodeToName[extractedCode]
+      const normalizedCountry = countryName.toLowerCase()
+      if (countryToContinent[normalizedCountry]) {
+        return countryToContinent[normalizedCountry]
+      }
+    }
+  }
+  
   if (!country) return 'Other'
   
   const normalizedCountry = country.trim().toLowerCase()
@@ -320,7 +409,10 @@ export default function VenuesPage() {
     const grouped: { [key: string]: Venue[] } = {}
     
     venues.forEach(venue => {
-      const continent = getContinent(venue.country)
+      // Get country from venue name or country field
+      const country = getCountryFromVenue(venue)
+      // Get continent using both country and venue name
+      const continent = getContinent(country, venue.name)
       if (!grouped[continent]) {
         grouped[continent] = []
       }
@@ -417,9 +509,12 @@ export default function VenuesPage() {
                 </div>
                 <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
                   {region.cities.map((venue) => {
-                    const countryCode = getCountryCode(venue.country)
+                    // Get country from venue name or country field
+                    const country = getCountryFromVenue(venue)
+                    // Get country code using both country and venue name
+                    const countryCode = getCountryCode(country, venue.name)
                     const flagUrl = getFlagImageUrl(countryCode)
-                    const venueDisplay = venue.name || `${venue.city}, ${venue.country}`
+                    const venueDisplay = venue.name || `${venue.city}, ${country || venue.country}`
                     return (
                       <div
                         key={venue.id}
@@ -429,7 +524,7 @@ export default function VenuesPage() {
                         <div className="w-10 h-10 rounded-full bg-white shadow-sm border-2 border-slate-200 flex items-center justify-center shrink-0 group-hover:border-blue-400 transition-colors overflow-hidden">
                           <Image
                             src={flagUrl}
-                            alt={`${venue.country} flag`}
+                            alt={`${country || venue.country} flag`}
                             width={40}
                             height={40}
                             className="w-full h-full object-cover rounded-full"
