@@ -141,9 +141,9 @@ export default function ModernHeroSection() {
           {/* Stats with staggered animation */}
           <div className={`grid grid-cols-2 md:grid-cols-4 gap-6 md:gap-8 pt-12 border-t border-white/10 transition-all duration-1000 delay-600 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}>
             {[
-              { value: "100+", label: "Expert Consultants" },
-              { value: "70+", label: "Global Cities" },
-              { value: "40+", label: "Years Experience" },
+              { value: "200+", label: "Expert Consultants" },
+              { value: "40+", label: "Global Cities" },
+              { value: "30+", label: "Years Experience" },
               { value: "50K+", label: "Professionals Trained" },
             ].map((stat, index) => (
               <div

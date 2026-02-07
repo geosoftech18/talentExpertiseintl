@@ -368,7 +368,21 @@ export default function Header() {
               >
                 Home
               </Link> */}
-                  <Link
+              {/* New Programs - Highlighted with Flowing Animation */}
+              <Link
+                href="/courses/new"
+                className="relative flex items-center gap-1.5 px-2 py-1 text-white font-semibold transition-all rounded-lg shadow-lg hover:shadow-xl overflow-hidden"
+              >
+                {/* Base background */}
+                <span className="absolute inset-0 bg-[#0A3049]"></span>
+                {/* Full-width flowing color */}
+                <span 
+                  className="absolute inset-0 w-full bg-[#fd2f2f] animate-flow-full"
+                ></span>
+                <span className="relative z-10">New Programs</span>
+              </Link>
+
+              <Link
                 href="/calendar"
                 className="flex items-center gap-1 px-4 py-2 text-slate-700 hover:text-[#0A3049] font-medium transition-colors rounded-lg hover:bg-[#0A3049]/5"
               >
@@ -621,6 +635,21 @@ export default function Header() {
                   <span>Training Programs</span>
                   <ChevronRight className="w-5 h-5 text-slate-400 flex-shrink-0" />
                 </button>
+
+                {/* New Programs - Highlighted with Flowing Animation */}
+                <Link
+                  href="/courses/new"
+                  className="relative flex items-center gap-2 px-4 py-2.5 rounded-lg text-white font-semibold transition-all shadow-lg hover:shadow-xl overflow-hidden mb-2"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                >
+                  {/* Base background */}
+                  <span className="absolute inset-0 bg-[#0A3049] rounded-lg"></span>
+                  {/* Full-width flowing color */}
+                  <span 
+                    className="absolute inset-0 w-full bg-[#fa3f2e] rounded-lg animate-flow-full"
+                  ></span>
+                  <span className="relative z-10">New Programs</span>
+                </Link>
 
                 <Link
                   href="/calendar"

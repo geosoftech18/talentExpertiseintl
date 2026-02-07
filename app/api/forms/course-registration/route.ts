@@ -46,7 +46,7 @@ export async function POST(request: NextRequest) {
       const participants = body.participants ? parseInt(body.participants) : 1
       const totalAmount = perParticipantAmount * participants
 
-      // Create invoice request
+      // Create invoice request with company details
       // Note: InvoiceRequest doesn't have userId field, but when approved and converted to CourseRegistration, it will be linked
       const invoiceRequest = await prisma.invoiceRequest.create({
         data: {
@@ -55,7 +55,7 @@ export async function POST(request: NextRequest) {
           courseTitle: body.courseTitle || null,
           title: body.title || null,
           name: body.name,
-          email: body.email,
+          email: body.email, // User email (always use the original user email)
           designation: body.designation || null,
           company: body.company || null,
           address: body.address,
@@ -65,11 +65,74 @@ export async function POST(request: NextRequest) {
           telephoneCountryCode: body.telephoneCountryCode || '+971',
           mobile: body.mobile || null,
           mobileCountryCode: body.mobileCountryCode || null,
+          // Company Information (from step 3)
+          contactPerson: body.contactPerson || null,
+          department: body.department || null,
+          invoiceEmail: body.invoiceEmail || null, // Company email (don't fall back to user email)
+          invoiceAddress: body.invoiceAddress || null, // Company address (don't fall back to user address)
           amount: totalAmount,
           participants: participants,
           status: 'PENDING',
         },
       })
+
+      // Send confirmation email to user
+      try {
+        const userConfirmationEmailHtml = generateInvoiceRequestConfirmationEmail({
+          customerName: body.name,
+          courseTitle: body.courseTitle || 'Course Registration',
+          invoiceRequestId: invoiceRequest.id,
+          participants: participants,
+          amount: totalAmount,
+          perParticipantAmount: perParticipantAmount,
+          submittedAt: invoiceRequest.submittedAt,
+        })
+
+        await sendEmail({
+          to: body.email,
+          subject: `Invoice Request Submitted - ${body.courseTitle || 'Course Registration'}`,
+          html: userConfirmationEmailHtml,
+          text: `Your invoice request for ${body.courseTitle || 'Course Registration'} has been submitted successfully. Request ID: ${invoiceRequest.id}. Amount: $${totalAmount.toFixed(2)} for ${participants} participant(s). We will review your request and get back to you soon.`,
+        })
+        console.log(`✅ User confirmation email sent successfully to ${body.email}`)
+      } catch (emailError) {
+        console.error('Error sending user confirmation email:', emailError)
+        // Don't fail the request if email fails
+      }
+
+      // Send notification email to company (if company email is provided and different from user email)
+      const companyEmail = body.invoiceEmail
+      if (companyEmail && companyEmail.trim() && companyEmail !== body.email) {
+        try {
+          const companyNotificationEmailHtml = generateInvoiceRequestCompanyNotificationEmail({
+            companyName: body.company || 'Company',
+            contactPerson: body.contactPerson || body.name,
+            courseTitle: body.courseTitle || 'Course Registration',
+            invoiceRequestId: invoiceRequest.id,
+            // User Details
+            userName: body.name,
+            userTitle: body.title || '',
+            userEmail: body.email,
+            userDesignation: body.designation || '',
+            // Course Details
+            participants: participants,
+            amount: totalAmount,
+            perParticipantAmount: perParticipantAmount,
+            submittedAt: invoiceRequest.submittedAt,
+          })
+
+          await sendEmail({
+            to: companyEmail,
+            subject: `Invoice Request Submitted - ${body.courseTitle || 'Course Registration'}`,
+            html: companyNotificationEmailHtml,
+            text: `An invoice request has been submitted for ${body.courseTitle || 'Course Registration'} by ${body.name} (${body.email}). Amount: $${totalAmount.toFixed(2)} for ${participants} participant(s).`,
+          })
+          console.log(`✅ Company notification email sent successfully to ${companyEmail}`)
+        } catch (emailError) {
+          console.error('Error sending company notification email:', emailError)
+          // Don't fail the request if email fails
+        }
+      }
 
       // Send notification email to owner/admin with user and company details
       const adminEmail = process.env.ADMIN_EMAIL || process.env.COMPANY_EMAIL || 'info@example.com'
@@ -107,6 +170,7 @@ export async function POST(request: NextRequest) {
           html: invoiceRequestEmailHtml,
           text: `New invoice request received for ${body.courseTitle || 'Course Registration'} from ${body.name} (${body.email}). Amount: $${totalAmount.toFixed(2)} for ${participants} participant(s).`,
         })
+        console.log(`✅ Admin notification email sent successfully to ${adminEmail}`)
       } catch (emailError) {
         console.error('Error sending invoice request notification email:', emailError)
         // Don't fail the request if email fails
@@ -393,6 +457,128 @@ function generateCourseRegistrationNotificationEmail(data: {
 /**
  * Generate HTML email for invoice request notification to admin (with user and company details)
  */
+// Generate user confirmation email for invoice request submission
+function generateInvoiceRequestConfirmationEmail(data: {
+  customerName: string
+  courseTitle: string
+  invoiceRequestId: string
+  participants: number
+  amount: number
+  perParticipantAmount: number
+  submittedAt: Date
+}): string {
+  const formattedDate = new Date(data.submittedAt).toLocaleDateString('en-US', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+  })
+
+  return `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <title>Invoice Request Confirmation</title>
+    </head>
+    <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
+      <div style="background: linear-gradient(135deg, #0A3049 0%, #0A3049 100%); padding: 30px; text-align: center; border-radius: 10px 10px 0 0;">
+        <h1 style="color: #ffffff; margin: 0;">Invoice Request Confirmation</h1>
+      </div>
+      
+      <div style="background: #f9f9f9; padding: 30px; border-radius: 0 0 10px 10px;">
+        <p>Dear ${data.customerName},</p>
+        
+        <p>Thank you for submitting your invoice request. We have received your request and it is currently under review.</p>
+        
+        <div style="background: #ffffff; padding: 20px; border-radius: 5px; margin: 20px 0; border-left: 4px solid #0A3049;">
+          <h2 style="color: #0A3049; margin-top: 0;">Request Details</h2>
+          <p><strong>Course:</strong> ${data.courseTitle}</p>
+          <p><strong>Request ID:</strong> ${data.invoiceRequestId.substring(0, 8).toUpperCase()}</p>
+          <p><strong>Participants:</strong> ${data.participants}</p>
+          <p><strong>Amount per Participant:</strong> $${data.perParticipantAmount.toFixed(2)}</p>
+          <p><strong>Total Amount:</strong> $${data.amount.toFixed(2)}</p>
+          <p><strong>Submitted Date:</strong> ${formattedDate}</p>
+        </div>
+        
+        <p>Our team will review your request and get back to you soon. You will receive a notification once your request has been processed.</p>
+        
+        <p>If you have any questions or need to make changes to your request, please contact us.</p>
+        
+        <p>Best regards,<br>Training Team</p>
+      </div>
+    </body>
+    </html>
+  `
+}
+
+// Generate company notification email for invoice request submission
+function generateInvoiceRequestCompanyNotificationEmail(data: {
+  companyName: string
+  contactPerson: string
+  courseTitle: string
+  invoiceRequestId: string
+  userName: string
+  userTitle: string
+  userEmail: string
+  userDesignation: string
+  participants: number
+  amount: number
+  perParticipantAmount: number
+  submittedAt: Date
+}): string {
+  const formattedDate = new Date(data.submittedAt).toLocaleDateString('en-US', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+  })
+
+  return `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <title>Invoice Request Notification</title>
+    </head>
+    <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
+      <div style="background: linear-gradient(135deg, #0A3049 0%, #0A3049 100%); padding: 30px; text-align: center; border-radius: 10px 10px 0 0;">
+        <h1 style="color: #ffffff; margin: 0;">Invoice Request Notification</h1>
+      </div>
+      
+      <div style="background: #f9f9f9; padding: 30px; border-radius: 0 0 10px 10px;">
+        <p>Dear ${data.contactPerson},</p>
+        
+        <p>An invoice request has been submitted for <strong>${data.companyName}</strong> and requires your attention.</p>
+        
+        <div style="background: #ffffff; padding: 20px; border-radius: 5px; margin: 20px 0; border-left: 4px solid #0A3049;">
+          <h2 style="color: #0A3049; margin-top: 0;">Request Details</h2>
+          <p><strong>Course:</strong> ${data.courseTitle}</p>
+          <p><strong>Request ID:</strong> ${data.invoiceRequestId.substring(0, 8).toUpperCase()}</p>
+          <p><strong>Participants:</strong> ${data.participants}</p>
+          <p><strong>Amount per Participant:</strong> $${data.perParticipantAmount.toFixed(2)}</p>
+          <p><strong>Total Amount:</strong> $${data.amount.toFixed(2)}</p>
+          <p><strong>Submitted Date:</strong> ${formattedDate}</p>
+        </div>
+        
+        <div style="background: #ffffff; padding: 20px; border-radius: 5px; margin: 20px 0; border-left: 4px solid #0A3049;">
+          <h2 style="color: #0A3049; margin-top: 0;">Submitted By</h2>
+          <p><strong>Name:</strong> ${data.userTitle} ${data.userName}</p>
+          <p><strong>Email:</strong> ${data.userEmail}</p>
+          <p><strong>Designation:</strong> ${data.userDesignation || 'N/A'}</p>
+        </div>
+        
+        <p>This invoice request is currently under review. You will be notified once the request has been processed.</p>
+        
+        <p>If you have any questions, please contact us.</p>
+        
+        <p>Best regards,<br>Training Team</p>
+      </div>
+    </body>
+    </html>
+  `
+}
+
 function generateInvoiceRequestNotificationEmail(data: {
   invoiceRequestId: string
   courseTitle: string

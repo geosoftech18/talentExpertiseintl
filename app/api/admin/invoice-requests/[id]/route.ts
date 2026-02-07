@@ -80,7 +80,8 @@ export async function PATCH(
         console.log('Could not find user for email:', invoiceRequest.email)
       }
 
-      // Create course registration with "In Progress" status
+      // Create course registration with "In Progress" status and "Unpaid" payment status
+      // Invoice will be generated later when admin changes payment status to "Paid" or order status to "Completed"
       const courseRegistration = await prisma.courseRegistration.create({
         data: {
           userId: userId || null, // Link to user account if found
@@ -108,9 +109,13 @@ export async function PATCH(
         },
       })
 
+      // Store company invoice details in a custom field or note for later use when generating invoice
+      // We'll use the invoice request data when generating invoice later
+      // Note: Invoice will be generated when payment status changes to "Paid" or order status to "Completed"
+
       return NextResponse.json({
         success: true,
-        message: 'Invoice request approved and order created',
+        message: 'Invoice request approved and order created. Invoice will be generated when payment status is changed to "Paid" or order status to "Completed".',
         data: {
           invoiceRequest: { ...invoiceRequest, status: 'APPROVED' },
           orderId: courseRegistration.id,

@@ -503,3 +503,47 @@
 .animate-bounce-slow {
   animation: bounce-slow 3s ease-in-out infinite;
 }
+
+/* Flowing background color animation - right to left */
+@keyframes flowing-bg {
+  0% {
+    background-position: 200% 0;
+  }
+  50% {
+    background-position: -100% 0;
+  }
+  50.01% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -100% 0;
+  }
+}
+
+.animate-flowing-bg {
+  background-size: 200% 100%;
+  background-image: linear-gradient(
+    90deg,
+    #0A3049 0%,
+    #0A3049 45%,
+    #06b6d4 45%,
+    #06b6d4 55%,
+    #0A3049 55%,
+    #0A3049 100%
+  );
+  animation: flowing-bg 4s linear infinite;
+}
+
+/* Single color flowing animation - covers full button */
+@keyframes flow-full-color {
+  0% {
+    transform: translateX(100%);
+  }
+  100% {
+    transform: translateX(-100%);
+  }
+}
+
+.animate-flow-full {
+  animation: flow-full-color 6s linear infinite;
+}

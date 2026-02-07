@@ -96,33 +96,56 @@ export async function POST(
             where: { courseRegistrationId: id },
           })
 
-          // Only create invoice if it doesn't exist
-          if (!existingInvoice) {
-            const amount = schedule?.fee || 0
-
-            if (amount <= 0) {
-              console.warn(`⚠️ Cannot generate invoice for order ${id}: amount is 0 or invalid`)
-            } else {
-              const invoiceResult = await createInvoice({
-                courseId: registration.courseId || null,
-                scheduleId: registration.scheduleId || null,
-                courseRegistrationId: id,
-                userId: null,
-                amount,
-                email: registration.email,
-                name: registration.name,
-                courseTitle: registration.courseTitle || programName || null,
-                address: registration.address || null,
-                city: registration.city || null,
-                country: registration.country || null,
-                participants: registration.participants || 1,
-                paymentStatus: paymentStatus,
-              })
-
-              console.log(`✅ Invoice generated for order ${id} when marked as completed: ${invoiceResult.invoiceNo}`)
-            }
-          } else {
+          if (existingInvoice) {
             console.log(`ℹ️ Invoice already exists for order ${id}, skipping generation`)
+            break
+          }
+
+          // Try to find invoice request to get company email/address
+          let invoiceEmail = registration.email
+          let invoiceAddress = registration.address || null
+          
+          try {
+            const invoiceRequest = await prisma.invoiceRequest.findFirst({
+              where: {
+                email: registration.email,
+                courseId: registration.courseId,
+                status: 'APPROVED',
+              },
+              orderBy: { createdAt: 'desc' },
+            })
+
+            if (invoiceRequest) {
+              // Use company email/address if available, otherwise use user email/address
+              invoiceEmail = invoiceRequest.invoiceEmail || invoiceRequest.email
+              invoiceAddress = invoiceRequest.invoiceAddress || invoiceRequest.address || invoiceAddress
+            }
+          } catch (error) {
+            console.log('Could not find invoice request, using registration data')
+          }
+
+          const amount = schedule?.fee ? schedule.fee * (registration.participants || 1) : 0
+
+          if (amount <= 0) {
+            console.warn(`⚠️ Cannot generate invoice for order ${id}: amount is 0 or invalid`)
+          } else {
+            const invoiceResult = await createInvoice({
+              courseId: registration.courseId || null,
+              scheduleId: registration.scheduleId || null,
+              courseRegistrationId: id,
+              userId: null,
+              amount,
+              email: invoiceEmail,
+              name: registration.name,
+              courseTitle: registration.courseTitle || programName || null,
+              address: invoiceAddress,
+              city: registration.city || null,
+              country: registration.country || null,
+              participants: registration.participants || 1,
+              paymentStatus: paymentStatus,
+            })
+
+            console.log(`✅ Invoice generated for order ${id} when marked as completed: ${invoiceResult.invoiceNo} (sent to ${invoiceEmail})`)
           }
         } catch (invoiceError) {
           console.error('Error generating invoice when marking order as completed:', invoiceError)

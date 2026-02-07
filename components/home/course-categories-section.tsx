@@ -37,235 +37,210 @@ import {
   Calendar,
   Loader2,
 } from "lucide-react"
-import { CourseRegistrationForm } from "@/components/course-registration-form"
-import type { Course as CourseType, CourseSchedule } from "@/lib/supabase"
+// Registration form is now on a dedicated page
 
-const courseCategories = [
-  {
+// Category metadata mapping - static styling for each category
+const categoryMetadata: Record<string, {
+  id: string
+  icon: any
+  description: string
+  color: string
+  bgColor: string
+  textColor: string
+  borderColor: string
+  trending: boolean
+  featured: boolean
+}> = {
+  "Mechanical Engineering": {
     id: "mechanical",
-    title: "Mechanical Engineering",
-    description: "Advanced mechanical systems, design principles, and industrial applications",
     icon: Settings,
-    courseCount: 45,
+    description: "Advanced mechanical systems, design principles, and industrial applications",
     color: "from-blue-600 to-blue-800",
     bgColor: "bg-blue-50",
     textColor: "text-blue-900",
     borderColor: "border-blue-200",
-    image: "/placeholder.svg?height=200&width=300",
     trending: true,
     featured: false,
   },
-  {
+  "Management & Leadership": {
     id: "management",
-    title: "Management & Leadership",
-    description: "Executive leadership, team management, and strategic decision making",
     icon: Users,
-    courseCount: 62,
+    description: "Executive leadership, team management, and strategic decision making",
     color: "from-purple-600 to-purple-800",
     bgColor: "bg-purple-50",
     textColor: "text-purple-900",
     borderColor: "border-purple-200",
-    image: "/placeholder.svg?height=200&width=300",
     trending: false,
     featured: true,
   },
-  {
+  "Maintenance Management": {
     id: "maintenance",
-    title: "Maintenance Management",
-    description: "Preventive maintenance, asset management, and operational efficiency",
     icon: Wrench,
-    courseCount: 28,
+    description: "Preventive maintenance, asset management, and operational efficiency",
     color: "from-orange-600 to-orange-800",
     bgColor: "bg-orange-50",
     textColor: "text-orange-900",
     borderColor: "border-orange-200",
-    image: "/placeholder.svg?height=200&width=300",
     trending: false,
     featured: false,
   },
-  {
+  "Oil & Gas": {
     id: "oil-gas",
-    title: "Oil & Gas",
-    description: "Petroleum engineering, refinery operations, and energy sector expertise",
     icon: Zap,
-    courseCount: 34,
+    description: "Petroleum engineering, refinery operations, and energy sector expertise",
     color: "from-green-600 to-green-800",
     bgColor: "bg-green-50",
     textColor: "text-green-900",
     borderColor: "border-green-200",
-    image: "/placeholder.svg?height=200&width=300",
     trending: true,
     featured: false,
   },
-  {
+  "Project Management": {
     id: "project",
-    title: "Project Management",
-    description: "PMP certification, agile methodologies, and project delivery excellence",
     icon: Target,
-    courseCount: 51,
+    description: "PMP certification, agile methodologies, and project delivery excellence",
     color: "from-indigo-600 to-indigo-800",
     bgColor: "bg-indigo-50",
     textColor: "text-indigo-900",
     borderColor: "border-indigo-200",
-    image: "/placeholder.svg?height=200&width=300",
     trending: false,
     featured: true,
   },
-  {
+  "Purchasing Management": {
     id: "purchasing",
-    title: "Purchasing Management",
-    description: "Supply chain optimization, vendor management, and procurement strategies",
     icon: DollarSign,
-    courseCount: 23,
+    description: "Supply chain optimization, vendor management, and procurement strategies",
     color: "from-teal-600 to-teal-800",
     bgColor: "bg-teal-50",
     textColor: "text-teal-900",
     borderColor: "border-teal-200",
-    image: "/placeholder.svg?height=200&width=300",
     trending: false,
     featured: false,
   },
-  {
+  "Public Relations": {
     id: "public-relations",
-    title: "Public Relations",
-    description: "Brand communication, media relations, and corporate reputation management",
     icon: MessageSquare,
-    courseCount: 19,
+    description: "Brand communication, media relations, and corporate reputation management",
     color: "from-pink-600 to-pink-800",
     bgColor: "bg-pink-50",
     textColor: "text-pink-900",
     borderColor: "border-pink-200",
-    image: "/placeholder.svg?height=200&width=300",
     trending: false,
     featured: false,
   },
-  {
+  "Urban Planning & Development": {
     id: "urban-planning",
-    title: "Urban Planning & Development",
-    description: "City planning, sustainable development, and infrastructure management",
     icon: Building,
-    courseCount: 16,
+    description: "City planning, sustainable development, and infrastructure management",
     color: "from-cyan-600 to-cyan-800",
     bgColor: "bg-cyan-50",
     textColor: "text-cyan-900",
     borderColor: "border-cyan-200",
-    image: "/placeholder.svg?height=200&width=300",
     trending: false,
     featured: false,
   },
-  {
+  "Admin & Secretarial": {
     id: "admin",
-    title: "Admin & Secretarial",
-    description: "Executive assistance, office management, and administrative excellence",
     icon: Briefcase,
-    courseCount: 31,
+    description: "Executive assistance, office management, and administrative excellence",
     color: "from-gray-600 to-gray-800",
     bgColor: "bg-gray-50",
     textColor: "text-gray-900",
     borderColor: "border-gray-200",
-    image: "/placeholder.svg?height=200&width=300",
     trending: false,
     featured: false,
   },
-  {
+  "Contracts Management": {
     id: "contracts",
-    title: "Contracts Management",
-    description: "Legal frameworks, contract negotiation, and compliance management",
     icon: Award,
-    courseCount: 27,
+    description: "Legal frameworks, contract negotiation, and compliance management",
     color: "from-violet-600 to-violet-800",
     bgColor: "bg-violet-50",
     textColor: "text-violet-900",
     borderColor: "border-violet-200",
-    image: "/placeholder.svg?height=200&width=300",
     trending: false,
     featured: false,
   },
-  {
+  "Customer Service": {
     id: "customer-service",
-    title: "Customer Service",
-    description: "Customer experience, service excellence, and relationship management",
     icon: HeadphonesIcon,
-    courseCount: 25,
+    description: "Customer experience, service excellence, and relationship management",
     color: "from-rose-600 to-rose-800",
     bgColor: "bg-rose-50",
     textColor: "text-rose-900",
     borderColor: "border-rose-200",
-    image: "/placeholder.svg?height=200&width=300",
     trending: true,
     featured: false,
   },
-  {
+  "Electrical Engineering": {
     id: "electrical",
-    title: "Electrical Engineering",
-    description: "Power systems, electronics, and electrical safety standards",
     icon: Lightbulb,
-    courseCount: 38,
+    description: "Power systems, electronics, and electrical safety standards",
     color: "from-yellow-600 to-yellow-800",
     bgColor: "bg-yellow-50",
     textColor: "text-yellow-900",
     borderColor: "border-yellow-200",
-    image: "/placeholder.svg?height=200&width=300",
     trending: false,
     featured: false,
   },
-  {
+  "Finance & Accounting": {
     id: "finance",
-    title: "Finance & Accounting",
-    description: "Financial analysis, accounting principles, and investment strategies",
     icon: BarChart3,
-    courseCount: 44,
+    description: "Financial analysis, accounting principles, and investment strategies",
     color: "from-emerald-600 to-emerald-800",
     bgColor: "bg-emerald-50",
     textColor: "text-emerald-900",
     borderColor: "border-emerald-200",
-    image: "/placeholder.svg?height=200&width=300",
     trending: false,
     featured: true,
   },
-  {
+  "HR Management": {
     id: "hr",
-    title: "HR Management",
-    description: "Human resources, talent acquisition, and organizational development",
     icon: Users,
-    courseCount: 36,
+    description: "Human resources, talent acquisition, and organizational development",
     color: "from-red-600 to-red-800",
     bgColor: "bg-red-50",
     textColor: "text-red-900",
     borderColor: "border-red-200",
-    image: "/placeholder.svg?height=200&width=300",
     trending: false,
     featured: false,
   },
-  {
+  "Quality, Health & Safety": {
     id: "quality",
-    title: "Quality, Health & Safety",
-    description: "ISO standards, workplace safety, and quality management systems",
     icon: Shield,
-    courseCount: 29,
+    description: "ISO standards, workplace safety, and quality management systems",
     color: "from-lime-600 to-lime-800",
     bgColor: "bg-lime-50",
     textColor: "text-lime-900",
     borderColor: "border-lime-200",
-    image: "/placeholder.svg?height=200&width=300",
     trending: false,
     featured: false,
   },
-  {
+  "Information Technology": {
     id: "it",
-    title: "Information Technology",
-    description: "Software development, cybersecurity, and digital transformation",
     icon: Code,
-    courseCount: 67,
+    description: "Software development, cybersecurity, and digital transformation",
     color: "from-blue-600 to-purple-600",
     bgColor: "bg-blue-50",
     textColor: "text-blue-900",
     borderColor: "border-blue-200",
-    image: "/placeholder.svg?height=200&width=300",
     trending: true,
     featured: true,
   },
-]
+}
+
+// Default metadata for categories not in the mapping
+const getDefaultMetadata = (categoryName: string) => ({
+  id: categoryName.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, ''),
+  icon: BookOpen,
+  description: `Explore our comprehensive ${categoryName} training programs designed for professionals`,
+  color: "from-gray-600 to-gray-800",
+  bgColor: "bg-gray-50",
+  textColor: "text-gray-900",
+  borderColor: "border-gray-200",
+  trending: false,
+  featured: false,
+})
 
 const specialOffers = [
   {
@@ -346,11 +321,22 @@ export default function CourseCategoriesSection() {
   const [loadingCourses, setLoadingCourses] = useState(false)
   const sliderRef = useRef<HTMLDivElement>(null)
   const selectedCategoryRef = useRef<HTMLDivElement>(null)
-  const [showRegistration, setShowRegistration] = useState(false)
-  const [selectedCourse, setSelectedCourse] = useState<CourseType | null>(null)
-  const [selectedSchedules, setSelectedSchedules] = useState<CourseSchedule[]>([])
-  const [selectedScheduleId, setSelectedScheduleId] = useState<string | null>(null)
-  const [loadingCourseData, setLoadingCourseData] = useState(false)
+  // Registration is now on a dedicated page, no need for modal state
+  const [courseCategories, setCourseCategories] = useState<Array<{
+    id: string
+    title: string
+    description: string
+    icon: any
+    courseCount: number
+    color: string
+    bgColor: string
+    textColor: string
+    borderColor: string
+    image: string
+    trending: boolean
+    featured: boolean
+  }>>([])
+  const [loadingCategories, setLoadingCategories] = useState(true)
 
   // Function to strip HTML tags from description
   const stripHtml = (html: string): string => {
@@ -368,6 +354,91 @@ export default function CourseCategoriesSection() {
       .replace(/&apos;/g, "'")
     return text.trim()
   }
+
+  // Fetch courses and generate categories dynamically
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        setLoadingCategories(true)
+        // Fetch all courses (including expired to get all categories)
+        const response = await fetch('/api/courses?limit=10000&includeExpired=true')
+        const result = await response.json()
+        
+        if (result.success && result.data) {
+          const courses = result.data
+          const today = new Date()
+          today.setHours(0, 0, 0, 0)
+          
+          // Group courses by category and count non-expired courses
+          const categoryMap = new Map<string, {
+            count: number
+            description?: string
+          }>()
+          
+          courses.forEach((course: any) => {
+            if (!course.category) return
+            
+            // Check if course is not expired
+            let isNotExpired = false
+            if (course.startDate) {
+              try {
+                const courseDate = new Date(course.startDate)
+                courseDate.setHours(0, 0, 0, 0)
+                isNotExpired = courseDate >= today
+              } catch {
+                isNotExpired = false
+              }
+            }
+            
+            // Only count non-expired courses
+            if (isNotExpired) {
+              const existing = categoryMap.get(course.category) || { count: 0 }
+              categoryMap.set(course.category, {
+                count: existing.count + 1,
+                description: existing.description || course.description || undefined
+              })
+            }
+          })
+          
+          // Generate categories array from the map
+          const generatedCategories = Array.from(categoryMap.entries())
+            .map(([categoryName, data]) => {
+              const metadata = categoryMetadata[categoryName] || getDefaultMetadata(categoryName)
+              
+              // Use description from first course if available, otherwise use metadata description
+              const description = data.description 
+                ? stripHtml(data.description).substring(0, 100) + (stripHtml(data.description).length > 100 ? '...' : '')
+                : metadata.description
+              
+              return {
+                id: metadata.id,
+                title: categoryName,
+                description: description,
+                icon: metadata.icon,
+                courseCount: data.count,
+                color: metadata.color,
+                bgColor: metadata.bgColor,
+                textColor: metadata.textColor,
+                borderColor: metadata.borderColor,
+                image: "/placeholder.svg?height=200&width=300",
+                trending: metadata.trending,
+                featured: metadata.featured,
+              }
+            })
+            .sort((a, b) => b.courseCount - a.courseCount) // Sort by course count descending
+          
+          setCourseCategories(generatedCategories)
+        }
+      } catch (error) {
+        console.error('Error fetching categories:', error)
+        setCourseCategories([])
+      } finally {
+        setLoadingCategories(false)
+      }
+    }
+    
+    fetchCategories()
+  }, [])
 
   const filteredCategories = courseCategories.filter((category) =>
     category.title.toLowerCase().includes(searchTerm.toLowerCase()),
@@ -473,7 +544,7 @@ export default function CourseCategoriesSection() {
     }
 
     fetchCategoryCourses()
-  }, [selectedCategory])
+  }, [selectedCategory, courseCategories])
 
   // Scroll to category details when a category is selected
   useEffect(() => {
@@ -512,67 +583,19 @@ export default function CourseCategoriesSection() {
 
   const handleBookNowClick = async (e: React.MouseEvent, course: Course) => {
     e.stopPropagation() // Prevent card click
-    setLoadingCourseData(true)
     
-    try {
-      // Fetch full course details with schedules
-      const response = await fetch(`/api/courses/${course.slug}`)
-      const result = await response.json()
-      
-      if (result.success && result.data) {
-        const courseData = result.data.course as CourseType
-        const schedules = result.data.schedules as CourseSchedule[]
-        
-        // Try to find matching schedule based on the course row's date/venue
-        let matchingScheduleId: string | null = null
-        if (course.startDate && schedules.length > 0) {
-          const matchingSchedule = schedules.find(s => {
-            const scheduleStart = s.start_date ? new Date(s.start_date).toISOString().split('T')[0] : null
-            const rowStart = course.startDate ? new Date(course.startDate).toISOString().split('T')[0] : null
-            return scheduleStart === rowStart && 
-                   (s.venue === course.venue || (!s.venue && !course.venue))
-          })
-          if (matchingSchedule) {
-            matchingScheduleId = matchingSchedule.id
-          } else if (schedules.length > 0) {
-            // If no exact match, use first schedule
-            matchingScheduleId = schedules[0].id
-          }
-        } else if (schedules.length > 0) {
-          matchingScheduleId = schedules[0].id
-        }
-        
-        setSelectedCourse(courseData)
-        setSelectedSchedules(schedules)
-        setSelectedScheduleId(matchingScheduleId)
-        setShowRegistration(true)
-      } else {
-        alert('Failed to load course details. Please try again.')
-      }
-    } catch (error) {
-      console.error('Error fetching course details:', error)
-      alert('Failed to load course details. Please try again.')
-    } finally {
-      setLoadingCourseData(false)
+    // Navigate to registration page
+    // Try to find matching schedule ID if course has startDate
+    let scheduleIdParam = ''
+    if (course.startDate) {
+      // We'll let the registration page handle schedule matching
+      // For now, just navigate to the registration page
     }
+    
+    router.push(`/courses/${course.slug}/register${scheduleIdParam}`)
   }
 
   return (
-    <>
-      {showRegistration && selectedCourse && (
-        <CourseRegistrationForm
-          course={selectedCourse}
-          schedules={selectedSchedules}
-          selectedScheduleId={selectedScheduleId}
-          onClose={() => {
-            setShowRegistration(false)
-            setSelectedCourse(null)
-            setSelectedSchedules([])
-            setSelectedScheduleId(null)
-          }}
-        />
-      )}
-
     <section className="py-10 sm:py-16 lg:py-20 bg-gradient-to-br from-gray-50 via-white to-blue-50 relative overflow-hidden">
       {/* Background Elements */}
       <div className="absolute top-0 left-0 w-64 h-64 sm:w-96 sm:h-96 bg-purple-200 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-pulse"></div>
@@ -726,7 +749,17 @@ export default function CourseCategoriesSection() {
                     className="flex space-x-3 md:gap-4 sm:space-x-4 overflow-x-auto scrollbar-hide pb-4 px-2 sm:px-4 snap-x snap-mandatory"
                     style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
                   >
-                    {(searchTerm ? filteredCategories : courseCategories).map((category) => {
+                    {loadingCategories ? (
+                      <div className="flex items-center justify-center w-full py-12">
+                        <Loader2 className="w-8 h-8 animate-spin text-[#0A3049]" />
+                        <span className="ml-3 text-gray-600">Loading categories...</span>
+                      </div>
+                    ) : (searchTerm ? filteredCategories : courseCategories).length === 0 ? (
+                      <div className="flex items-center justify-center w-full py-12">
+                        <span className="text-gray-600">No categories available</span>
+                      </div>
+                    ) : (
+                      (searchTerm ? filteredCategories : courseCategories).map((category) => {
                       const IconComponent = category.icon
                       const isSelected = selectedCategory === category.id
                       const isHighlighted = category.featured || category.trending
@@ -804,7 +837,8 @@ export default function CourseCategoriesSection() {
                           </CardContent>
                         </Card>
                       )
-                    })}
+                    })
+                    )}
                   </div>
 
                   {/* Category Slider Controls - Hidden on mobile, shown on larger screens */}
@@ -894,7 +928,7 @@ export default function CourseCategoriesSection() {
                               setSelectedCategory(null)
                               setCategoryCourses([])
                             }}
-                            className={`${category.borderColor} ${category.textColor} hover:bg-${category.bgColor} w-full sm:w-auto`}
+                            className={`${category.borderColor} !${category.textColor} hover:bg-${category.bgColor} w-full sm:w-auto`}
                           >
                             Close
                             <X className="w-4 h-4 ml-2" />
@@ -971,18 +1005,10 @@ export default function CourseCategoriesSection() {
                                     <div className="flex gap-2" onClick={(e) => e.stopPropagation()}>
                                       <Button
                                         onClick={(e) => handleBookNowClick(e, course)}
-                                        disabled={loadingCourseData}
                                         size="sm"
                                         className={`flex-1 bg-gradient-to-r ${category.color} text-white hover:opacity-90 text-xs sm:text-sm`}
                                       >
-                                        {loadingCourseData ? (
-                                          <>
-                                            <Loader2 className="w-3 h-3 sm:w-4 sm:h-4 mr-2 animate-spin" />
-                                            Loading...
-                                          </>
-                                        ) : (
-                                          'Book Now'
-                                        )}
+                                        Book Now
                                       </Button>
                                       <Button 
                                         onClick={() => router.push(`/courses/${course.slug}`)}
@@ -1026,7 +1052,7 @@ export default function CourseCategoriesSection() {
                               className={`bg-gradient-to-r ${category.color} text-white hover:opacity-90 px-6 sm:px-8 py-2 sm:py-3 text-sm sm:text-base w-full sm:w-auto`}
                               onClick={() => {
                                 const categoryParam = encodeURIComponent(category.title)
-                                router.push(`/courses?category=${categoryParam}`)
+                                router.push(`/courses/category/${categoryParam}`)
                               }}
                             >
                               View All {category.title} Courses
@@ -1514,6 +1540,5 @@ export default function CourseCategoriesSection() {
         </div>
       </div>
     </section>
-    </>
   )
 }

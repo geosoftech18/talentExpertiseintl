@@ -181,6 +181,9 @@ export async function createInvoice(params: CreateInvoiceParams) {
   const dueDate = new Date()
   dueDate.setDate(dueDate.getDate() + 7) // 7 days from now (for database record)
 
+  // Determine invoice status based on payment status
+  const invoiceStatus = paymentStatus && paymentStatus.toUpperCase() === 'PAID' ? 'PAID' : 'PENDING'
+  
   // Create invoice record
   const invoice = await prisma.invoice.create({
     data: {
@@ -189,7 +192,7 @@ export async function createInvoice(params: CreateInvoiceParams) {
       courseRegistrationId: courseRegistrationId || null,
       invoiceNo,
       amount: totalAmount, // Store total amount
-      status: 'PAID',
+      status: invoiceStatus,
       issueDate,
       dueDate,
       customerName: name,
@@ -220,7 +223,7 @@ export async function createInvoice(params: CreateInvoiceParams) {
       customerCountry: country || undefined,
       courseTitle: courseInfo,
       amount: totalAmount, // Total amount
-      status: 'PAID',
+      status: invoiceStatus,
       participants: participantsCount,
       unitPrice: unitPrice,
     },

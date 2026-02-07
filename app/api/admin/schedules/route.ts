@@ -19,6 +19,16 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    // Handle isNewProgram - explicitly convert to boolean
+    let isNewProgramValue = false
+    if (body.hasOwnProperty('isNewProgram')) {
+      if (typeof body.isNewProgram === 'boolean') {
+        isNewProgramValue = body.isNewProgram
+      } else if (typeof body.isNewProgram === 'string') {
+        isNewProgramValue = body.isNewProgram === 'true'
+      }
+    }
+
     const schedule = await prisma.schedule.create({
       data: {
         programId: body.programId,
@@ -29,6 +39,7 @@ export async function POST(request: NextRequest) {
         venue: body.venue,
         fee: body.fee !== null && body.fee !== undefined ? parseFloat(String(body.fee).replace(/[^\d.]/g, '')) : null,
         status: body.status || 'Open',
+        isNewProgram: isNewProgramValue, // Explicitly set boolean value
       },
     })
 
@@ -166,6 +177,7 @@ export async function GET(request: NextRequest) {
           venue: true,
           fee: true,
           status: true,
+          isNewProgram: true,
           createdAt: true,
           // Only include basic fields from relations
           program: {
@@ -251,6 +263,16 @@ export async function PUT(request: NextRequest) {
       }
     }
 
+    // Handle isNewProgram - explicitly convert to boolean
+    let isNewProgramValue = false
+    if (updateData.hasOwnProperty('isNewProgram')) {
+      if (typeof updateData.isNewProgram === 'boolean') {
+        isNewProgramValue = updateData.isNewProgram
+      } else if (typeof updateData.isNewProgram === 'string') {
+        isNewProgramValue = updateData.isNewProgram === 'true'
+      }
+    }
+
     const schedule = await prisma.schedule.update({
       where: { id },
       data: {
@@ -264,6 +286,7 @@ export async function PUT(request: NextRequest) {
           ? parseFloat(String(updateData.fee).replace(/[^\d.]/g, '')) 
           : null,
         status: updateData.status || 'Open',
+        isNewProgram: isNewProgramValue, // Explicitly set boolean value
       },
     })
 

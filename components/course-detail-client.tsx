@@ -13,7 +13,7 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion'
-import { CourseRegistrationForm } from '@/components/course-registration-form'
+// Registration form is now on a dedicated page
 import { CourseEnquiryForm } from '@/components/course-enquiry-form'
 import { InHouseCourseForm } from '@/components/in-house-course-form'
 import { OnlineSessionForm } from '@/components/online-session-form'
@@ -108,8 +108,7 @@ export default function CourseDetailClient({
   const router = useRouter()
   const pathname = usePathname()
   const [activeTab, setActiveTab] = useState('overview')
-  const [showRegistration, setShowRegistration] = useState(false)
-  const [selectedScheduleId, setSelectedScheduleId] = useState<string | null>(null)
+  // Registration is now on a dedicated page, no need for modal state
   const [showEnquiry, setShowEnquiry] = useState(false)
   const [showInHouse, setShowInHouse] = useState(false)
   const [showOnlineSession, setShowOnlineSession] = useState(false)
@@ -143,18 +142,19 @@ export default function CourseDetailClient({
     }
     
     if (status === 'unauthenticated' || !session?.user) {
-      // Store current path in sessionStorage for redirect after login
-      if (typeof window !== 'undefined' && pathname) {
-        sessionStorage.setItem('callbackUrl', pathname)
+      // Store registration page URL in sessionStorage for redirect after login
+      const registrationUrl = `/courses/${course.slug}/register`
+      if (typeof window !== 'undefined') {
+        sessionStorage.setItem('callbackUrl', registrationUrl)
       }
-      // Redirect to auth page with callback URL
-      const callbackUrl = pathname ? encodeURIComponent(pathname) : ''
-      router.push(`/auth${callbackUrl ? `?callbackUrl=${callbackUrl}` : ''}`)
+      // Redirect to auth page with registration URL as callback
+      const callbackUrl = encodeURIComponent(registrationUrl)
+      router.push(`/auth?callbackUrl=${callbackUrl}`)
       return
     }
     
-    // User is authenticated, show registration form
-    setShowRegistration(true)
+    // User is authenticated, navigate to registration page
+    router.push(`/courses/${course.slug}/register`)
   }
 
   const handleScheduleRegisterClick = (scheduleId: string) => {
@@ -174,9 +174,8 @@ export default function CourseDetailClient({
       return
     }
     
-    // User is authenticated, show registration form with selected schedule
-    setSelectedScheduleId(scheduleId)
-    setShowRegistration(true)
+    // User is authenticated, navigate to registration page with selected schedule
+    router.push(`/courses/${course.slug}/register?scheduleId=${scheduleId}`)
   }
 
   const scrollToSection = (sectionId: string) => {
@@ -277,18 +276,6 @@ export default function CourseDetailClient({
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-slate-50 to-white">
-      {showRegistration && (
-        <CourseRegistrationForm
-          course={course}
-          schedules={schedules}
-          selectedScheduleId={selectedScheduleId}
-          onClose={() => {
-            setShowRegistration(false)
-            setSelectedScheduleId(null)
-          }}
-        />
-      )}
-
       {showEnquiry && (
         <CourseEnquiryForm
           course={course}

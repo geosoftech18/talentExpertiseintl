@@ -4,17 +4,9 @@ import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { useSession } from "next-auth/react"
 import { format } from "date-fns"
-import { Calendar, MapPin, DollarSign, ArrowRight, Loader2, LogIn } from "lucide-react"
+import { Calendar, MapPin, DollarSign, ArrowRight, Loader2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog"
 import {
   Carousel,
   CarouselContent,
@@ -23,8 +15,8 @@ import {
   CarouselPrevious,
   type CarouselApi,
 } from "@/components/ui/carousel"
-import { CourseRegistrationForm } from "@/components/course-registration-form"
-import type { Course, CourseSchedule } from "@/lib/supabase"
+// Registration form is now on a dedicated page
+// Course types no longer needed for modal
 
 interface UpcomingProgram {
   id: string
@@ -46,12 +38,6 @@ export default function UpcomingProgramsCarousel() {
   const [loading, setLoading] = useState(true)
   const [api, setApi] = useState<CarouselApi>()
   const [isHovered, setIsHovered] = useState(false)
-  const [showRegistration, setShowRegistration] = useState(false)
-  const [selectedCourse, setSelectedCourse] = useState<Course | null>(null)
-  const [selectedSchedules, setSelectedSchedules] = useState<CourseSchedule[]>([])
-  const [selectedScheduleId, setSelectedScheduleId] = useState<string | null>(null)
-  const [loadingCourseData, setLoadingCourseData] = useState(false)
-  const [showLoginDialog, setShowLoginDialog] = useState(false)
 
   // Cache keys for upcoming schedules
   const CACHE_KEY = 'upcoming_schedules_cache'
@@ -175,70 +161,7 @@ export default function UpcomingProgramsCarousel() {
     router.push(`/courses/${program.slug}`)
   }
 
-  const handleRegisterClick = async (e: React.MouseEvent, program: UpcomingProgram) => {
-    e.stopPropagation() // Prevent card click
-    
-    // Check if user is authenticated
-    if (status === "loading") {
-      // Still loading, wait a bit
-      return
-    }
-    
-    if (status === "unauthenticated" || !session?.user) {
-      // User is not logged in, show login dialog
-      setShowLoginDialog(true)
-      return
-    }
-    
-    // User is logged in, proceed with registration flow
-    setLoadingCourseData(true)
-    
-    try {
-      // Fetch full course details with schedules
-      const response = await fetch(`/api/courses/${program.slug}`)
-      const result = await response.json()
-      
-      if (result.success && result.data) {
-        const courseData = result.data.course as Course
-        const schedules = result.data.schedules as CourseSchedule[]
-        
-        // Find matching schedule based on scheduleId
-        let matchingScheduleId: string | null = program.scheduleId || null
-        
-        // If scheduleId doesn't match, try to find by date/venue
-        if (!matchingScheduleId || !schedules.find(s => s.id === matchingScheduleId)) {
-          if (program.startDate && schedules.length > 0) {
-            const matchingSchedule = schedules.find(s => {
-              const scheduleStart = s.start_date ? new Date(s.start_date).toISOString().split('T')[0] : null
-              const rowStart = program.startDate ? new Date(program.startDate).toISOString().split('T')[0] : null
-              return scheduleStart === rowStart && 
-                     (s.venue === program.venue || (!s.venue && !program.venue))
-            })
-            if (matchingSchedule) {
-              matchingScheduleId = matchingSchedule.id
-            } else if (schedules.length > 0) {
-              // If no exact match, use first schedule
-              matchingScheduleId = schedules[0].id
-            }
-          } else if (schedules.length > 0) {
-            matchingScheduleId = schedules[0].id
-          }
-        }
-        
-        setSelectedCourse(courseData)
-        setSelectedSchedules(schedules)
-        setSelectedScheduleId(matchingScheduleId)
-        setShowRegistration(true)
-      } else {
-        alert('Failed to load course details. Please try again.')
-      }
-    } catch (error) {
-      console.error('Error fetching course details:', error)
-      alert('Failed to load course details. Please try again.')
-    } finally {
-      setLoadingCourseData(false)
-    }
-  }
+  // Registration now navigates to dedicated page, no need for this handler
 
   // Auto-scroll functionality
   useEffect(() => {
@@ -260,58 +183,6 @@ export default function UpcomingProgramsCarousel() {
 
   return (
     <section className="py-16 bg-gradient-to-b from-white to-slate-50">
-      {/* Login Required Dialog */}
-      <Dialog open={showLoginDialog} onOpenChange={setShowLoginDialog}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <div className="flex items-center gap-3 mb-2">
-              <div className="p-2 bg-blue-100 rounded-full">
-                <LogIn className="w-6 h-6 text-blue-600" />
-              </div>
-              <DialogTitle className="text-2xl font-bold text-[#0A3049]">
-                Login Required
-              </DialogTitle>
-            </div>
-            <DialogDescription className="text-base text-slate-600 pt-2">
-              To register for this course, you need to be logged in. Please log in to your account to continue with the registration process.
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter className="flex-col sm:flex-row gap-2 sm:gap-0">
-            <Button
-              variant="outline"
-              onClick={() => setShowLoginDialog(false)}
-              className="w-full sm:w-auto"
-            >
-              Cancel
-            </Button>
-            <Button
-              onClick={() => {
-                setShowLoginDialog(false)
-                router.push('/auth')
-              }}
-              className="w-full sm:w-auto bg-[#0A3049] hover:bg-[#0A3049]/90 text-white"
-            >
-              <LogIn className="w-4 h-4 mr-2" />
-              Go to Login
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {showRegistration && selectedCourse && (
-        <CourseRegistrationForm
-          course={selectedCourse}
-          schedules={selectedSchedules}
-          selectedScheduleId={selectedScheduleId}
-          onClose={() => {
-            setShowRegistration(false)
-            setSelectedCourse(null)
-            setSelectedSchedules([])
-            setSelectedScheduleId(null)
-          }}
-        />
-      )}
-
       <div className="container mx-auto px-6 lg:px-8 max-w-7xl">
         {/* Section Header */}
         <div className="text-center mb-12">
@@ -410,23 +281,31 @@ export default function UpcomingProgramsCarousel() {
                           </div>
                         </div>
 
-                        {/* Register Button */}
+                        {/* Register Now Button */}
                         <Button
-                          onClick={(e) => handleRegisterClick(e, program)}
-                          disabled={loadingCourseData}
+                          onClick={(e) => {
+                            e.stopPropagation() // Prevent card click
+                            const isAuthenticated = status === "authenticated" && !!session?.user
+                            if (isAuthenticated) {
+                              // User is logged in - navigate to registration page
+                              let scheduleIdParam = ''
+                              if (program.scheduleId) {
+                                scheduleIdParam = `?scheduleId=${program.scheduleId}`
+                              }
+                              router.push(`/courses/${program.slug}/register${scheduleIdParam}`)
+                            } else {
+                              // User is not logged in - redirect to checkout page
+                              let scheduleIdParam = ''
+                              if (program.scheduleId) {
+                                scheduleIdParam = `?scheduleId=${program.scheduleId}`
+                              }
+                              router.push(`/courses/${program.slug}/checkout${scheduleIdParam}`)
+                            }
+                          }}
                           className="w-full bg-[#0A3049] hover:bg-[#0A3049]/90 text-white font-semibold"
                         >
-                          {loadingCourseData ? (
-                            <>
-                              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                              Loading...
-                            </>
-                          ) : (
-                            <>
-                              Register Now
-                              <ArrowRight className="w-4 h-4 ml-2" />
-                            </>
-                          )}
+                          Register Now
+                          <ArrowRight className="w-4 h-4 ml-2" />
                         </Button>
                       </CardContent>
                     </Card>

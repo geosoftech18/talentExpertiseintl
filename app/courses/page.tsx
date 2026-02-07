@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useMemo, useEffect, Suspense } from 'react'
-import { Search, Calendar, MapPin, Clock, X, SlidersHorizontal, Loader2 } from 'lucide-react'
+import { Search, Calendar, MapPin, Clock, X, SlidersHorizontal, Loader2, Filter, Award, Building2, CalendarDays, Tag } from 'lucide-react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { Card, CardContent } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
@@ -11,8 +11,7 @@ import { Badge } from '@/components/ui/badge'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Checkbox } from '@/components/ui/checkbox'
 import { format } from 'date-fns'
-import { CourseRegistrationForm } from '@/components/course-registration-form'
-import type { Course, CourseSchedule } from '@/lib/supabase'
+// Registration form is now on a dedicated page
 
 interface CourseListItem {
   id: string
@@ -65,11 +64,7 @@ function CourseFinderPageContent() {
   const [availableCertificates, setAvailableCertificates] = useState<Certificate[]>([])
   const [loading, setLoading] = useState(true)
   const [loadingCertificates, setLoadingCertificates] = useState(true)
-  const [showRegistration, setShowRegistration] = useState(false)
-  const [selectedCourse, setSelectedCourse] = useState<Course | null>(null)
-  const [selectedSchedules, setSelectedSchedules] = useState<CourseSchedule[]>([])
-  const [selectedScheduleId, setSelectedScheduleId] = useState<string | null>(null)
-  const [loadingCourseData, setLoadingCourseData] = useState(false)
+  // Registration is now on a dedicated page, no need for modal state
 
   // Cache key for sessionStorage
   const CACHE_KEY = 'courses_cache'
@@ -109,6 +104,7 @@ function CourseFinderPageContent() {
         // No cache or cache expired - fetch fresh data
         setLoading(true)
         // Fetch all courses including expired ones to populate year/month filters
+        // Note: newPrograms filter is handled in the API route
         const coursesResponse = await fetch('/api/courses?limit=10000&includeExpired=true')
 
         const coursesResult = await coursesResponse.json()
@@ -511,66 +507,20 @@ function CourseFinderPageContent() {
 
   const handleRegisterClick = async (e: React.MouseEvent, course: CourseListItem) => {
     e.stopPropagation() // Prevent row click
-    setLoadingCourseData(true)
     
-    try {
-      // Fetch full course details with schedules
-      const response = await fetch(`/api/courses/${course.slug}`)
-      const result = await response.json()
-      
-      if (result.success && result.data) {
-        const courseData = result.data.course as Course
-        const schedules = result.data.schedules as CourseSchedule[]
-        
-        // Try to find matching schedule based on the course row's date/venue
-        let matchingScheduleId: string | null = null
-        if (course.startDate && schedules.length > 0) {
-          const matchingSchedule = schedules.find(s => {
-            const scheduleStart = s.start_date ? new Date(s.start_date).toISOString().split('T')[0] : null
-            const rowStart = course.startDate ? new Date(course.startDate).toISOString().split('T')[0] : null
-            return scheduleStart === rowStart && 
-                   (s.venue === course.venue || (!s.venue && !course.venue))
-          })
-          if (matchingSchedule) {
-            matchingScheduleId = matchingSchedule.id
-          } else if (schedules.length > 0) {
-            // If no exact match, use first schedule
-            matchingScheduleId = schedules[0].id
-          }
-        } else if (schedules.length > 0) {
-          matchingScheduleId = schedules[0].id
-        }
-        
-        setSelectedCourse(courseData)
-        setSelectedSchedules(schedules)
-        setSelectedScheduleId(matchingScheduleId)
-        setShowRegistration(true)
-      } else {
-        alert('Failed to load course details. Please try again.')
-      }
-    } catch (error) {
-      console.error('Error fetching course details:', error)
-      alert('Failed to load course details.  Please try again.')
-    } finally {
-      setLoadingCourseData(false) 
+    // Navigate to registration page
+    // Try to find matching schedule ID if course has startDate
+    let scheduleIdParam = ''
+    if (course.startDate) {
+      // We'll let the registration page handle schedule matching
+      // For now, just navigate to the registration page
     }
+    
+    router.push(`/courses/${course.slug}/register${scheduleIdParam}`)
   }
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-slate-50 to-white">
-      {showRegistration && selectedCourse && (
-        <CourseRegistrationForm
-          course={selectedCourse}
-          schedules={selectedSchedules}
-          selectedScheduleId={selectedScheduleId}
-          onClose={() => {
-            setShowRegistration(false)
-            setSelectedCourse(null)
-            setSelectedSchedules([])
-            setSelectedScheduleId(null)
-          }}
-        />
-      )}
       {/* Hero Section */}
       <div className="relative bg-gradient-to-r from-[#0A3049] via-[#0A3049] to-[#0A3049] text-white overflow-hidden">
         <div className="absolute inset-0 bg-grid-white/[0.05] bg-[size:30px_30px]" />
@@ -626,178 +576,167 @@ function CourseFinderPageContent() {
         <div className="flex flex-col lg:flex-row gap-4 sm:gap-6">
           {/* Left Sidebar - Filters */}
           <aside className={`w-full lg:w-80 lg:shrink-0 ${showFilters ? 'block' : 'hidden lg:block'}`}>
-            <Card className="shadow-lg lg:sticky lg:top-24">
-              <CardContent className="pt-4 sm:pt-6">
-                <div className="flex items-center justify-between mb-4 sm:mb-6">
-                  <div className="flex items-center gap-2">
-                    <SlidersHorizontal className="w-4 h-4 sm:w-5 sm:h-5 text-slate-600" />
-                    <h3 className="text-base sm:text-lg font-bold text-slate-900">Filters</h3>
+            <Card className="shadow-xl border-2 border-slate-200/60 bg-gradient-to-br from-white to-slate-50/50 lg:sticky lg:top-24 overflow-hidden">
+              {/* Header with gradient */}
+              <div className="bg-gradient-to-r from-[#0A3049] to-[#0A3049] px-4 sm:px-6 py-4 border-b border-blue-800/20">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2.5">
+                    <div className="p-1.5 bg-white/20 rounded-lg backdrop-blur-sm">
+                      <Filter className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
+                    </div>
+                    <h3 className="text-base sm:text-lg font-bold text-white">Filters</h3>
                   </div>
                   {activeFiltersCount > 0 && (
-                    <Badge className="bg-blue-600 text-white text-xs">{activeFiltersCount}</Badge>
+                    <Badge className="bg-white text-blue-700 border-0 shadow-md font-semibold text-xs px-2.5 py-1">
+                      {activeFiltersCount}
+                    </Badge>
                   )}
                 </div>
+              </div>
 
-                <div className="space-y-4 sm:space-y-6">
+              <CardContent className="pt-2 sm:pt-2 pb-3 sm:pb-4 px-4 sm:px-6">
+                <div className="space-y-3 sm:space-y-4">
                   {/* Category Filter */}
-                  <div>
-                    <Label className="text-xs sm:text-sm font-semibold text-slate-700 mb-2 block">
+                  <div className="space-y-2">
+                    <Label className="text-xs sm:text-sm font-semibold text-slate-800 mb-1.5 flex items-center gap-2">
+                      <Tag className="w-3.5 h-3.5 text-blue-600" />
                       Category
                     </Label>
-                    <Select value={selectedCategory} onValueChange={(value) => { setSelectedCategory(value); setCurrentPage(1) }}>
-                      <SelectTrigger className="w-full h-9 sm:h-10">
-                        <SelectValue placeholder="All Categories" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="all">All Categories</SelectItem>
-                        {categories.map((cat) => (
-                          <SelectItem key={cat} value={cat}>{cat}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  {/* Venue Filter */}
-                  <div>
-                    <Label className="text-xs sm:text-sm font-semibold text-slate-700 mb-2 block">
-                      Venue
-                    </Label>
-                    <Select value={selectedVenue} onValueChange={(value) => { setSelectedVenue(value); setCurrentPage(1) }}>
-                      <SelectTrigger className="w-full h-9 sm:h-10">
-                        <SelectValue placeholder="All Venues" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="all">All Venues</SelectItem>
-                        {availableVenues.map((venue) => (
-                          <SelectItem key={venue} value={venue}>{venue}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                   {/* Certificate Filter */}
-                   <div className="space-y-3">
-                      <Label className="text-xs sm:text-sm font-semibold text-slate-700 mb-2 block">
-                        Filter by Certificate
-                      </Label>
-                      <Select 
-                        value={selectedCertificate} 
-                        onValueChange={(value) => { setSelectedCertificate(value); setCurrentPage(1) }}
-                        disabled={loadingCertificates}
-                      >
-                        <SelectTrigger className="w-full h-9 sm:h-10">
-                          <SelectValue placeholder={loadingCertificates ? "Loading..." : "All Certificates"} />
+                    <div className="border border-slate-300 rounded-lg p-0.5 bg-white shadow-sm hover:shadow-md transition-shadow">
+                      <Select value={selectedCategory} onValueChange={(value) => { setSelectedCategory(value); setCurrentPage(1) }}>
+                        <SelectTrigger className="w-full h-10 sm:h-11 border-0 shadow-none focus:ring-2 focus:ring-blue-500/20 bg-transparent">
+                          <SelectValue placeholder="All Categories" />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="all">All Certificates</SelectItem>
-                          {availableCertificates.map((certificate) => (
-                            <SelectItem key={certificate.id} value={certificate.id}>
-                              {certificate.name}
-                            </SelectItem>
+                          <SelectItem value="all">All Categories</SelectItem>
+                          {categories.map((cat) => (
+                            <SelectItem key={cat} value={cat}>{cat}</SelectItem>
                           ))}
                         </SelectContent>
                       </Select>
                     </div>
+                  </div>
 
-                  {/* Sort Filter */}
-                  <div className="space-y-3">
-                   
-                    
-                    {/* Year Filter */}
-                    <div className="space-y-3">
-                      <Label className="text-xs sm:text-sm font-semibold text-slate-700 mb-2 block">
-                        Filter by Year
-                      </Label>
-                      <Select value={selectedYear} onValueChange={(value) => { setSelectedYear(value); setCurrentPage(1) }}>
-                        <SelectTrigger className="w-full h-9 sm:h-10">
-                          <SelectValue placeholder="All Years" />
+                  {/* Divider */}
+                  <div className="border-t border-slate-200"></div>
+
+                  {/* Venue Filter */}
+                  <div className="space-y-2">
+                    <Label className="text-xs sm:text-sm font-semibold text-slate-800 mb-1.5 flex items-center gap-2">
+                      <Building2 className="w-3.5 h-3.5 text-blue-600" />
+                      Venue
+                    </Label>
+                    <div className="border border-slate-300 rounded-lg p-0.5 bg-white shadow-sm hover:shadow-md transition-shadow">
+                      <Select value={selectedVenue} onValueChange={(value) => { setSelectedVenue(value); setCurrentPage(1) }}>
+                        <SelectTrigger className="w-full h-10 sm:h-11 border-0 shadow-none focus:ring-2 focus:ring-blue-500/20 bg-transparent">
+                          <SelectValue placeholder="All Venues" />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="all">All Years</SelectItem>
-                          {availableYears.map((year) => (
-                            <SelectItem key={year} value={year.toString()}>{year}</SelectItem>
+                          <SelectItem value="all">All Venues</SelectItem>
+                          {availableVenues.map((venue) => (
+                            <SelectItem key={venue} value={venue}>{venue}</SelectItem>
                           ))}
                         </SelectContent>
                       </Select>
+                    </div>
+                  </div>
+
+                  {/* Divider */}
+                  <div className="border-t border-slate-200"></div>
+
+                   {/* Certificate Filter */}
+                   <div className="space-y-2">
+                      <Label className="text-xs sm:text-sm font-semibold text-slate-800 mb-1.5 flex items-center gap-2">
+                        <Award className="w-3.5 h-3.5 text-blue-600" />
+                        Certificate
+                      </Label>
+                      <div className="border border-slate-300 rounded-lg p-0.5 bg-white shadow-sm hover:shadow-md transition-shadow">
+                        <Select 
+                          value={selectedCertificate} 
+                          onValueChange={(value) => { setSelectedCertificate(value); setCurrentPage(1) }}
+                          disabled={loadingCertificates}
+                        >
+                          <SelectTrigger className="w-full h-10 sm:h-11 border-0 shadow-none focus:ring-2 focus:ring-blue-500/20 bg-transparent disabled:opacity-60">
+                            <SelectValue placeholder={loadingCertificates ? "Loading..." : "All Certificates"} />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="all">All Certificates</SelectItem>
+                            {availableCertificates.map((certificate) => (
+                              <SelectItem key={certificate.id} value={certificate.id}>
+                                {certificate.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+
+                  {/* Divider */}
+                  <div className="border-t border-slate-200"></div>
+
+                  {/* Date Filters Section */}
+                  <div className="space-y-3">
+                    <div className="flex items-center gap-2 mb-2">
+                      <CalendarDays className="w-4 h-4 text-blue-600" />
+                      <Label className="text-xs sm:text-sm font-semibold text-slate-800">
+                        Date Filters
+                      </Label>
+                    </div>
+                    
+                    {/* Year Filter */}
+                    <div className="space-y-2">
+                      <Label className="text-xs sm:text-sm font-medium text-slate-700 mb-1.5 block">
+                        Year
+                      </Label>
+                      <div className="border border-slate-300 rounded-lg p-0.5 bg-white shadow-sm hover:shadow-md transition-shadow">
+                        <Select value={selectedYear} onValueChange={(value) => { setSelectedYear(value); setCurrentPage(1) }}>
+                          <SelectTrigger className="w-full h-10 sm:h-11 border-0 shadow-none focus:ring-2 focus:ring-blue-500/20 bg-transparent">
+                            <SelectValue placeholder="All Years" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="all">All Years</SelectItem>
+                            {availableYears.map((year) => (
+                              <SelectItem key={year} value={year.toString()}>{year}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
                     </div>
 
                     {/* Month Filter */}
-                    <div className="space-y-3">
-                      <Label className="text-xs sm:text-sm font-semibold text-slate-700 mb-2 block">
-                        Filter by Month
+                    <div className="space-y-2">
+                      <Label className="text-xs sm:text-sm font-medium text-slate-700 mb-1.5 block">
+                        Month
                       </Label>
-                      <Select value={selectedMonth} onValueChange={(value) => { setSelectedMonth(value); setCurrentPage(1) }}>
-                        <SelectTrigger className="w-full h-9 sm:h-10">
-                          <SelectValue placeholder="All Months" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="all">All Months</SelectItem>
-                          {availableMonths.map((month) => (
-                            <SelectItem key={month} value={month.toString()}>{monthNames[month]}</SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-
-                  
-
-                    {/* Additional Sort Options */}
-                    {/* <div className="space-y-2">
-                      <Label className="text-xs sm:text-sm font-semibold text-slate-700 mb-2 block">
-                        Additional Sort Options
-                      </Label>
-                      <div className="space-y-2">
-                        <div className="flex items-center space-x-2">
-                          <Checkbox
-                            id="sort-by-year"
-                            checked={sortByYear}
-                            onCheckedChange={(checked) => setSortByYear(checked === true)}
-                            className='border-slate-500'
-                          />
-                          <label
-                            htmlFor="sort-by-year"
-                            className="text-xs sm:text-sm text-slate-700 cursor-pointer font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                          >
-                            Sort by Year
-                          </label>
-                        </div>
-                        <div className="flex items-center space-x-2">
-                          <Checkbox
-                            id="sort-by-month"
-                            checked={sortByMonth}
-                            onCheckedChange={(checked) => setSortByMonth(checked === true)}
-                            className='border-slate-500'
-                          />
-                          <label
-                            htmlFor="sort-by-month"
-                            className="text-xs sm:text-sm text-slate-700 cursor-pointer font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                          >
-                            Sort by Month
-                          </label>
-                        </div>
+                      <div className="border border-slate-300 rounded-lg p-0.5 bg-white shadow-sm hover:shadow-md transition-shadow">
+                        <Select value={selectedMonth} onValueChange={(value) => { setSelectedMonth(value); setCurrentPage(1) }}>
+                          <SelectTrigger className="w-full h-10 sm:h-11 border-0 shadow-none focus:ring-2 focus:ring-blue-500/20 bg-transparent">
+                            <SelectValue placeholder="All Months" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="all">All Months</SelectItem>
+                            {availableMonths.map((month) => (
+                              <SelectItem key={month} value={month.toString()}>{monthNames[month]}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
                       </div>
-                      {(sortByYear || sortByMonth) && (
-                        <p className="text-xs text-slate-500 mt-1">
-                          {sortByYear && sortByMonth 
-                            ? 'Sorting by Year, then Month, then main sort'
-                            : sortByYear 
-                            ? 'Sorting by Year, then main sort'
-                            : 'Sorting by Month, then main sort'}
-                        </p>
-                      )}
-                    </div> */}
+                    </div>
                   </div>
 
                   {/* Clear Filters */}
                   {activeFiltersCount > 0 && (
-                    <Button
-                      variant="outline"
-                      onClick={clearFilters}
-                      className="w-full text-sm"
-                    >
-                      <X className="w-4 h-4 mr-2" />
-                      Clear All Filters
-                    </Button>
+                    <>
+                      <div className="border-t border-slate-200 pt-3"></div>
+                      <Button
+                        variant="outline"
+                        onClick={clearFilters}
+                        className="w-full text-sm h-10 sm:h-11 border-2 border-slate-300 hover:border-red-400 hover:bg-red-50 hover:text-red-700 font-medium shadow-sm hover:shadow-md transition-all"
+                      >
+                        <X className="w-4 h-4 mr-2" />
+                        Clear All Filters
+                      </Button>
+                    </>
                   )}
                 </div>
               </CardContent>
@@ -901,18 +840,10 @@ function CourseFinderPageContent() {
                               {/* <td className="px-6 py-4" onClick={(e) => e.stopPropagation()}>
                                 <Button
                                   onClick={(e) => handleRegisterClick(e, course)}
-                                  disabled={loadingCourseData}
                                   className="bg-[#0A3049] hover:bg-blue-700 text-white"
                                   size="sm"
                                 >
-                                  {loadingCourseData ? (
-                                    <>
-                                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                                      Loading...
-                                    </>
-                                  ) : (
-                                    'Register Now'
-                                  )}
+                                  Register Now
                                 </Button>
                               </td> */}
                             </tr>
@@ -972,18 +903,10 @@ function CourseFinderPageContent() {
                               )}
                               <Button
                                 onClick={(e) => handleRegisterClick(e, course)}
-                                disabled={loadingCourseData}
                                 className="bg-blue-600 hover:bg-blue-700 text-white"
                                 size="sm"
                               >
-                                {loadingCourseData ? (
-                                  <>
-                                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                                    Loading...
-                                  </>
-                                ) : (
-                                  'Register Now'
-                                )}
+                                Register Now
                               </Button>
                             </div>
                           </div>

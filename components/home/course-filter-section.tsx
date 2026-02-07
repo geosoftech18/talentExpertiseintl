@@ -131,10 +131,11 @@ export default function CourseFilterSection() {
   const [loadingVenues, setLoadingVenues] = useState(true)
 
   // Fetch courses to get available categories
+  // Fetch with includeExpired=true to match course finder page behavior
   useEffect(() => {
     const fetchCategories = async () => {
       try {
-        const response = await fetch('/api/courses?limit=1000')
+        const response = await fetch('/api/courses?limit=10000&includeExpired=true')
         const result = await response.json()
         if (result.success && result.data) {
           setCourses(result.data)
@@ -254,9 +255,31 @@ export default function CourseFilterSection() {
     return colorMap[categoryName] || "bg-gray-100 text-gray-800"
   }
 
-  // Count courses per category
+  // Count courses per category (only non-expired courses)
   const getCategoryCount = (categoryName: string) => {
-    return courses.filter((course) => course.category === categoryName).length
+    const today = new Date()
+    today.setHours(0, 0, 0, 0) // Set to start of day for accurate comparison
+    
+    return courses.filter((course) => {
+      // Must match the category
+      if (course.category !== categoryName) return false
+      
+      // Check if course has a startDate and it's not expired
+      if (course.startDate) {
+        try {
+          const courseDate = new Date(course.startDate)
+          courseDate.setHours(0, 0, 0, 0)
+          // Only count courses with startDate in the future (not expired)
+          return courseDate >= today
+        } catch {
+          // If date parsing fails, exclude the course
+          return false
+        }
+      }
+      
+      // If no startDate, exclude the course (can't determine if expired)
+      return false
+    }).length
   }
 
   const handleSearch = () => {
@@ -362,17 +385,17 @@ export default function CourseFilterSection() {
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
               <div className="text-center p-4 bg-gradient-to-br from-purple-50 to-purple-100 rounded-xl">
                 <BookOpen className="w-8 h-8 text-purple-600 mx-auto mb-2" />
-                <div className="text-2xl font-bold text-purple-900">650+</div>
+                <div className="text-2xl font-bold text-purple-900">1000+</div>
                 <div className="text-sm text-purple-700">Total Courses</div>
               </div>
               <div className="text-center p-4 bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl">
                 <MapPin className="w-8 h-8 text-blue-600 mx-auto mb-2" />
-                <div className="text-2xl font-bold text-blue-900">70+</div>
+                <div className="text-2xl font-bold text-blue-900">40+</div>
                 <div className="text-sm text-blue-700">Global Cities</div>
               </div>
               <div className="text-center p-4 bg-gradient-to-br from-green-50 to-green-100 rounded-xl">
                 <Users className="w-8 h-8 text-green-600 mx-auto mb-2" />
-                <div className="text-2xl font-bold text-green-900">100+</div>
+                <div className="text-2xl font-bold text-green-900">200+</div>
                 <div className="text-sm text-green-700">Expert Trainers</div>
               </div>
               <div className="text-center p-4 bg-gradient-to-br from-orange-50 to-orange-100 rounded-xl">
@@ -423,9 +446,9 @@ export default function CourseFilterSection() {
                         <SelectItem key={categoryName} value={categoryName}>
                           <div className="flex items-center justify-between w-full">
                             <span>{categoryName}</span>
-                            {/* <Badge className={`ml-2 ${getCategoryColor(categoryName)}`}>
+                            <Badge className={`ml-2 ${getCategoryColor(categoryName)}`}>
                               {getCategoryCount(categoryName)}
-                            </Badge> */}
+                            </Badge>
                           </div>
                         </SelectItem>
                       ))

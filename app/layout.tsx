@@ -3,6 +3,7 @@ import type { Metadata } from "next"
 import { Analytics } from "@vercel/analytics/next"
 import { ThemeProvider } from "@/components/theme-provider"
 import PublicLayout from "@/components/public-layout"
+import CopyProtection from "@/components/copy-protection"
 import "./globals.css"
 
 export const metadata: Metadata = {
@@ -19,6 +20,7 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body className="antialiased">
+        <CopyProtection />
         <ThemeProvider
           attribute="class"
           defaultTheme="light"

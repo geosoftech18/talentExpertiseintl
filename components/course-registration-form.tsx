@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { X, ChevronLeft, ChevronRight, BookOpen, Loader2, RotateCcw } from 'lucide-react'
+import { X, ChevronLeft, ChevronRight, BookOpen, Loader2, RotateCcw, Lock } from 'lucide-react'
 import { useRequireAuth } from '@/hooks/use-require-auth'
 import Image from 'next/image'
 import { Button } from '@/components/ui/button'
@@ -17,7 +17,10 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import type { Course, CourseSchedule } from '@/lib/supabase'
 import { format } from 'date-fns'
-import { StripePaymentPage } from '@/components/stripe-payment-page'
+import { Elements, PaymentElement, useStripe, useElements } from '@stripe/react-stripe-js'
+import { loadStripe } from '@stripe/stripe-js'
+
+const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY || '')
 
 // Map phone country codes to ISO country codes for flags
 const getCountryISO = (phoneCode: string): string => {
@@ -384,9 +387,124 @@ interface CourseRegistrationFormProps {
   onClose: () => void
 }
 
+// Inline Stripe Payment Component
+function InlineStripePayment({ 
+  clientSecret, 
+  amount, 
+  onSuccess, 
+  onError 
+}: { 
+  clientSecret: string
+  amount: number
+  onSuccess: () => void
+  onError: (error: string) => void
+}) {
+  const stripe = useStripe()
+  const elements = useElements()
+  const [isProcessing, setIsProcessing] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  const handlePayment = async () => {
+    if (!stripe || !elements) {
+      return
+    }
+
+    setIsProcessing(true)
+    setError(null)
+
+    try {
+      const { error: submitError } = await elements.submit()
+      if (submitError) {
+        const errorMsg = submitError.message || 'Payment form validation failed'
+        setError(errorMsg)
+        onError(errorMsg)
+        setIsProcessing(false)
+        return
+      }
+
+      const { error: confirmError } = await stripe.confirmPayment({
+        elements,
+        confirmParams: {
+          return_url: `${window.location.origin}/payment-success`,
+        },
+        redirect: 'if_required',
+      })
+
+      if (confirmError) {
+        const errorMsg = confirmError.message || 'Payment failed'
+        setError(errorMsg)
+        onError(errorMsg)
+        setIsProcessing(false)
+      } else {
+        onSuccess()
+      }
+    } catch (err) {
+      const errorMsg = 'An unexpected error occurred. Please try again.'
+      setError(errorMsg)
+      onError(errorMsg)
+      setIsProcessing(false)
+    }
+  }
+
+  return (
+    <div className="space-y-4 mt-4">
+      <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-4 rounded-xl border-2 border-blue-200">
+        <div className="flex items-center justify-between">
+          <div>
+            <p className="text-xs text-slate-600 mb-1">Total Amount</p>
+            <p className="text-2xl font-bold text-slate-900">${amount.toFixed(2)}</p>
+          </div>
+          <div className="flex items-center gap-2 text-green-600">
+            <Lock className="w-5 h-5" />
+            <span className="text-xs font-semibold">Secure</span>
+          </div>
+        </div>
+      </div>
+
+      <div className="bg-white p-4 rounded-xl border-2 border-slate-200">
+        <div className="min-h-[300px]">
+          <PaymentElement 
+            options={{
+              layout: {
+                type: 'tabs',
+                defaultCollapsed: false,
+              },
+            }}
+          />
+        </div>
+      </div>
+
+      {error && (
+        <div className="p-3 bg-red-50 border-2 border-red-200 rounded-lg">
+          <p className="text-xs font-medium text-red-800">{error}</p>
+        </div>
+      )}
+
+      <Button
+        type="button"
+        onClick={handlePayment}
+        disabled={!stripe || isProcessing}
+        className="w-full h-10 text-sm bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-semibold"
+      >
+        {isProcessing ? (
+          <>
+            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+            Processing Payment...
+          </>
+        ) : (
+          <>
+            <Lock className="w-4 h-4 mr-2" />
+            Pay ${amount.toFixed(2)}
+          </>
+        )}
+      </Button>
+    </div>
+  )
+}
+
 export function CourseRegistrationForm({ course, schedules, selectedScheduleId, onClose }: CourseRegistrationFormProps) {
   // Check authentication - redirects to /auth if not logged in
-  const { isAuthenticated, isLoading } = useRequireAuth()
+  const { isAuthenticated, isLoading, session } = useRequireAuth()
   
   const [step, setStep] = useState(1)
   const [errors, setErrors] = useState<Record<string, string>>({})
@@ -394,11 +512,38 @@ export function CourseRegistrationForm({ course, schedules, selectedScheduleId, 
   const [submitError, setSubmitError] = useState<string | null>(null)
   const [stripeClientSecret, setStripeClientSecret] = useState<string | null>(null)
   const [stripePaymentIntentId, setStripePaymentIntentId] = useState<string | null>(null)
-  const [showStripeForm, setShowStripeForm] = useState(false)
   const [paymentAmount, setPaymentAmount] = useState(0)
+  const [isCreatingPaymentIntent, setIsCreatingPaymentIntent] = useState(false)
+  const [showStripePayment, setShowStripePayment] = useState(false)
   const [captchaValue, setCaptchaValue] = useState<string>('')
   const [countrySearchOpen, setCountrySearchOpen] = useState(false)
   const [countrySearch, setCountrySearch] = useState('')
+  
+  // Form data state - must be declared before generateCaptcha
+  const [formData, setFormData] = useState({
+    scheduleId: selectedScheduleId || '',
+    title: '',
+    name: '',
+    email: '',
+    designation: '',
+    company: '',
+    address: '',
+    city: '',
+    country: '',
+    telephone: '',
+    telephoneCountryCode: '+971',
+    mobile: '',
+    mobileCountryCode: '+971',
+    paymentMethod: '',
+    differentBilling: false,
+    acceptTerms: false,
+    captcha: '',
+    // Invoice request specific fields
+    contactPerson: '',
+    department: '',
+    invoiceEmail: '',
+    invoiceAddress: ''
+  })
 
   // Generate random CAPTCHA on mount and when needed
   const generateCaptcha = () => {
@@ -430,37 +575,105 @@ export function CourseRegistrationForm({ course, schedules, selectedScheduleId, 
   if (!isAuthenticated) {
     return null
   }
-  const [formData, setFormData] = useState({
-    scheduleId: selectedScheduleId || '',
-    title: '',
-    name: '',
-    email: '',
-    designation: '',
-    company: '',
-    address: '',
-    city: '',
-    country: '',
-    telephone: '',
-    telephoneCountryCode: '+971',
-    mobile: '',
-    mobileCountryCode: '+971',
-    paymentMethod: '',
-    differentBilling: false,
-    acceptTerms: false,
-    captcha: '',
-    // Invoice request specific fields
-    contactPerson: '',
-    department: '',
-    invoiceEmail: '',
-    invoiceAddress: ''
-  })
 
-  // Update scheduleId when selectedScheduleId prop changes
+  // Auto-fill name and email from session when available
   useEffect(() => {
-    if (selectedScheduleId) {
-      setFormData(prev => ({ ...prev, scheduleId: selectedScheduleId }))
+    if (session?.user) {
+      setFormData(prev => ({
+        ...prev,
+        name: prev.name || session.user.name || '',
+        email: prev.email || session.user.email || '',
+        invoiceEmail: prev.invoiceEmail || session.user.email || '',
+      }))
     }
-  }, [selectedScheduleId])
+  }, [session])
+
+  // Update scheduleId when selectedScheduleId prop changes or schedules load
+  useEffect(() => {
+    if (selectedScheduleId && schedules.length > 0) {
+      // Verify the schedule exists in the schedules array
+      const scheduleExists = schedules.find(s => s.id === selectedScheduleId)
+      if (scheduleExists) {
+        setFormData(prev => {
+          if (prev.scheduleId !== selectedScheduleId) {
+            return { ...prev, scheduleId: selectedScheduleId }
+          }
+          return prev
+        })
+      } else if (schedules.length > 0) {
+        // If selectedScheduleId doesn't exist, use first available schedule
+        setFormData(prev => {
+          if (!prev.scheduleId || !schedules.find(s => s.id === prev.scheduleId)) {
+            return { ...prev, scheduleId: schedules[0].id }
+          }
+          return prev
+        })
+      }
+    } else if (schedules.length > 0) {
+      // If no selectedScheduleId but schedules are available, use first one
+      setFormData(prev => {
+        if (!prev.scheduleId || !schedules.find(s => s.id === prev.scheduleId)) {
+          return { ...prev, scheduleId: schedules[0].id }
+        }
+        return prev
+      })
+    }
+  }, [selectedScheduleId, schedules])
+
+  // Function to create payment intent
+  const createPaymentIntent = async () => {
+    if (!formData.scheduleId) {
+      setSubmitError('Please select a schedule')
+      return
+    }
+
+    setIsCreatingPaymentIntent(true)
+    setSubmitError(null)
+    
+    try {
+      const selectedSchedule = schedules.find(s => s.id === formData.scheduleId)
+      const participants = 1
+      
+      let amount = 0
+      if (selectedSchedule?.fees) {
+        amount = selectedSchedule.fees * participants
+      } else if (selectedSchedule?.price) {
+        amount = selectedSchedule.price * participants
+      } else {
+        amount = 100 * participants
+      }
+
+      const response = await fetch('/api/stripe/create-payment-intent', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          scheduleId: formData.scheduleId,
+          courseId: course.id,
+          courseTitle: course.title,
+          participants: participants,
+          registrationData: formData,
+        }),
+      })
+
+      const result = await response.json()
+
+      if (!response.ok) {
+        throw new Error(result.error || 'Failed to create payment intent')
+      }
+      
+      setStripeClientSecret(result.clientSecret)
+      setStripePaymentIntentId(result.paymentIntentId)
+      setPaymentAmount(amount)
+      setShowStripePayment(true)
+    } catch (error) {
+      console.error('Error creating payment intent:', error)
+      setSubmitError(error instanceof Error ? error.message : 'Failed to initialize payment. Please try again.')
+    } finally {
+      setIsCreatingPaymentIntent(false)
+    }
+  }
 
   const validateEmail = (email: string) => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
@@ -558,56 +771,9 @@ export function CourseRegistrationForm({ course, schedules, selectedScheduleId, 
       return
     }
 
-    // If Stripe payment method, create payment intent first
+    // For Stripe payment, create payment intent and show payment form
     if (formData.paymentMethod === 'stripe') {
-      setIsSubmitting(true)
-      setSubmitError(null)
-
-      try {
-        const selectedSchedule = schedules.find(s => s.id === formData.scheduleId)
-        const participants = 1 // Default to 1 participant
-        
-        // Calculate payment amount
-        let amount = 0
-        if (selectedSchedule?.fees) {
-          amount = selectedSchedule.fees * participants
-        } else if (selectedSchedule?.price) {
-          amount = selectedSchedule.price * participants
-        } else {
-          amount = 100 * participants // Default minimum
-        }
-        
-        const response = await fetch('/api/stripe/create-payment-intent', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            scheduleId: formData.scheduleId,
-            courseId: course.id,
-            courseTitle: course.title,
-            participants: participants,
-            registrationData: formData,
-          }),
-        })
-
-        const result = await response.json()
-
-        if (!response.ok) {
-          throw new Error(result.error || 'Failed to create payment intent')
-        }
-        
-        // Set client secret, payment intent ID, amount, and show Stripe payment page
-        setStripeClientSecret(result.clientSecret)
-        setStripePaymentIntentId(result.paymentIntentId)
-        setPaymentAmount(amount)
-        setShowStripeForm(true)
-      } catch (error) {
-        console.error('Error creating payment intent:', error)
-        setSubmitError(error instanceof Error ? error.message : 'Failed to initialize payment. Please try again.')
-      } finally {
-        setIsSubmitting(false)
-      }
+      await createPaymentIntent()
       return
     }
 
@@ -629,12 +795,14 @@ export function CourseRegistrationForm({ course, schedules, selectedScheduleId, 
             paymentMethod: 'invoice', // API expects lowercase 'invoice'
             courseId: course.id,
             courseTitle: course.title,
-            // Use invoice-specific fields if provided, otherwise fall back to regular fields
-            email: formData.invoiceEmail || formData.email,
-            address: formData.invoiceAddress || formData.address,
-            // Include additional invoice fields
+            // Keep user email and address separate from company email/address
+            email: formData.email, // User email (always send original user email)
+            address: formData.address, // User address (always send original user address)
+            // Include additional invoice fields (company details)
             contactPerson: formData.contactPerson,
             department: formData.department,
+            invoiceEmail: formData.invoiceEmail, // Company email (separate from user email)
+            invoiceAddress: formData.invoiceAddress, // Company address (separate from user address)
           }),
         })
 
@@ -750,83 +918,20 @@ export function CourseRegistrationForm({ course, schedules, selectedScheduleId, 
 
   return (
     <>
-      {/* Full-Screen Stripe Payment Page */}
-      {formData.paymentMethod === 'stripe' && showStripeForm && stripeClientSecret && (
-        <StripePaymentPage
-          clientSecret={stripeClientSecret}
-          amount={paymentAmount}
-          courseTitle={course.title}
-          onSuccess={async () => {
-            // Create registration after successful payment
-            if (stripePaymentIntentId) {
-              try {
-                const response = await fetch('/api/stripe/create-registration', {
-                  method: 'POST',
-                  headers: {
-                    'Content-Type': 'application/json',
-                  },
-                  body: JSON.stringify({
-                    paymentIntentId: stripePaymentIntentId,
-                  }),
-                })
 
-                const result = await response.json()
-
-                if (result.success) {
-                  alert('✅ Payment successful! Your registration has been completed.')
-                  setShowStripeForm(false)
-                  setStripeClientSecret(null)
-                  setStripePaymentIntentId(null)
-                  setStripePaymentIntentId(null)
-                  onClose()
-                } else {
-                  // Payment succeeded but registration creation failed
-                  // This should be rare - webhook will handle it, but show message
-                  alert('✅ Payment successful! Your registration is being processed. You will receive a confirmation email shortly.')
-                  setShowStripeForm(false)
-                  setStripeClientSecret(null)
-                  setStripePaymentIntentId(null)
-                  setStripePaymentIntentId(null)
-                  onClose()
-                }
-              } catch (error) {
-                console.error('Error creating registration:', error)
-                // Payment succeeded but registration creation failed
-                // Webhook will handle it, but show message
-                alert('✅ Payment successful! Your registration is being processed. You will receive a confirmation email shortly.')
-                setShowStripeForm(false)
-                setStripeClientSecret(null)
-                setStripePaymentIntentId(null)
-                onClose()
-              }
-            } else {
-              alert('✅ Payment successful! Your registration is being processed.')
-              setShowStripeForm(false)
-              setStripeClientSecret(null)
-              setStripePaymentIntentId(null)
-              onClose()
-            }
-          }}
-          onCancel={() => {
-            setShowStripeForm(false)
-            setStripeClientSecret(null)
-            setStripePaymentIntentId(null)
-          }}
-        />
-      )}
-
-      {/* Registration Form */}
-      <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4 backdrop-blur-sm">
-        <Card className="w-full max-w-2xl max-h-[95vh] flex flex-col animate-slide-up shadow-2xl overflow-hidden">
-        <CardHeader className="relative border-b bg-gradient-to-r from-blue-50 to-white pb-3 pt-4 flex-shrink-0">
-          <Button
-            variant="ghost"
-            size="icon"
-            className="absolute right-3 top-3 hover:bg-slate-200 rounded-full h-8 w-8"
-            onClick={onClose}
-          >
-            <X className="w-4 h-4" />
-          </Button>
+      {/* Registration Form - Full Page Layout */}
+      <div className="min-h-screen bg-gradient-to-b from-slate-50 to-white py-8">
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8 max-w-4xl">
+          <Card className="w-full shadow-2xl">
+            <CardHeader className="relative border-b bg-gradient-to-r from-blue-50 to-white pb-4 pt-6">
+              <Button
+                variant="ghost"
+                size="icon"
+                className="absolute right-4 top-4 hover:bg-slate-200 rounded-full h-8 w-8"
+                onClick={onClose}
+              >
+                <X className="w-4 h-4" />
+              </Button>
           
           <div className="pr-8">
             <div className="flex items-center gap-2 mb-3">
@@ -882,19 +987,25 @@ export function CourseRegistrationForm({ course, schedules, selectedScheduleId, 
                       <SelectValue placeholder="Select Schedule" />
                     </SelectTrigger>
                     <SelectContent>
-                      {schedules.map((schedule) => {
-                        const startDate = schedule.start_date ? new Date(schedule.start_date) : new Date()
-                        const endDate = schedule.end_date ? new Date(schedule.end_date) : startDate
-                        const city = schedule.city || schedule.venue?.split(',')[0] || 'TBA'
-                        const country = schedule.country || schedule.venue?.split(',')[1]?.trim() || 'TBA'
-                        const fees = schedule.fees || schedule.price || 0
-                        
-                        return (
-                          <SelectItem key={schedule.id} value={schedule.id}>
-                            {format(startDate, 'MMM dd')} - {format(endDate, 'MMM dd, yyyy')} | {city}, {country} | ${fees.toLocaleString()}
-                          </SelectItem>
-                        )
-                      })}
+                      {schedules && schedules.length > 0 ? (
+                        schedules.map((schedule) => {
+                          const startDate = schedule.start_date ? new Date(schedule.start_date) : new Date()
+                          const endDate = schedule.end_date ? new Date(schedule.end_date) : startDate
+                          const city = schedule.city || schedule.venue?.split(',')[0] || 'TBA'
+                          const country = schedule.country || schedule.venue?.split(',')[1]?.trim() || 'TBA'
+                          const fees = schedule.fees || schedule.price || 0
+                          
+                          return (
+                            <SelectItem key={schedule.id} value={schedule.id}>
+                              {format(startDate, 'MMM dd')} - {format(endDate, 'MMM dd, yyyy')} | {city}, {country} | ${fees.toLocaleString()}
+                            </SelectItem>
+                          )
+                        })
+                      ) : (
+                        <SelectItem value="no-schedules" disabled>
+                          No schedules available
+                        </SelectItem>
+                      )}
                     </SelectContent>
                   </Select>
                   {errors.scheduleId && <p className="text-xs text-red-600 mt-1">{errors.scheduleId}</p>}
@@ -1162,14 +1273,15 @@ export function CourseRegistrationForm({ course, schedules, selectedScheduleId, 
                   </div>
                 </div>
 
-                <div className="space-y-1.5">
+                  <div className="space-y-1.5">
                   <Label htmlFor="payment" className="text-xs font-semibold text-slate-700">Payment Method *</Label>
                   <Select value={formData.paymentMethod} onValueChange={(value) => {
                     handleFieldChange('paymentMethod', value)
-                    setShowStripeForm(false)
                     setStripeClientSecret(null)
+                    setStripePaymentIntentId(null)
+                    setShowStripePayment(false)
                     // If switching payment method away from Invoice while on step 3, go back to step 2
-                    if (value !== 'Invoice' && step === 3) {
+                    if (value !== 'Invoice' && step >= 3) {
                       setStep(2)
                     }
                   }}>
@@ -1183,6 +1295,90 @@ export function CourseRegistrationForm({ course, schedules, selectedScheduleId, 
                     </Select>
                     {errors.paymentMethod && <p className="text-xs text-red-600 mt-1">{errors.paymentMethod}</p>}
                   </div>
+
+                  {/* Inline Stripe Payment Form - Only show after form submission */}
+                  {formData.paymentMethod === 'stripe' && showStripePayment && (
+                    <div className="mt-4">
+                      {isCreatingPaymentIntent ? (
+                        <div className="flex items-center justify-center py-8">
+                          <Loader2 className="w-6 h-6 animate-spin text-blue-600" />
+                          <span className="ml-2 text-sm text-slate-600">Initializing payment...</span>
+                        </div>
+                      ) : stripeClientSecret ? (
+                        <Elements
+                          stripe={stripePromise}
+                          options={{
+                            clientSecret: stripeClientSecret,
+                            appearance: {
+                              theme: 'stripe',
+                              variables: {
+                                colorPrimary: '#2563eb',
+                                colorBackground: '#ffffff',
+                                colorText: '#1e293b',
+                                colorDanger: '#ef4444',
+                                fontFamily: 'system-ui, sans-serif',
+                                spacingUnit: '4px',
+                                borderRadius: '12px',
+                              },
+                            },
+                          }}
+                        >
+                          <InlineStripePayment
+                            clientSecret={stripeClientSecret}
+                            amount={paymentAmount}
+                            onSuccess={async () => {
+                              // Create registration after successful payment
+                              if (stripePaymentIntentId) {
+                                try {
+                                  const response = await fetch('/api/stripe/create-registration', {
+                                    method: 'POST',
+                                    headers: {
+                                      'Content-Type': 'application/json',
+                                    },
+                                    body: JSON.stringify({
+                                      paymentIntentId: stripePaymentIntentId,
+                                    }),
+                                  })
+
+                                  const result = await response.json()
+
+                                  if (result.success) {
+                                    alert('✅ Payment successful! Your registration has been completed.')
+                                    setStripeClientSecret(null)
+                                    setStripePaymentIntentId(null)
+                                    onClose()
+                                  } else {
+                                    alert('✅ Payment successful! Your registration is being processed. You will receive a confirmation email shortly.')
+                                    setStripeClientSecret(null)
+                                    setStripePaymentIntentId(null)
+                                    onClose()
+                                  }
+                                } catch (error) {
+                                  console.error('Error creating registration:', error)
+                                  alert('✅ Payment successful! Your registration is being processed. You will receive a confirmation email shortly.')
+                                  setStripeClientSecret(null)
+                                  setStripePaymentIntentId(null)
+                                  onClose()
+                                }
+                              } else {
+                                alert('✅ Payment successful! Your registration is being processed.')
+                                setStripeClientSecret(null)
+                                setStripePaymentIntentId(null)
+                                onClose()
+                              }
+                            }}
+                            onError={(error) => {
+                              setSubmitError(error)
+                            }}
+                          />
+                        </Elements>
+                      ) : (
+                        <div className="p-4 bg-yellow-50 border-2 border-yellow-200 rounded-lg">
+                          <p className="text-xs text-yellow-800">Please wait while we initialize your payment...</p>
+                        </div>
+                      )}
+                    </div>
+                  )}
 
 
                 
@@ -1412,7 +1608,8 @@ export function CourseRegistrationForm({ course, schedules, selectedScheduleId, 
             </div>
           </form>
         </CardContent>
-      </Card>
+          </Card>
+        </div>
       </div>
     </>
   )

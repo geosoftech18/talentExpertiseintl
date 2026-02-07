@@ -180,6 +180,7 @@ export async function PATCH(
     const updateData: any = {}
 
     // Handle payment status update (independent from order status)
+    let paymentStatusChangedToPaid = false
     if (body.paymentStatus !== undefined) {
       const validStatuses = ['Paid', 'Unpaid', 'Partially Refunded', 'Refunded']
       if (!validStatuses.includes(body.paymentStatus)) {
@@ -188,6 +189,17 @@ export async function PATCH(
           { status: 400 }
         )
       }
+      
+      // Check if payment status is changing to Paid
+      const currentRegistration = await prisma.courseRegistration.findUnique({
+        where: { id },
+        select: { paymentStatus: true },
+      })
+      
+      if (currentRegistration && currentRegistration.paymentStatus !== 'Paid' && body.paymentStatus === 'Paid') {
+        paymentStatusChangedToPaid = true
+      }
+      
       updateData.paymentStatus = body.paymentStatus
     }
 
@@ -258,6 +270,77 @@ export async function PATCH(
       }
     }
 
+    // Helper function to generate invoice with company details from invoice request if available
+    const generateInvoiceForOrder = async () => {
+      // Check if invoice already exists for this registration
+      const existingInvoice = await prisma.invoice.findFirst({
+        where: { courseRegistrationId: id },
+      })
+
+      if (existingInvoice) {
+        console.log(`ℹ️ Invoice already exists for order ${id}, skipping generation`)
+        return
+      }
+
+      // Try to find invoice request to get company email/address
+      let invoiceEmail = updatedRegistration.email
+      let invoiceAddress = updatedRegistration.address || null
+      
+      try {
+        const invoiceRequest = await prisma.invoiceRequest.findFirst({
+          where: {
+            email: updatedRegistration.email,
+            courseId: updatedRegistration.courseId,
+            status: 'APPROVED',
+          },
+          orderBy: { createdAt: 'desc' },
+        })
+
+        if (invoiceRequest) {
+          // Use company email/address if available, otherwise use user email/address
+          invoiceEmail = invoiceRequest.invoiceEmail || invoiceRequest.email
+          invoiceAddress = invoiceRequest.invoiceAddress || invoiceRequest.address || invoiceAddress
+        }
+      } catch (error) {
+        console.log('Could not find invoice request, using registration data')
+      }
+
+      const amount = schedule?.fee ? schedule.fee * (updatedRegistration.participants || 1) : 0
+
+      if (amount <= 0) {
+        console.warn(`⚠️ Cannot generate invoice for order ${id}: amount is 0 or invalid`)
+        return
+      }
+
+      await createInvoice({
+        courseId: updatedRegistration.courseId || null,
+        scheduleId: updatedRegistration.scheduleId || null,
+        courseRegistrationId: id,
+        userId: null,
+        amount,
+        email: invoiceEmail,
+        name: updatedRegistration.name,
+        courseTitle: updatedRegistration.courseTitle || programName || null,
+        address: invoiceAddress,
+        city: updatedRegistration.city || null,
+        country: updatedRegistration.country || null,
+        participants: updatedRegistration.participants || 1,
+        paymentStatus: 'Paid',
+      })
+
+      console.log(`✅ Invoice generated for order ${id} and sent to ${invoiceEmail}`)
+    }
+
+    // Generate invoice when payment status changes to Paid
+    if (paymentStatusChangedToPaid) {
+      try {
+        await generateInvoiceForOrder()
+      } catch (invoiceError) {
+        console.error('Error generating invoice when payment status changed to Paid:', invoiceError)
+        // Don't fail the order update if invoice generation fails
+      }
+    }
+
     // Generate invoice when order status changes to Completed (only for paid orders)
     if (statusChangedToCompleted) {
       try {
@@ -266,35 +349,7 @@ export async function PATCH(
         if (paymentStatus.toUpperCase() !== 'PAID') {
           console.log(`ℹ️ Invoice not generated for order ${id}: payment status is ${paymentStatus} (only paid orders generate invoices)`)
         } else {
-          // Check if invoice already exists for this registration
-          const existingInvoice = await prisma.invoice.findFirst({
-            where: { courseRegistrationId: id },
-          })
-
-          // Only create invoice if it doesn't exist
-          if (!existingInvoice) {
-            const amount = schedule?.fee || 0
-
-            await createInvoice({
-              courseId: updatedRegistration.courseId || null,
-              scheduleId: updatedRegistration.scheduleId || null,
-              courseRegistrationId: id,
-              userId: null,
-              amount,
-              email: updatedRegistration.email,
-              name: updatedRegistration.name,
-              courseTitle: updatedRegistration.courseTitle || programName || null,
-              address: updatedRegistration.address || null,
-              city: updatedRegistration.city || null,
-              country: updatedRegistration.country || null,
-              participants: updatedRegistration.participants || 1,
-              paymentStatus: paymentStatus,
-            })
-
-            console.log(`✅ Invoice generated for order ${id} when status changed to Completed`)
-          } else {
-            console.log(`ℹ️ Invoice already exists for order ${id}, skipping generation`)
-          }
+          await generateInvoiceForOrder()
         }
       } catch (invoiceError) {
         console.error('Error generating invoice when order status changed to Completed:', invoiceError)

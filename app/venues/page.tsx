@@ -11,13 +11,13 @@ import Image from 'next/image'
 // Comprehensive country to ISO code mapping for flags
 const countryToISOCode: { [key: string]: string } = {
   // Asia
-  'Indonesia': 'id', 'India': 'in', 'Thailand': 'th', 'UAE': 'ae', 'United Arab Emirates': 'ae',
+  'IN': 'id', 'India': 'in', 'Thailand': 'th', 'UAE': 'ae', 'United Arab Emirates': 'ae',
   'Malaysia': 'my', 'Saudi Arabia': 'sa', 'Qatar': 'qa', 'Bahrain': 'bh', 'Oman': 'om',
   'China': 'cn', 'Japan': 'jp', 'South Korea': 'kr', 'Philippines': 'ph', 'Vietnam': 'vn',
   'Singapore': 'sg', 'HK': 'hk', 'Taiwan': 'tw', 'Bangladesh': 'bd', 'Pakistan': 'pk',
   'Sri Lanka': 'lk', 'Nepal': 'np', 'Myanmar': 'mm', 'Cambodia': 'kh', 'Laos': 'la',
   'Kuwait': 'kw', 'Jordan': 'jo', 'Lebanon': 'lb', 'Israel': 'il', 'Iraq': 'iq',
-  'Iran': 'ir', 'Afghanistan': 'af', 'Kazakhstan': 'kz', 'Uzbekistan': 'uz', 'Mongolia': 'mn','SG':'sg','IN':'id',
+  'Iran': 'ir', 'Afghanistan': 'af', 'Kazakhstan': 'kz', 'Uzbekistan': 'uz', 'Mongolia': 'mn','SG':'sg',
   'KSA':'sa','SN':'sg',
   // Africa
   'Ghana': 'gh', 'South Africa': 'za', 'Uganda': 'ug', 'Zimbabwe': 'zw', 'Rwanda': 'rw',
@@ -45,22 +45,47 @@ const countryToISOCode: { [key: string]: string } = {
   'Australia': 'au', 'New Zealand': 'nz', 'Fiji': 'fj', 'Papua New Guinea': 'pg',
 }
 
-// Map country codes to full country names
+// Map country codes to full country names (comprehensive mapping)
 const countryCodeToName: { [key: string]: string } = {
+  // Europe
   'NL': 'Netherlands',
   'SP': 'Spain',
+  'ES': 'Spain',
   'DE': 'Germany',
   'FR': 'France',
-  'CA': 'Canada',
-  'US': 'United States',
   'IT': 'Italy',
   'CH': 'Switzerland',
   'PT': 'Portugal',
   'TR': 'Turkey',
   'GB': 'United Kingdom',
   'UK': 'United Kingdom',
-  'AU': 'Australia',
-  'NZ': 'New Zealand',
+  'AT': 'Austria',
+  'BE': 'Belgium',
+  'PL': 'Poland',
+ 
+  'NO': 'Norway',
+  'DK': 'Denmark',
+  'FI': 'Finland',
+  'IE': 'Ireland',
+  'GR': 'Greece',
+  'CZ': 'Czech Republic',
+  'RO': 'Romania',
+  'HU': 'Hungary',
+  'SK': 'Slovakia',
+  'HR': 'Croatia',
+  'RS': 'Serbia',
+  'BG': 'Bulgaria',
+  'UA': 'Ukraine',
+  'RU': 'Russia',
+  // North America
+  'US': 'United States',
+  'CA': 'Canada',
+  'MX': 'Mexico',
+  'CR': 'Costa Rica',
+  'PA': 'Panama',
+  'JM': 'Jamaica',
+  'CU': 'Cuba',
+  // Asia
   'SG': 'Singapore',
   'MY': 'Malaysia',
   'TH': 'Thailand',
@@ -71,21 +96,272 @@ const countryCodeToName: { [key: string]: string } = {
   'KR': 'South Korea',
   'AE': 'UAE',
   'SA': 'Saudi Arabia',
+  'KSA': 'Saudi Arabia',
+  'QA': 'Qatar',
+  'BH': 'Bahrain',
+  'OM': 'Oman',
+  'PH': 'Philippines',
+  'VN': 'Vietnam',
+  'HK': 'Hong Kong',
+  'TW': 'Taiwan',
+  'BD': 'Bangladesh',
+  'PK': 'Pakistan',
+  'LK': 'Sri Lanka',
+  'NP': 'Nepal',
+  'MM': 'Myanmar',
+  'KH': 'Cambodia',
+  'LA': 'Laos',
+  'KW': 'Kuwait',
+  'JO': 'Jordan',
+  'LB': 'Lebanon',
+  'IL': 'Israel',
+  'IQ': 'Iraq',
+  'IR': 'Iran',
+  'AF': 'Afghanistan',
+  'KZ': 'Kazakhstan',
+  'UZ': 'Uzbekistan',
+  'MN': 'Mongolia',
+  // Africa
   'ZA': 'South Africa',
   'EG': 'Egypt',
   'KE': 'Kenya',
   'MA': 'Morocco',
   'TZ': 'Tanzania',
+  'GH': 'Ghana',
+  'UG': 'Uganda',
+  'ZW': 'Zimbabwe',
+  'RW': 'Rwanda',
+  'MU': 'Mauritius',
+  
+  'SE': 'Seychelles',
+  'ET': 'Ethiopia',
+  'NG': 'Nigeria',
+  'DZ': 'Algeria',
+  'TN': 'Tunisia',
+  'LY': 'Libya',
+  'SD': 'Sudan',
+  'SN': 'Senegal',
+  'CI': 'Ivory Coast',
+  'CM': 'Cameroon',
+  'AO': 'Angola',
+  'MZ': 'Mozambique',
+  'MG': 'Madagascar',
+  'BW': 'Botswana',
+  'NA': 'Namibia',
+  'ZM': 'Zambia',
+  'MW': 'Malawi',
+  // Oceania
+  'AU': 'Australia',
+  'NZ': 'New Zealand',
+  'FJ': 'Fiji',
+  'PG': 'Papua New Guinea',
+  // South America
+  'BR': 'Brazil',
+  'AR': 'Argentina',
+  'CL': 'Chile',
+  'CO': 'Colombia',
+  'PE': 'Peru',
+  'EC': 'Ecuador',
+  'VE': 'Venezuela',
+  'UY': 'Uruguay',
+  'PY': 'Paraguay',
+  'BO': 'Bolivia',
 }
 
-// Function to extract country code from venue name (e.g., "Amsterdam-NL" -> "NL")
+// Function to map lowercase country names to country codes
+const countryNameToCode: { [key: string]: string } = {
+  'japan': 'JP', 'france': 'FR', 'germany': 'DE', 'spain': 'ES', 'italy': 'IT',
+  'netherlands': 'NL', 'portugal': 'PT', 'turkey': 'TR', 'switzerland': 'CH',
+  'united kingdom': 'GB', 'uk': 'GB', 'britain': 'GB', 'canada': 'CA',
+  'united states': 'US', 'usa': 'US', 'australia': 'AU', 'new zealand': 'NZ',
+  'singapore': 'SG', 'malaysia': 'MY', 'thailand': 'TH', 'indonesia': 'ID',
+  'india': 'IN', 'china': 'CN', 'south korea': 'KR', 'korea': 'KR',
+  'uae': 'AE', 'united arab emirates': 'AE', 'saudi arabia': 'SA', 'ksa': 'SA',
+  'south africa': 'ZA', 'egypt': 'EG', 'kenya': 'KE', 'morocco': 'MA',
+  'tanzania': 'TZ', 'philippines': 'PH', 'vietnam': 'VN', 'hong kong': 'HK',
+  'taiwan': 'TW', 'qatar': 'QA', 'bahrain': 'BH', 'oman': 'OM',
+  'seychelles': 'SC', 'sweden': 'SE',
+}
+
+// City to country mapping for cities without country codes in their names
+const cityToCountry: { [key: string]: string } = {
+  'kuala lumpur': 'Malaysia',
+  'kl': 'Malaysia',
+  'jakarta': 'Indonesia',
+  'bangkok': 'Thailand',
+  'singapore': 'Singapore',
+  'manila': 'Philippines',
+  'ho chi minh': 'Vietnam',
+  'hanoi': 'Vietnam',
+  'hong kong': 'Hong Kong',
+  'tokyo': 'Japan',
+  'osaka': 'Japan',
+  'seoul': 'South Korea',
+  'beijing': 'China',
+  'shanghai': 'China',
+  'mumbai': 'India',
+  'delhi': 'India',
+  'dubai': 'UAE',
+  'abu dhabi': 'UAE',
+  'riyadh': 'Saudi Arabia',
+  'jeddah': 'Saudi Arabia',
+  'doha': 'Qatar',
+  'manama': 'Bahrain',
+  'muscat': 'Oman',
+  'cairo': 'Egypt',
+  'nairobi': 'Kenya',
+  'johannesburg': 'South Africa',
+  'cape town': 'South Africa',
+  'casablanca': 'Morocco',
+  'dar es salaam': 'Tanzania',
+  'london': 'United Kingdom',
+  'paris': 'France',
+  'madrid': 'Spain',
+  'barcelona': 'Spain',
+  'rome': 'Italy',
+  'milan': 'Italy',
+  'amsterdam': 'Netherlands',
+  'berlin': 'Germany',
+  'munich': 'Germany',
+  'vienna': 'Austria',
+  'zurich': 'Switzerland',
+  'lisbon': 'Portugal',
+  'istanbul': 'Turkey',
+  'new york': 'United States',
+  'los angeles': 'United States',
+  'chicago': 'United States',
+  'toronto': 'Canada',
+  'vancouver': 'Canada',
+  'sydney': 'Australia',
+  'melbourne': 'Australia',
+  'auckland': 'New Zealand',
+  'victoria': 'Seychelles', // Victoria, Seychelles (not Victoria, Canada or other)
+  'bali': 'Indonesia', // Bali is in Indonesia, not India
+  'surabaya': 'Indonesia',
+  'bandung': 'Indonesia',
+  'yogyakarta': 'Indonesia',
+  'medan': 'Indonesia',
+  'semarang': 'Indonesia',
+  'makassar': 'Indonesia',
+  'palembang': 'Indonesia',
+  'denpasar': 'Indonesia',
+}
+
+// Function to extract country code from venue name (e.g., "Amsterdam-NL" -> "NL", "Tokyo-japan" -> "JP")
+// Also handles city names like "Kuala Lumpur" -> "MY"
 const extractCountryFromVenueName = (venueName: string): string | null => {
   if (!venueName) return null
   
-  // Match patterns like "City-Code" or "City - Code"
-  const match = venueName.match(/[- ]([A-Z]{2})$/i)
-  if (match && match[1]) {
-    return match[1].toUpperCase()
+  // Pattern 1: Match uppercase 2-letter country codes like "Amsterdam-NL", "Madrid - SP", "Victoria, SE"
+  const uppercaseCodeMatch = venueName.match(/[- _,]([A-Z]{2})(?:[- _]|$)/i)
+  if (uppercaseCodeMatch && uppercaseCodeMatch[1]) {
+    const code = uppercaseCodeMatch[1].toUpperCase()
+    if (code.length === 2 && code.match(/^[A-Z]{2}$/)) {
+      // Special handling for "SE" ambiguity (Sweden vs Seychelles)
+      if (code === 'SE') {
+        // Check if city is "Victoria" - Victoria, SE is Seychelles (Africa), not Sweden
+        const cityMatch = venueName.match(/^([^,-\s]+)/i)
+        if (cityMatch && cityMatch[1]) {
+          const cityName = cityMatch[1].toLowerCase().trim()
+          if (cityName === 'victoria') {
+            return 'SC' // Seychelles uses SC as ISO code, but venue might use SE
+          }
+        }
+      }
+      // Special handling for "IN" ambiguity (India vs Indonesia)
+      if (code === 'IN') {
+        // Check if city is "Bali" or other Indonesian cities - Bali, IN is Indonesia, not India
+        const cityMatch = venueName.match(/^([^,-\s]+)/i)
+        if (cityMatch && cityMatch[1]) {
+          const cityName = cityMatch[1].toLowerCase().trim()
+          // Indonesian cities that use "IN" code
+          const indonesianCities = ['bali', 'jakarta', 'surabaya', 'bandung', 'yogyakarta', 
+            'medan', 'semarang', 'makassar', 'palembang', 'denpasar']
+          if (indonesianCities.includes(cityName)) {
+            return 'ID' // Indonesia uses ID as ISO code, but venue might use IN
+          }
+        }
+      }
+      return code
+    }
+  }
+  
+  // Pattern 2: Match lowercase country names after comma like "Bangalore, india", "City, country"
+  const commaLowercaseMatch = venueName.match(/,\s*([a-z]+(?: [a-z]+)?)$/i)
+  if (commaLowercaseMatch && commaLowercaseMatch[1]) {
+    const countryName = commaLowercaseMatch[1].toLowerCase().trim()
+    if (countryNameToCode[countryName]) {
+      return countryNameToCode[countryName]
+    }
+  }
+  
+  // Pattern 3: Match lowercase country names like "Tokyo-japan", "Paris-france"
+  const lowercaseNameMatch = venueName.match(/[- _]([a-z]+(?: [a-z]+)?)$/i)
+  if (lowercaseNameMatch && lowercaseNameMatch[1]) {
+    const countryName = lowercaseNameMatch[1].toLowerCase().trim()
+    if (countryNameToCode[countryName]) {
+      return countryNameToCode[countryName]
+    }
+  }
+  
+  // Pattern 4: Try to extract from common patterns like "City, Country" or "City (Country)" with uppercase codes
+  const commaMatch = venueName.match(/[, (]([A-Z]{2})[) ]*$/i)
+  if (commaMatch && commaMatch[1]) {
+    const code = commaMatch[1].toUpperCase()
+    if (code.length === 2 && code.match(/^[A-Z]{2}$/)) {
+      // Special handling for "SE" ambiguity
+      if (code === 'SE') {
+        const cityMatch = venueName.match(/^([^,-\s]+)/i)
+        if (cityMatch && cityMatch[1]) {
+          const cityName = cityMatch[1].toLowerCase().trim()
+          if (cityName === 'victoria') {
+            return 'SC' // Seychelles
+          }
+        }
+      }
+      // Special handling for "IN" ambiguity (India vs Indonesia)
+      if (code === 'IN') {
+        const cityMatch = venueName.match(/^([^,-\s]+)/i)
+        if (cityMatch && cityMatch[1]) {
+          const cityName = cityMatch[1].toLowerCase().trim()
+          // Indonesian cities that use "IN" code
+          const indonesianCities = ['bali', 'jakarta', 'surabaya', 'bandung', 'yogyakarta', 
+            'medan', 'semarang', 'makassar', 'palembang', 'denpasar']
+          if (indonesianCities.includes(cityName)) {
+            return 'ID' // Indonesia uses ID as ISO code, but venue might use IN
+          }
+        }
+      }
+      return code
+    }
+  }
+  
+  // Pattern 4: Check if venue name is a known city (e.g., "Kuala Lumpur" -> "MY")
+  const normalizedVenueName = venueName.toLowerCase().trim()
+  if (cityToCountry[normalizedVenueName]) {
+    const countryName = cityToCountry[normalizedVenueName]
+    if (countryNameToCode[countryName.toLowerCase()]) {
+      return countryNameToCode[countryName.toLowerCase()]
+    }
+    // Try direct country name lookup
+    const lowerCountry = countryName.toLowerCase()
+    for (const [key, code] of Object.entries(countryNameToCode)) {
+      if (key === lowerCountry || lowerCountry.includes(key) || key.includes(lowerCountry)) {
+        return code
+      }
+    }
+  }
+  
+  // Pattern 5: Try to match city name at the start (before any separator)
+  const cityNameMatch = venueName.match(/^([^,-\s]+(?:\s+[^,-\s]+)?)/i)
+  if (cityNameMatch && cityNameMatch[1]) {
+    const cityName = cityNameMatch[1].toLowerCase().trim()
+    if (cityToCountry[cityName]) {
+      const countryName = cityToCountry[cityName]
+      if (countryNameToCode[countryName.toLowerCase()]) {
+        return countryNameToCode[countryName.toLowerCase()]
+      }
+    }
   }
   
   return null
@@ -109,22 +385,37 @@ const getCountryCode = (country: string, venueName?: string): string => {
   if (venueName) {
     const extractedCode = extractCountryFromVenueName(venueName)
     if (extractedCode) {
-      // Map common country codes to ISO codes
+      // Map common country codes to ISO codes (lowercase for flag API)
       const codeMap: { [key: string]: string } = {
         'NL': 'nl', 'SP': 'es', 'DE': 'de', 'FR': 'fr', 'CA': 'ca',
         'US': 'us', 'IT': 'it', 'CH': 'ch', 'PT': 'pt', 'TR': 'tr',
         'GB': 'gb', 'UK': 'gb', 'AU': 'au', 'NZ': 'nz', 'SG': 'sg',
-        'MY': 'my', 'TH': 'th', 'ID': 'id', 'IN': 'id', 'CN': 'cn',
+        'MY': 'my', 'TH': 'th', 'ID': 'id', 'IN': 'in', 'CN': 'cn',
         'JP': 'jp', 'KR': 'kr', 'AE': 'ae', 'SA': 'sa', 'ZA': 'za',
-        'EG': 'eg', 'KE': 'ke', 'MA': 'ma', 'TZ': 'tz',
+        'EG': 'eg', 'KE': 'ke', 'MA': 'ma', 'TZ': 'tz', 'SC': 'sc', // Seychelles
+        // Note: 'IN' can be India or Indonesia - handled in extractCountryFromVenueName
       }
       if (codeMap[extractedCode]) {
         return codeMap[extractedCode]
       }
+      // If extracted code is already a valid ISO code (2 lowercase letters), use it directly
+      if (extractedCode.length === 2 && extractedCode.match(/^[A-Z]{2}$/)) {
+        return extractedCode.toLowerCase()
+      }
     }
   }
   
-  if (!country) return 'xx'
+  if (!country) {
+    // If no country field, try to extract from venue name one more time
+    if (venueName) {
+      const extractedCode = extractCountryFromVenueName(venueName)
+      if (extractedCode) {
+        // Convert to lowercase ISO code
+        return extractedCode.toLowerCase()
+      }
+    }
+    return 'xx'
+  }
   
   const normalizedCountry = country.trim()
   
@@ -141,6 +432,11 @@ const getCountryCode = (country: string, venueName?: string): string => {
     }
   }
   
+  // Try country name to code mapping
+  if (countryNameToCode[lowerCountry]) {
+    return countryNameToCode[lowerCountry].toLowerCase()
+  }
+  
   // Partial match for common variations
   if (lowerCountry.includes('united states') || lowerCountry.includes('usa') || lowerCountry.includes('u.s.')) {
     return 'us'
@@ -151,6 +447,12 @@ const getCountryCode = (country: string, venueName?: string): string => {
   if (lowerCountry.includes('uae') || lowerCountry.includes('emirates')) {
     return 'ae'
   }
+  if (lowerCountry.includes('seychelles')) {
+    return 'sc'
+  }
+  if (lowerCountry.includes('india')) {
+    return 'in'
+  }
   
   return 'xx' // Unknown country
 }
@@ -158,6 +460,43 @@ const getCountryCode = (country: string, venueName?: string): string => {
 // Function to get flag image URL
 const getFlagImageUrl = (countryCode: string): string => {
   return `https://flagcdn.com/w40/${countryCode.toLowerCase()}.png`
+}
+
+// Direct country code to continent mapping (for faster lookup from venue names)
+const countryCodeToContinent: { [key: string]: string } = {
+  // Asia
+  'ID': 'Asia', 'IN': 'Asia', 'TH': 'Asia', 'AE': 'Asia', 'MY': 'Asia',
+  'SA': 'Asia', 'QA': 'Asia', 'BH': 'Asia', 'OM': 'Asia', 'CN': 'Asia',
+  'JP': 'Asia', 'KR': 'Asia', 'PH': 'Asia', 'VN': 'Asia', 'SG': 'Asia',
+  'HK': 'Asia', 'TW': 'Asia', 'BD': 'Asia', 'PK': 'Asia', 'LK': 'Asia',
+  'NP': 'Asia', 'MM': 'Asia', 'KH': 'Asia', 'LA': 'Asia', 'KW': 'Asia',
+  'JO': 'Asia', 'LB': 'Asia', 'IL': 'Asia', 'IQ': 'Asia', 'IR': 'Asia',
+  'AF': 'Asia', 'KZ': 'Asia', 'UZ': 'Asia', 'MN': 'Asia', 'YE': 'Asia',
+  'SY': 'Asia',
+  // Africa
+  'GH': 'Africa', 'ZA': 'Africa', 'UG': 'Africa', 'ZW': 'Africa', 'RW': 'Africa',
+  'MA': 'Africa', 'KE': 'Africa', 'MU': 'Africa', 'EG': 'Africa', 'SC': 'Africa',
+  'TZ': 'Africa', 'ET': 'Africa', 'NG': 'Africa', 'DZ': 'Africa', 'TN': 'Africa',
+  'LY': 'Africa', 'SD': 'Africa', 'SN': 'Africa', 'CI': 'Africa', 'CM': 'Africa',
+  'AO': 'Africa', 'MZ': 'Africa', 'MG': 'Africa', 'BW': 'Africa', 'NA': 'Africa',
+  'ZM': 'Africa', 'MW': 'Africa',
+  // Note: 'SE' can be Sweden (Europe) or Seychelles (Africa) - handled in getContinent function
+  // Europe
+  'NL': 'Europe', 'ES': 'Europe', 'SP': 'Europe', 'GB': 'Europe', 'UK': 'Europe',
+  'DE': 'Europe', 'CH': 'Europe', 'TR': 'Europe', 'IT': 'Europe', 'FR': 'Europe',
+  'CZ': 'Europe', 'AT': 'Europe', 'GR': 'Europe', 'AZ': 'Europe', 'PT': 'Europe',
+  'BE': 'Europe', 'PL': 'Europe', 'SE': 'Europe', 'NO': 'Europe', 'DK': 'Europe',
+  'FI': 'Europe', 'IE': 'Europe', 'RO': 'Europe', 'HU': 'Europe', 'SK': 'Europe',
+  'HR': 'Europe', 'RS': 'Europe', 'BG': 'Europe', 'UA': 'Europe', 'RU': 'Europe',
+  // North America
+  'US': 'North America', 'CA': 'North America', 'MX': 'North America',
+  'CR': 'North America', 'PA': 'North America', 'JM': 'North America', 'CU': 'North America',
+  // South America
+  'BR': 'South America', 'AR': 'South America', 'CL': 'South America', 'CO': 'South America',
+  'PE': 'South America', 'EC': 'South America', 'VE': 'South America', 'UY': 'South America',
+  'PY': 'South America', 'BO': 'South America',
+  // Oceania
+  'AU': 'Oceania', 'NZ': 'Oceania', 'FJ': 'Oceania', 'PG': 'Oceania',
 }
 
 // Comprehensive country to continent mapping
@@ -289,68 +628,109 @@ const countryToContinent: { [key: string]: string } = {
 
 // Function to determine continent from country name or venue
 const getContinent = (country: string, venueName?: string): string => {
-  // First, try to extract country code from venue name if provided
+  // Priority 1: Extract country code from venue name and use direct mapping (most reliable for hyphenated names)
   if (venueName) {
     const extractedCode = extractCountryFromVenueName(venueName)
-    if (extractedCode && countryCodeToName[extractedCode]) {
-      const countryName = countryCodeToName[extractedCode]
-      const normalizedCountry = countryName.toLowerCase()
-      if (countryToContinent[normalizedCountry]) {
-        return countryToContinent[normalizedCountry]
+    if (extractedCode) {
+      // Special handling for "SE" ambiguity (Sweden vs Seychelles)
+      if (extractedCode === 'SE') {
+        // Check if city is "Victoria" - Victoria, SE is Seychelles (Africa)
+        const cityMatch = venueName.match(/^([^,-\s]+)/i)
+        if (cityMatch && cityMatch[1]) {
+          const cityName = cityMatch[1].toLowerCase().trim()
+          if (cityName === 'victoria') {
+            // Victoria, SE is Seychelles (Africa)
+            return 'Africa'
+          }
+        }
+        // Check country field for Seychelles
+        if (country && country.toLowerCase().includes('seychelles')) {
+          return 'Africa'
+        }
+        // Default to Sweden (Europe) if no context
+        return 'Europe'
+      }
+      
+      // Direct lookup from country code to continent
+      if (countryCodeToContinent[extractedCode]) {
+        return countryCodeToContinent[extractedCode]
+      }
+      
+      // If direct mapping doesn't work, try to get country name first
+      if (countryCodeToName[extractedCode]) {
+        const countryName = countryCodeToName[extractedCode]
+        const normalizedCountry = countryName.toLowerCase()
+        if (countryToContinent[normalizedCountry]) {
+          return countryToContinent[normalizedCountry]
+        }
+      }
+    }
+    
+    // If no code extracted, try city name mapping (e.g., "Kuala Lumpur" -> Malaysia -> Asia)
+    const cityMatch = venueName.match(/^([^,-\s]+(?:\s+[^,-\s]+)?)/i)
+    if (cityMatch && cityMatch[1]) {
+      const cityName = cityMatch[1].toLowerCase().trim()
+      if (cityToCountry[cityName]) {
+        const countryName = cityToCountry[cityName]
+        const normalizedCountry = countryName.toLowerCase()
+        if (countryToContinent[normalizedCountry]) {
+          return countryToContinent[normalizedCountry]
+        }
       }
     }
   }
   
-  if (!country) return 'Other'
-  
-  const normalizedCountry = country.trim().toLowerCase()
-  
-  // Direct lookup first (exact match)
-  if (countryToContinent[normalizedCountry]) {
-    return countryToContinent[normalizedCountry]
-  }
-  
-  // Try with common variations
-  const variations: { [key: string]: string } = {
-    'united states': 'usa',
-    'united states of america': 'usa',
-    'u.s.': 'usa',
-    'u.s.a.': 'usa',
-    'united kingdom': 'uk',
-    'great britain': 'uk',
-    'britain': 'uk',
-    'hong kong': 'hong kong',
-    'hongkong': 'hong kong',
-    'south korea': 'south korea',
-    'korea': 'south korea',
-    'czech republic': 'czech republic',
-    'czechia': 'czech republic',
-    'ivory coast': 'ivory coast',
-    'cote d\'ivoire': 'ivory coast',
-  }
-  
-  // Check variations
-  for (const [variation, standard] of Object.entries(variations)) {
-    if (normalizedCountry.includes(variation) || variation.includes(normalizedCountry)) {
-      const standardKey = standard.toLowerCase()
-      if (countryToContinent[standardKey]) {
-        return countryToContinent[standardKey]
+  // Priority 2: Use country field if available
+  if (country) {
+    const normalizedCountry = country.trim().toLowerCase()
+    
+    // Direct lookup first (exact match)
+    if (countryToContinent[normalizedCountry]) {
+      return countryToContinent[normalizedCountry]
+    }
+    
+    // Try with common variations
+    const variations: { [key: string]: string } = {
+      'united states': 'usa',
+      'united states of america': 'usa',
+      'u.s.': 'usa',
+      'u.s.a.': 'usa',
+      'united kingdom': 'uk',
+      'great britain': 'uk',
+      'britain': 'uk',
+      'hong kong': 'hong kong',
+      'hongkong': 'hong kong',
+      'south korea': 'south korea',
+      'korea': 'south korea',
+      'czech republic': 'czech republic',
+      'czechia': 'czech republic',
+      'ivory coast': 'ivory coast',
+      'cote d\'ivoire': 'ivory coast',
+    }
+    
+    // Check variations
+    for (const [variation, standard] of Object.entries(variations)) {
+      if (normalizedCountry.includes(variation) || variation.includes(normalizedCountry)) {
+        const standardKey = standard.toLowerCase()
+        if (countryToContinent[standardKey]) {
+          return countryToContinent[standardKey]
+        }
       }
     }
-  }
-  
-  // Try partial match (but be careful with abbreviations)
-  for (const [key, continent] of Object.entries(countryToContinent)) {
-    // Only match if it's a full word match or exact abbreviation
-    if (key.length <= 3) {
-      // For abbreviations, require exact match
-      if (normalizedCountry === key) {
-        return continent
-      }
-    } else {
-      // For full country names, check if country contains the key or vice versa
-      if (normalizedCountry === key || normalizedCountry.includes(key) || key.includes(normalizedCountry)) {
-        return continent
+    
+    // Try partial match (but be careful with abbreviations)
+    for (const [key, continent] of Object.entries(countryToContinent)) {
+      // Only match if it's a full word match or exact abbreviation
+      if (key.length <= 3) {
+        // For abbreviations, require exact match
+        if (normalizedCountry === key) {
+          return continent
+        }
+      } else {
+        // For full country names, check if country contains the key or vice versa
+        if (normalizedCountry === key || normalizedCountry.includes(key) || key.includes(normalizedCountry)) {
+          return continent
+        }
       }
     }
   }

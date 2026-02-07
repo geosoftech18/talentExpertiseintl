@@ -43,16 +43,34 @@ export async function GET(request: NextRequest) {
     const today = new Date()
     today.setHours(0, 0, 0, 0)
     
+    // Check if we should filter by new programs
+    const isNewPrograms = searchParams.get('newPrograms') === 'true'
+    
+    // Build where clause
+    const scheduleWhere: any = {
+      status: { in: ['Open', 'Published'] },
+    }
+    
+    // Filter by isNewProgram when newPrograms=true
+    // Explicitly check for true value to exclude false, null, or undefined
+    if (isNewPrograms) {
+      scheduleWhere.isNewProgram = {
+        equals: true
+      }
+    }
+    
+    // Add date filter if not including expired
+    if (!includeExpired) {
+      scheduleWhere.startDate = {
+        gte: today,
+      }
+    }
+    
     // Fetch schedules with their programs in a single optimized query
     // This is much faster than fetching separately and mapping
     const allSchedules = await prisma.schedule.findMany({
       where: {
-        status: { in: ['Open', 'Published'] },
-        ...(includeExpired ? {} : {
-          startDate: {
-            gte: today, // Only upcoming schedules
-          },
-        }),
+        ...scheduleWhere,
         program: {
           status: 'Published', // Only schedules for published programs
           ...(category && category !== 'all' ? { category } : {}),
@@ -88,6 +106,29 @@ export async function GET(request: NextRequest) {
       },
       orderBy: { startDate: 'asc' },
     })
+
+    // Debug logging for new programs filter
+    if (isNewPrograms) {
+      console.log(`[New Programs API] Query params: newPrograms=${isNewPrograms}, includeExpired=${includeExpired}`)
+      console.log(`[New Programs API] Where clause:`, JSON.stringify(scheduleWhere, null, 2))
+      console.log(`[New Programs API] Found ${allSchedules.length} schedules with isNewProgram=true`)
+      if (allSchedules.length === 0) {
+        // Check if there are any schedules with isNewProgram=true at all
+        const allNewSchedules = await prisma.schedule.findMany({
+          where: { isNewProgram: true },
+          select: { id: true, status: true, programName: true, startDate: true, program: { select: { status: true } } },
+          take: 5,
+        })
+        console.log(`[New Programs API] Total schedules with isNewProgram=true (any status):`, allNewSchedules.length)
+        console.log(`[New Programs API] Sample schedules:`, allNewSchedules.map(s => ({
+          id: s.id,
+          status: s.status,
+          programStatus: s.program?.status,
+          programName: s.programName,
+          startDate: s.startDate,
+        })))
+      }
+    }
 
     // Transform schedules to course entries - much faster with direct relation access
     const now = new Date()

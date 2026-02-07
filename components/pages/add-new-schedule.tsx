@@ -5,6 +5,7 @@ import { ArrowLeft, Save, CheckIcon, ChevronDownIcon, SearchIcon, Plus } from "l
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { Switch } from "@/components/ui/switch"
 import {
   Select,
   SelectContent,
@@ -66,6 +67,7 @@ export default function AddNewSchedule({ onBack, editId }: { onBack?: () => void
     venue: "",
     fee: "",
     status: "Open",
+    isNewProgram: false,
   })
 
   const [programs, setPrograms] = useState<Program[]>([])
@@ -98,6 +100,7 @@ export default function AddNewSchedule({ onBack, editId }: { onBack?: () => void
                 venue: schedule.venue || "",
                 fee: schedule.fee ? String(schedule.fee) : "",
                 status: schedule.status || "Open",
+                isNewProgram: schedule.isNewProgram || false,
               })
             }
           }
@@ -209,7 +212,7 @@ export default function AddNewSchedule({ onBack, editId }: { onBack?: () => void
     fetchMentors()
   }, [])
 
-  const handleInputChange = (field: string, value: string) => {
+  const handleInputChange = (field: string, value: string | boolean) => {
     setFormData((prev) => ({ ...prev, [field]: value }))
   }
 
@@ -222,6 +225,7 @@ export default function AddNewSchedule({ onBack, editId }: { onBack?: () => void
       venue: "",
       fee: "",
       status: "Open",
+      isNewProgram: false,
     })
     setProgramSearch("")
     setProgramSearchOpen(false)
@@ -256,6 +260,7 @@ export default function AddNewSchedule({ onBack, editId }: { onBack?: () => void
         venue: formData.venue,
         fee: formData.fee ? parseFloat(formData.fee.replace(/[^\d.]/g, '')) : null,
         status: formData.status,
+        isNewProgram: formData.isNewProgram,
       }
 
       const response = await fetch('/api/admin/schedules', {
@@ -574,7 +579,7 @@ export default function AddNewSchedule({ onBack, editId }: { onBack?: () => void
             </div>
 
             {/* Status Field */}
-            <div className="space-y-2">
+            <div className="space-y-2 mb-6">
               <Label htmlFor="status" className="text-sm font-medium theme-text">
                 Status <span className="text-destructive">*</span>
               </Label>
@@ -592,6 +597,26 @@ export default function AddNewSchedule({ onBack, editId }: { onBack?: () => void
                   <SelectItem value="Closed">Closed</SelectItem>
                 </SelectContent>
               </Select>
+            </div>
+
+            {/* New Program Toggle */}
+            <div className="space-y-2">
+              <div className="flex items-center justify-between p-4 border border-border rounded-lg bg-input/50">
+                <div className="flex flex-col gap-1">
+                  <Label htmlFor="isNewProgram" className="text-sm font-medium theme-text cursor-pointer">
+                    Show in New Programs
+                  </Label>
+                  <p className="text-xs theme-muted">
+                    Enable this to display this schedule on the New Programs page
+                  </p>
+                </div>
+                <Switch
+                  id="isNewProgram"
+                  checked={formData.isNewProgram}
+                  onCheckedChange={(checked) => handleInputChange("isNewProgram", checked)}
+                  className="data-[state=unchecked]:bg-slate-300 dark:data-[state=unchecked]:bg-slate-600 data-[state=checked]:bg-primary"
+                />
+              </div>
             </div>
           </div>
 
