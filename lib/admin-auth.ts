@@ -128,15 +128,20 @@ export function verifyOTP(email: string, code: string): boolean {
 }
 
 /**
+ * List of allowed admin emails
+ * This is the single source of truth for admin emails
+ */
+export const ADMIN_EMAILS = [
+  'pranavkhandekar152@gmail.com',
+  'info@talentexpertiseintl.com',
+  'admin@talentexpertiseintl.com'
+]
+
+/**
  * Check if email is allowed for admin access
  */
 export function isAdminEmail(email: string): boolean {
-  const allowedEmails = [
-'pranavkhandekar152@gmail.com',
-'info@talentexpertiseintl.com',
-'admin@talentexpertiseintl.com'
-  ]
-  return allowedEmails.includes(email.toLowerCase())
+  return ADMIN_EMAILS.includes(email.toLowerCase())
 }
 
 /**

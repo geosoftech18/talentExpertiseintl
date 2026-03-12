@@ -172,22 +172,17 @@ export default function CourseManagement({ onAddProgram, onAddSchedule, onEditPr
     }
   }, [selectedMonth, selectedYear, searchTerm, activeTab])
 
-  // Fetch programs from database with pagination and search
+  // Fetch programs from database with pagination (search is handled client-side like schedules)
   useEffect(() => {
     const fetchPrograms = async () => {
       try {
         setLoading(true)
         
-        // Build query params
+        // Build query params (no search filter - handled client-side)
         const params = new URLSearchParams()
         params.append('page', programPage.toString())
-        params.append('limit', '50')
+        params.append('limit', '1000') // Fetch more to allow client-side filtering
         params.append('includeDetails', 'true') // Include details for preview
-        
-        // Add search filter if provided
-        if (searchTerm.trim() && activeTab === 'programs') {
-          params.append('search', searchTerm.trim())
-        }
         
         const response = await fetch(`/api/admin/programs?${params.toString()}`)
         const result = await response.json()
@@ -237,11 +232,7 @@ export default function CourseManagement({ onAddProgram, onAddSchedule, onEditPr
         })
         setProgramDetailsMap(detailsMap)
         
-        // Update pagination info
-        if (result.pagination) {
-          setProgramTotalPages(result.pagination.totalPages || 1)
-          setProgramTotal(result.pagination.total || 0)
-        }
+        // Note: Pagination is now handled client-side based on filtered results
       } catch (err) {
         console.error('Error fetching programs:', err)
         setError(err instanceof Error ? err.message : 'Failed to load programs')
@@ -254,7 +245,7 @@ export default function CourseManagement({ onAddProgram, onAddSchedule, onEditPr
     if (activeTab === 'programs') {
       fetchPrograms()
     }
-  }, [programPage, searchTerm, activeTab])
+  }, [programPage, activeTab])
 
   // Fetch all unique months and years from all schedules (for filter dropdowns)
   useEffect(() => {
@@ -707,9 +698,38 @@ export default function CourseManagement({ onAddProgram, onAddSchedule, onEditPr
   }
 
   // Programs are already filtered server-side, so use them directly
+  // Filter programs based on search term (client-side for instant feedback, like schedules)
   const filteredPrograms = useMemo(() => {
-    return programs
-  }, [programs])
+    let filtered = programs
+
+    // Filter by search term (client-side for instant feedback)
+    if (searchTerm.trim() && activeTab === 'programs') {
+      const searchLower = searchTerm.toLowerCase().trim()
+      filtered = filtered.filter((program) => {
+        const refCodeMatch = program.refCode?.toLowerCase().includes(searchLower) || false
+        const nameMatch = program.name?.toLowerCase().includes(searchLower) || false
+        const categoryMatch = program.category?.toLowerCase().includes(searchLower) || false
+        
+        return refCodeMatch || nameMatch || categoryMatch
+      })
+    }
+
+    return filtered
+  }, [programs, searchTerm, activeTab])
+
+  // Calculate pagination for filtered programs (client-side pagination)
+  const paginatedPrograms = useMemo(() => {
+    const limit = 50
+    const startIndex = (programPage - 1) * limit
+    const endIndex = startIndex + limit
+    return filteredPrograms.slice(startIndex, endIndex)
+  }, [filteredPrograms, programPage])
+
+  // Calculate total pages for filtered programs
+  const filteredProgramTotalPages = useMemo(() => {
+    const limit = 50
+    return Math.ceil(filteredPrograms.length / limit) || 1
+  }, [filteredPrograms.length])
 
   // Filter schedules based on search term only (month/year filtering is done server-side)
   const filteredSchedules = useMemo(() => {
@@ -971,7 +991,7 @@ export default function CourseManagement({ onAddProgram, onAddSchedule, onEditPr
                 </tr>
               </thead>
               <tbody>
-                {filteredPrograms.map((program) => (
+                {paginatedPrograms.map((program) => (
                   <React.Fragment key={program.id}>
                     <tr className="border-b border-border hover:bg-muted/50 transition-colors cursor-pointer" onClick={() => handleProgramPreview(program.id)}>
                       <td className="px-6 py-4 text-center" onClick={(e) => e.stopPropagation()}>
@@ -1133,10 +1153,10 @@ export default function CourseManagement({ onAddProgram, onAddSchedule, onEditPr
             </table>
           )}
           {/* Pagination Controls for Programs */}
-          {filteredPrograms.length > 0 && programTotalPages > 1 && (
+          {filteredPrograms.length > 0 && filteredProgramTotalPages > 1 && (
             <div className="flex items-center justify-between px-6 py-4 border-t border-border">
               <div className="text-sm theme-muted">
-                Showing page {programPage} of {programTotalPages} ({programTotal} total programs)
+                Showing page {programPage} of {filteredProgramTotalPages} ({filteredPrograms.length} total programs)
               </div>
               <div className="flex items-center gap-2">
                 <Button
@@ -1150,14 +1170,14 @@ export default function CourseManagement({ onAddProgram, onAddSchedule, onEditPr
                   Previous
                 </Button>
                 <div className="flex items-center gap-1">
-                  {Array.from({ length: Math.min(5, programTotalPages) }, (_, i) => {
+                  {Array.from({ length: Math.min(5, filteredProgramTotalPages) }, (_, i) => {
                     let pageNum: number
-                    if (programTotalPages <= 5) {
+                    if (filteredProgramTotalPages <= 5) {
                       pageNum = i + 1
                     } else if (programPage <= 3) {
                       pageNum = i + 1
-                    } else if (programPage >= programTotalPages - 2) {
-                      pageNum = programTotalPages - 4 + i
+                    } else if (programPage >= filteredProgramTotalPages - 2) {
+                      pageNum = filteredProgramTotalPages - 4 + i
                     } else {
                       pageNum = programPage - 2 + i
                     }
@@ -1178,8 +1198,8 @@ export default function CourseManagement({ onAddProgram, onAddSchedule, onEditPr
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => setProgramPage(prev => Math.min(programTotalPages, prev + 1))}
-                  disabled={programPage === programTotalPages || loading}
+                  onClick={() => setProgramPage(prev => Math.min(filteredProgramTotalPages, prev + 1))}
+                  disabled={programPage === filteredProgramTotalPages || loading}
                   className="flex items-center gap-1"
                 >
                   Next

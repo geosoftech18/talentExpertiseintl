@@ -493,6 +493,428 @@ export async function generateInvoicePDF(
 }
 
 /**
+ * Generate PDF invoice and return as buffer (for cloud storage)
+ * This version doesn't save to disk, just returns the buffer
+ */
+export async function generateInvoicePDFBuffer(
+  invoiceData: InvoiceData
+): Promise<Buffer> {
+  try {
+    // Create a new PDF document
+    const pdfDoc = await PDFDocument.create()
+    const page = pdfDoc.addPage([595, 842]) // A4 size in points
+    const { width, height } = page.getSize()
+
+    // Load fonts
+    const helveticaFont = await pdfDoc.embedFont(StandardFonts.Helvetica)
+    const helveticaBoldFont = await pdfDoc.embedFont(StandardFonts.HelveticaBold)
+
+    // Colors
+    const primaryBlue = rgb(0.12, 0.25, 0.69) // #1e40af
+    const darkGray = rgb(0.31, 0.35, 0.41) // #4b5563
+    const mediumGray = rgb(0.55, 0.58, 0.63) // #8b9199
+    const lightGray = rgb(0.82, 0.84, 0.92) // #d1d5db
+    const black = rgb(0.07, 0.09, 0.15) // #111827
+    const white = rgb(1, 1, 1) // #ffffff
+
+    // Margins
+    const margin = 50
+    const contentWidth = width - (margin * 2)
+    let currentY = height - margin
+
+    // ==========================================
+    // HEADER SECTION
+    // ==========================================
+    
+    // Company Logo/Name Area (Left)
+    const companyName = process.env.COMPANY_NAME || 'Talent Expertise Institute'
+    const companyAddress = process.env.COMPANY_ADDRESS || 'Dubai, UAE'
+    const companyEmail = process.env.COMPANY_EMAIL || 'info@example.com'
+    const companyPhone = process.env.COMPANY_PHONE || '+971 XX XXX XXXX'
+    const logoUrl = 'https://talentexpertiseintl.com/wp-content/uploads/2022/07/talent-expertise-logo.jpg'
+
+    // Try to load and embed company logo
+    let logoImage = null
+    let logoHeight = 60
+    let logoWidth = 0
+    try {
+      const logoResponse = await fetch(logoUrl)
+      if (logoResponse.ok) {
+        const logoBytes = await logoResponse.arrayBuffer()
+        logoImage = await pdfDoc.embedJpg(logoBytes)
+        const logoDims = logoImage.scale(0.15)
+        logoWidth = logoDims.width
+        logoHeight = logoDims.height
+      }
+    } catch (logoError) {
+      console.warn('Could not load logo, using text only')
+    }
+
+    // Company name and logo
+    if (logoImage) {
+      page.drawImage(logoImage, {
+        x: margin,
+        y: currentY - logoHeight,
+        width: logoWidth,
+        height: logoHeight,
+      })
+      currentY -= logoHeight + 10
+    } else {
+      page.drawText(companyName, {
+        x: margin,
+        y: currentY - 20,
+        size: 20,
+        font: helveticaBoldFont,
+        color: primaryBlue,
+      })
+      currentY -= 30
+    }
+
+    // Company details
+    page.drawText(companyAddress, {
+      x: margin,
+      y: currentY,
+      size: 10,
+      font: helveticaFont,
+      color: darkGray,
+    })
+    currentY -= 12
+    page.drawText(`Email: ${companyEmail}`, {
+      x: margin,
+      y: currentY,
+      size: 10,
+      font: helveticaFont,
+      color: darkGray,
+    })
+    currentY -= 12
+    page.drawText(`Phone: ${companyPhone}`, {
+      x: margin,
+      y: currentY,
+      size: 10,
+      font: helveticaFont,
+      color: darkGray,
+    })
+
+    // Invoice title (Right)
+    currentY = height - margin
+    page.drawText('INVOICE', {
+      x: width - margin - helveticaBoldFont.widthOfTextAtSize('INVOICE', 32),
+      y: currentY - 25,
+      size: 32,
+      font: helveticaBoldFont,
+      color: primaryBlue,
+    })
+
+    // Invoice number and date
+    currentY -= 40
+    page.drawText(`Invoice No: ${invoiceData.invoiceNo}`, {
+      x: width - margin - helveticaFont.widthOfTextAtSize(`Invoice No: ${invoiceData.invoiceNo}`, 12),
+      y: currentY,
+      size: 12,
+      font: helveticaBoldFont,
+      color: black,
+    })
+    currentY -= 15
+    page.drawText(`Issue Date: ${formatDate(invoiceData.issueDate)}`, {
+      x: width - margin - helveticaFont.widthOfTextAtSize(`Issue Date: ${formatDate(invoiceData.issueDate)}`, 10),
+      y: currentY,
+      size: 10,
+      font: helveticaFont,
+      color: darkGray,
+    })
+
+    // Status badge
+    currentY -= 25
+    const statusText = invoiceData.status.toUpperCase()
+    const statusColor = getStatusColor(invoiceData.status)
+    const statusWidth = helveticaBoldFont.widthOfTextAtSize(statusText, 10) + 20
+    const statusX = width - margin - statusWidth
+
+    // Draw status background
+    page.drawRectangle({
+      x: statusX,
+      y: currentY - 15,
+      width: statusWidth,
+      height: 20,
+      color: statusColor,
+    })
+    page.drawText(statusText, {
+      x: statusX + 10,
+      y: currentY - 5,
+      size: 10,
+      font: helveticaBoldFont,
+      color: white,
+    })
+
+    // Divider
+    currentY -= 40
+    page.drawLine({
+      start: { x: margin, y: currentY },
+      end: { x: width - margin, y: currentY },
+      thickness: 2,
+      color: primaryBlue,
+    })
+
+    // ==========================================
+    // BILL TO SECTION
+    // ==========================================
+    currentY -= 30
+    page.drawText('Bill To:', {
+      x: margin,
+      y: currentY,
+      size: 12,
+      font: helveticaBoldFont,
+      color: black,
+    })
+    currentY -= 20
+    page.drawText(invoiceData.customerName, {
+      x: margin,
+      y: currentY,
+      size: 11,
+      font: helveticaFont,
+      color: darkGray,
+    })
+    currentY -= 14
+    page.drawText(invoiceData.customerEmail, {
+      x: margin,
+      y: currentY,
+      size: 10,
+      font: helveticaFont,
+      color: mediumGray,
+    })
+    if (invoiceData.customerAddress) {
+      currentY -= 14
+      const addressLines = wrapText(invoiceData.customerAddress, contentWidth / 2, helveticaFont, 10)
+      for (const line of addressLines) {
+        page.drawText(line, {
+          x: margin,
+          y: currentY,
+          size: 10,
+          font: helveticaFont,
+          color: mediumGray,
+        })
+        currentY -= 12
+      }
+    }
+    if (invoiceData.customerCity) {
+      currentY -= 2
+      page.drawText(
+        `${invoiceData.customerCity}${invoiceData.customerCountry ? `, ${invoiceData.customerCountry}` : ''}`,
+        {
+          x: margin,
+          y: currentY,
+          size: 10,
+          font: helveticaFont,
+          color: mediumGray,
+        }
+      )
+    }
+
+    // ==========================================
+    // ITEMS TABLE
+    // ==========================================
+    currentY -= 50
+    const tableTop = currentY
+    const tableRowHeight = 30
+    const tableHeaderHeight = 25
+
+    // Table header background
+    page.drawRectangle({
+      x: margin,
+      y: currentY - tableHeaderHeight,
+      width: contentWidth,
+      height: tableHeaderHeight,
+      color: primaryBlue,
+    })
+
+    // Table headers
+    currentY -= 18
+    page.drawText('Description', {
+      x: margin + 10,
+      y: currentY,
+      size: 11,
+      font: helveticaBoldFont,
+      color: white,
+    })
+    page.drawText('Qty', {
+      x: margin + contentWidth * 0.6,
+      y: currentY,
+      size: 11,
+      font: helveticaBoldFont,
+      color: white,
+    })
+    page.drawText('Unit Price', {
+      x: margin + contentWidth * 0.7,
+      y: currentY,
+      size: 11,
+      font: helveticaBoldFont,
+      color: white,
+    })
+    page.drawText('Amount', {
+      x: width - margin - 10 - helveticaBoldFont.widthOfTextAtSize('Amount', 11),
+      y: currentY,
+      size: 11,
+      font: helveticaBoldFont,
+      color: white,
+    })
+
+    // Table row
+    currentY -= tableRowHeight
+    const courseTitleLines = wrapText(invoiceData.courseTitle, contentWidth * 0.55, helveticaFont, 10)
+    const firstLineY = currentY + 5
+    for (let i = 0; i < courseTitleLines.length; i++) {
+      page.drawText(courseTitleLines[i], {
+        x: margin + 10,
+        y: firstLineY - i * 12,
+        size: 10,
+        font: helveticaFont,
+        color: black,
+      })
+    }
+
+    const participants = invoiceData.participants || 1
+    const unitPrice = invoiceData.unitPrice || invoiceData.amount
+    const totalAmount = invoiceData.amount
+
+    page.drawText(String(participants), {
+      x: margin + contentWidth * 0.6,
+      y: currentY + 5,
+      size: 10,
+      font: helveticaFont,
+      color: darkGray,
+    })
+    page.drawText(formatCurrency(unitPrice), {
+      x: margin + contentWidth * 0.7,
+      y: currentY + 5,
+      size: 10,
+      font: helveticaFont,
+      color: darkGray,
+    })
+    page.drawText(formatCurrency(totalAmount), {
+      x: width - margin - 10 - helveticaFont.widthOfTextAtSize(formatCurrency(totalAmount), 10),
+      y: currentY + 5,
+      size: 10,
+      font: helveticaBoldFont,
+      color: black,
+    })
+
+    // Table borders
+    page.drawRectangle({
+      x: margin,
+      y: currentY - 5,
+      width: contentWidth,
+      height: tableRowHeight + 10,
+      borderColor: lightGray,
+      borderWidth: 1,
+    })
+
+    // ==========================================
+    // TOTALS SECTION
+    // ==========================================
+    currentY -= 50
+    const totalsX = width - margin - 200
+    page.drawText('Subtotal:', {
+      x: totalsX,
+      y: currentY,
+      size: 11,
+      font: helveticaFont,
+      color: darkGray,
+    })
+    page.drawText(formatCurrency(totalAmount), {
+      x: width - margin - 10 - helveticaFont.widthOfTextAtSize(formatCurrency(totalAmount), 11),
+      y: currentY,
+      size: 11,
+      font: helveticaFont,
+      color: darkGray,
+    })
+
+    currentY -= 20
+    page.drawText('Total:', {
+      x: totalsX,
+      y: currentY,
+      size: 14,
+      font: helveticaBoldFont,
+      color: black,
+    })
+    page.drawText(formatCurrency(totalAmount), {
+      x: width - margin - 10 - helveticaBoldFont.widthOfTextAtSize(formatCurrency(totalAmount), 14),
+      y: currentY,
+      size: 14,
+      font: helveticaBoldFont,
+      color: primaryBlue,
+    })
+
+    // ==========================================
+    // FOOTER
+    // ==========================================
+    currentY = margin + 80
+    page.drawLine({
+      start: { x: margin, y: currentY },
+      end: { x: width - margin, y: currentY },
+      thickness: 1,
+      color: lightGray,
+    })
+
+    currentY -= 20
+    const thankYouText = 'Thank you for your business!'
+    const thankYouWidth = helveticaBoldFont.widthOfTextAtSize(thankYouText, 12)
+    page.drawText(thankYouText, {
+      x: (width - thankYouWidth) / 2,
+      y: currentY,
+      size: 12,
+      font: helveticaBoldFont,
+      color: primaryBlue,
+    })
+
+    // Payment info if provided
+    if (process.env.COMPANY_PAYMENT_INFO) {
+      currentY -= 15
+      const paymentText = 'Payment Information:'
+      const paymentWidth = helveticaFont.widthOfTextAtSize(paymentText, 8)
+      page.drawText(paymentText, {
+        x: (width - paymentWidth) / 2,
+        y: currentY,
+        size: 8,
+        font: helveticaFont,
+        color: mediumGray,
+      })
+    }
+
+    // Payment info if provided
+    if (process.env.COMPANY_PAYMENT_INFO) {
+      currentY -= 15
+      const paymentInfo = process.env.COMPANY_PAYMENT_INFO
+      const paymentInfoWidth = helveticaFont.widthOfTextAtSize(paymentInfo, 8)
+      page.drawText(paymentInfo, {
+        x: (width - paymentInfoWidth) / 2,
+        y: currentY,
+        size: 8,
+        font: helveticaFont,
+        color: mediumGray,
+      })
+    }
+
+    // Bottom border
+    page.drawLine({
+      start: { x: margin, y: margin },
+      end: { x: width - margin, y: margin },
+      thickness: 1,
+      color: lightGray,
+    })
+
+    // ==========================================
+    // RETURN PDF BUFFER
+    // ==========================================
+    
+    const pdfBytes = await pdfDoc.save()
+    return Buffer.from(pdfBytes)
+  } catch (error) {
+    console.error('Error generating PDF buffer:', error)
+    throw error
+  }
+}
+
+/**
  * Wrap text to fit within a maximum width
  */
 function wrapText(

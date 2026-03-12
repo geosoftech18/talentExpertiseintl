@@ -12,6 +12,8 @@ import Mentors from "@/components/pages/mentors"
 import AddNewMentor from "@/components/pages/add-new-mentor"
 import TeamMembers from "@/components/pages/team-members"
 import AddNewTeamMember from "@/components/pages/add-new-team-member"
+import Users from "@/components/pages/users"
+import Admins from "@/components/pages/admins"
 import Venues from "@/components/pages/venues"
 import AddNewVenue from "@/components/pages/add-new-venue"
 import AllSchedules from "@/components/pages/all-schedules"
@@ -143,6 +145,10 @@ function AdminPageContent() {
           onAddMentor={() => navigateToPage("add-mentor")}
           onEditMentor={(id) => navigateToPage("add-mentor", id, "mentor")}
         />
+      case "users-list":
+        return <Users />
+      case "admins":
+        return <Admins />
       case "team":
         return <TeamMembers 
           onAddTeamMember={() => navigateToPage("add-team-member")}

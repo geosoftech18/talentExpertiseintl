@@ -11,6 +11,7 @@ export async function GET(request: NextRequest) {
     const [
       totalPublishedPrograms,
       totalActiveVenues,
+      totalLiveSchedules,
       newRegistrationsCount,
       previousRegistrationsCount,
       newEnquiriesCount,
@@ -25,6 +26,10 @@ export async function GET(request: NextRequest) {
       // Total active venues
       prisma.venue.count({
         where: { status: 'Active' },
+      }),
+      // Total live schedules (Open status)
+      prisma.schedule.count({
+        where: { status: 'Open' },
       }),
       // New registrations in last 30 days
       prisma.courseRegistration.count({
@@ -125,12 +130,22 @@ export async function GET(request: NextRequest) {
       ? newEnquiriesCount - previousEnquiriesCount
       : newEnquiriesCount > 0 ? newEnquiriesCount : 0
 
+    // Debug logging (can be removed in production)
+    console.log('[Dashboard Stats]', {
+      newRegistrationsCount,
+      previousRegistrationsCount,
+      registrationsChange,
+      thirtyDaysAgo: thirtyDaysAgo.toISOString(),
+      now: now.toISOString(),
+    })
+
     return NextResponse.json({
       success: true,
       data: {
         stats: {
           totalPublishedPrograms,
           totalActiveVenues,
+          totalLiveSchedules,
           newRegistrations: newRegistrationsCount,
           registrationsChange: registrationsChange >= 0 ? `+${registrationsChange}` : `${registrationsChange}`,
           newEnquiries: newEnquiriesCount,

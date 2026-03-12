@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { TrendingUp, Users, BookOpen, HelpCircle } from "lucide-react"
+import { TrendingUp, Users, BookOpen, HelpCircle, Calendar } from "lucide-react"
 import StatCard from "@/components/stat-card"
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts"
 
@@ -15,6 +15,7 @@ interface DashboardData {
   stats: {
     totalPublishedPrograms: number
     totalActiveVenues: number
+    totalLiveSchedules: number
     newRegistrations: number
     registrationsChange: string
     newEnquiries: number
@@ -44,6 +45,11 @@ export default function Dashboard({ onAddProgram, onViewRegistrations, onManageT
         }
         
         setData(result.data)
+        // Debug logging (can be removed in production)
+        console.log('[Dashboard] Fetched data:', {
+          newRegistrations: result.data?.stats?.newRegistrations,
+          registrationsChange: result.data?.stats?.registrationsChange,
+        })
       } catch (err) {
         console.error('Error fetching dashboard data:', err)
         setError(err instanceof Error ? err.message : 'Failed to load dashboard data')
@@ -83,6 +89,13 @@ export default function Dashboard({ onAddProgram, onViewRegistrations, onManageT
       icon: BookOpen, 
       color: "from-[#00d9ff] to-[#00f5d4]" 
     },
+    {
+      label: "Total Live Schedules",
+      value: data.stats.totalLiveSchedules.toString(),
+      change: "+0",
+      icon: Calendar,
+      color: "from-[#ff6b35] to-[#f7931e]",
+    },
     { 
       label: "Total Training Locations", 
       value: data.stats.totalActiveVenues.toString(), 
@@ -119,7 +132,7 @@ export default function Dashboard({ onAddProgram, onViewRegistrations, onManageT
       </div>
 
       {/* Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
         {stats.map((stat, index) => (
           <StatCard key={index} {...stat} />
         ))}
@@ -139,12 +152,12 @@ export default function Dashboard({ onAddProgram, onViewRegistrations, onManageT
         >
           View All Registrations
         </button>
-        <button 
+        {/* <button 
           onClick={onManageTestimonials}
           className="px-6 py-4 theme-card text-accent rounded-lg font-semibold hover:bg-muted transition-all"
         >
           Manage Testimonials
-        </button>
+        </button> */}
       </div>
 
       {/* Charts and Pending Items */}

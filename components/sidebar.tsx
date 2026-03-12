@@ -83,8 +83,11 @@ export default function Sidebar({ isOpen, onNavigate, currentPage }: SidebarProp
       label: "User & Team Management",
       icon: Users,
       submenu: [
-        { id: "team", label: "Team Members" },
+        { id: "admins", label: "Admins" },
+        { id: "users-list", label: "Users" },
+       
         { id: "mentors", label: "Mentors" },
+       
       ],
     },
     { id: "orders", label: "Orders", icon: Briefcase },
@@ -100,7 +103,7 @@ export default function Sidebar({ isOpen, onNavigate, currentPage }: SidebarProp
         { id: "in-house-requests", label: "In-House Requests" },
       ],
     },
-    { id: "settings", label: "System Settings", icon: Settings },
+  
   ]
 
   const toggleSubmenu = (id: string) => {

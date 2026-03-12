@@ -1,7 +1,9 @@
 import { prisma } from '@/lib/prisma'
-import { generateInvoicePDF } from '@/lib/utils/invoice-pdf'
+import { generateInvoicePDF, generateInvoicePDFBuffer } from '@/lib/utils/invoice-pdf'
 import { sendEmail } from '@/lib/email'
+import { uploadToR2, isR2Configured } from '@/lib/storage/cloudflare-r2'
 import path from 'path'
+import fs from 'fs'
 
 /**
  * Generate next invoice number
@@ -205,33 +207,54 @@ export async function createInvoice(params: CreateInvoiceParams) {
     },
   })
 
-  // Generate PDF
-  const publicDir = path.join(process.cwd(), 'public')
-  const invoicesDir = path.join(publicDir, 'invoices')
+  // Generate PDF and upload to Cloudflare R2 or save locally
   const pdfFileName = `${invoiceNo}.pdf`
-  const pdfPath = path.join(invoicesDir, pdfFileName)
+  let pdfUrl: string
+  let pdfPath: string | null = null
+  let pdfBuffer: Buffer | null = null // Keep buffer for email attachment if using R2
 
-  await generateInvoicePDF(
-    {
-      invoiceNo,
-      issueDate,
-      // dueDate is optional now - not shown in PDF
-      customerName: name,
-      customerEmail: email,
-      customerAddress: address || undefined,
-      customerCity: city || undefined,
-      customerCountry: country || undefined,
-      courseTitle: courseInfo,
-      amount: totalAmount, // Total amount
-      status: invoiceStatus,
-      participants: participantsCount,
-      unitPrice: unitPrice,
-    },
-    pdfPath
-  )
+  const invoicePdfData = {
+    invoiceNo,
+    issueDate,
+    customerName: name,
+    customerEmail: email,
+    customerAddress: address || undefined,
+    customerCity: city || undefined,
+    customerCountry: country || undefined,
+    courseTitle: courseInfo,
+    amount: totalAmount,
+    status: invoiceStatus,
+    participants: participantsCount,
+    unitPrice: unitPrice,
+  }
+
+  // Check if R2 is configured
+  if (isR2Configured()) {
+    try {
+      // Generate PDF buffer and upload to R2
+      pdfBuffer = await generateInvoicePDFBuffer(invoicePdfData)
+      pdfUrl = await uploadToR2(pdfBuffer, pdfFileName, 'application/pdf')
+      console.log(`✅ Invoice PDF uploaded to Cloudflare R2: ${pdfUrl}`)
+    } catch (r2Error) {
+      console.error('❌ Error uploading to R2, falling back to local storage:', r2Error)
+      // Fallback to local storage if R2 upload fails
+      const publicDir = path.join(process.cwd(), 'public')
+      const invoicesDir = path.join(publicDir, 'invoices')
+      pdfPath = path.join(invoicesDir, pdfFileName)
+      await generateInvoicePDF(invoicePdfData, pdfPath)
+      pdfUrl = `/invoices/${pdfFileName}`
+      pdfBuffer = null // Clear buffer since we're using local file
+    }
+  } else {
+    // Use local storage if R2 is not configured
+    const publicDir = path.join(process.cwd(), 'public')
+    const invoicesDir = path.join(publicDir, 'invoices')
+    pdfPath = path.join(invoicesDir, pdfFileName)
+    await generateInvoicePDF(invoicePdfData, pdfPath)
+    pdfUrl = `/invoices/${pdfFileName}`
+  }
 
   // Update invoice with PDF URL
-  const pdfUrl = `/invoices/${pdfFileName}`
   await prisma.invoice.update({
     where: { id: invoice.id },
     data: { pdfUrl },
@@ -243,19 +266,26 @@ export async function createInvoice(params: CreateInvoiceParams) {
     // Generate email HTML
     const emailHtml = generateInvoiceEmailHTML(invoiceNo, name, courseInfo, totalAmount, dueDate)
 
+    // Prepare attachment - use buffer if available (R2), otherwise use file path (local)
+    const attachment = pdfBuffer
+      ? {
+          filename: pdfFileName,
+          content: pdfBuffer,
+          contentType: 'application/pdf',
+        }
+      : {
+          filename: pdfFileName,
+          path: pdfPath!,
+          contentType: 'application/pdf',
+        }
+
     // Send email with PDF attachment
     emailSent = await sendEmail({
       to: email,
       subject: `Invoice ${invoiceNo} - ${courseInfo}`,
       html: emailHtml,
       text: `Invoice ${invoiceNo} for ${courseInfo}. Amount: $${totalAmount.toFixed(2)}${participantsCount > 1 ? ` (${participantsCount} participants × $${unitPrice.toFixed(2)})` : ''}. Please find the invoice PDF attached.`,
-      attachments: [
-        {
-          filename: pdfFileName,
-          path: pdfPath,
-          contentType: 'application/pdf',
-        },
-      ],
+      attachments: [attachment],
     })
 
     if (!emailSent) {

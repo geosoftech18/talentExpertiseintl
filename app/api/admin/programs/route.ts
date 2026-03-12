@@ -74,17 +74,8 @@ export async function GET(request: NextRequest) {
     // Build where clause
     const where: any = status ? { status } : {}
     
-    // Add search filter if provided
-    // Note: MongoDB with Prisma uses contains (case-sensitive)
-    // For case-insensitive, we'll filter results after fetching
-    if (search && search.trim()) {
-      const searchTerm = search.trim()
-      where.OR = [
-        { refCode: { contains: searchTerm } },
-        { programName: { contains: searchTerm } },
-        { category: { contains: searchTerm } },
-      ]
-    }
+    // Note: We don't add search to the database query here because MongoDB with Prisma
+    // doesn't support case-insensitive search well. We'll filter results after fetching.
 
     // Build query based on whether details are needed
     const queryOptions: any = {
@@ -119,39 +110,57 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    const [programs, total] = await Promise.all([
-      prisma.program.findMany(queryOptions),
-      prisma.program.count({ where }),
+    // Fetch programs (without search filter for now)
+    const [allPrograms, totalBeforeSearch] = await Promise.all([
+      prisma.program.findMany({
+        where: status ? { status } : {},
+        ...(includeDetails ? {
+          include: {
+            courseOutline: true,
+            certifications: true,
+            faqs: true,
+          }
+        } : {
+          select: {
+            id: true,
+            refCode: true,
+            programName: true,
+            shortDescription: true,
+            category: true,
+            type: true,
+            status: true,
+            duration: true,
+            certificateIds: true,
+            createdAt: true,
+            updatedAt: true,
+          }
+        }),
+        orderBy: { createdAt: 'desc' },
+      }),
+      prisma.program.count({ where: status ? { status } : {} }),
     ])
 
-    // If search is provided, do case-insensitive filtering on results
-    let filteredPrograms = programs
-    let filteredTotal = total
+    // Apply case-insensitive search filter if provided
+    let filteredPrograms = allPrograms
+    let filteredTotal = totalBeforeSearch
+    
     if (search && search.trim()) {
-      const searchTerm = search.trim().toLowerCase()
-      filteredPrograms = programs.filter((program: any) => {
-        const refCodeMatch = program.refCode?.toLowerCase().includes(searchTerm) || false
-        const nameMatch = program.programName?.toLowerCase().includes(searchTerm) || false
-        const categoryMatch = program.category?.toLowerCase().includes(searchTerm) || false
+      const searchLower = search.trim().toLowerCase()
+      filteredPrograms = allPrograms.filter((program: any) => {
+        const refCodeMatch = program.refCode?.toLowerCase().includes(searchLower) || false
+        const nameMatch = program.programName?.toLowerCase().includes(searchLower) || false
+        const categoryMatch = program.category?.toLowerCase().includes(searchLower) || false
         return refCodeMatch || nameMatch || categoryMatch
       })
-      // For accurate total count with case-insensitive search, we need to count all matching programs
-      // This is a limitation - for better performance, consider using MongoDB text indexes
-      const allProgramsForCount = await prisma.program.findMany({
-        where: status ? { status } : {},
-        select: { refCode: true, programName: true, category: true },
-      })
-      filteredTotal = allProgramsForCount.filter((p: any) => {
-        const refCodeMatch = p.refCode?.toLowerCase().includes(searchTerm) || false
-        const nameMatch = p.programName?.toLowerCase().includes(searchTerm) || false
-        const categoryMatch = p.category?.toLowerCase().includes(searchTerm) || false
-        return refCodeMatch || nameMatch || categoryMatch
-      }).length
+      filteredTotal = filteredPrograms.length
     }
+
+    // Apply pagination after filtering
+    const paginatedPrograms = filteredPrograms.slice(skip, skip + limit)
 
     return NextResponse.json({
       success: true,
-      data: filteredPrograms,
+      data: paginatedPrograms,
       pagination: {
         page,
         limit,

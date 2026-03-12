@@ -288,14 +288,21 @@ function NewProgramsPageContent() {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-slate-50 to-white">
-      <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+      <div className="container mx-auto   ">
         {/* Header */}
-        <div className="mb-6 sm:mb-8">
-          <h1 className="text-3xl sm:text-4xl font-bold text-slate-900 mb-2">New Programs</h1>
-          <p className="text-slate-600 text-sm sm:text-base">
-            Discover our latest and featured training programs
-          </p>
+        <div className="relative bg-gradient-to-r from-[#0A3049] via-[#0A3049] to-[#0A3049] text-white overflow-hidden">
+        <div className="absolute inset-0 bg-grid-white/[0.05] bg-[size:30px_30px]" />
+        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 py-12 sm:py-16 md:py-20">
+          <div className="max-w-3xl">
+            <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-5xl font-bold mb-4 sm:mb-6 leading-tight">
+              New Programs
+            </h1>
+            <p className="text-base sm:text-lg md:text-xl text-blue-100 leading-relaxed">
+              Discover our latest and featured training programs
+            </p>
+          </div>
         </div>
+      </div>
 
         {/* Search and Filter Toggle */}
         <div className="flex flex-col sm:flex-row gap-4 mb-6">

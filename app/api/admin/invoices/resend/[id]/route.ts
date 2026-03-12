@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { sendEmail } from '@/lib/email'
+import { downloadFromR2, extractKeyFromUrl, isR2Configured } from '@/lib/storage/cloudflare-r2'
 import path from 'path'
 import fs from 'fs'
 
@@ -34,14 +35,58 @@ export async function POST(
       )
     }
 
-    // Get PDF path
-    const pdfPath = path.join(process.cwd(), 'public', invoice.pdfUrl)
+    // Check if PDF is stored in R2 or locally
+    let attachment: { filename: string; path?: string; content?: Buffer; contentType: string }
+    const pdfFileName = `${invoice.invoiceNo}.pdf`
 
-    if (!fs.existsSync(pdfPath)) {
-      return NextResponse.json(
-        { success: false, error: 'Invoice PDF file not found on server' },
-        { status: 404 }
-      )
+    // Check if URL is an R2 URL (contains year/month pattern or matches R2 public URL)
+    const isR2Url = invoice.pdfUrl.includes('r2.cloudflarestorage.com') || 
+                    invoice.pdfUrl.match(/\d{4}\/\d{2}\//) ||
+                    (isR2Configured() && process.env.CLOUDFLARE_R2_PUBLIC_URL && invoice.pdfUrl.startsWith(process.env.CLOUDFLARE_R2_PUBLIC_URL))
+
+    if (isR2Url && isR2Configured()) {
+      try {
+        // Extract key from URL and download from R2
+        const key = extractKeyFromUrl(invoice.pdfUrl)
+        if (!key) {
+          throw new Error('Could not extract R2 key from URL')
+        }
+        const pdfBuffer = await downloadFromR2(key)
+        attachment = {
+          filename: pdfFileName,
+          content: pdfBuffer,
+          contentType: 'application/pdf',
+        }
+      } catch (r2Error) {
+        console.error('Error downloading from R2, trying local fallback:', r2Error)
+        // Fallback to local file if R2 download fails
+        const pdfPath = path.join(process.cwd(), 'public', invoice.pdfUrl)
+        if (!fs.existsSync(pdfPath)) {
+          return NextResponse.json(
+            { success: false, error: 'Invoice PDF file not found' },
+            { status: 404 }
+          )
+        }
+        attachment = {
+          filename: pdfFileName,
+          path: pdfPath,
+          contentType: 'application/pdf',
+        }
+      }
+    } else {
+      // Local file path
+      const pdfPath = path.join(process.cwd(), 'public', invoice.pdfUrl)
+      if (!fs.existsSync(pdfPath)) {
+        return NextResponse.json(
+          { success: false, error: 'Invoice PDF file not found on server' },
+          { status: 404 }
+        )
+      }
+      attachment = {
+        filename: pdfFileName,
+        path: pdfPath,
+        contentType: 'application/pdf',
+      }
     }
 
     // Generate email HTML
@@ -59,13 +104,7 @@ export async function POST(
       subject: `Invoice ${invoice.invoiceNo} - ${invoice.courseTitle || 'Course Registration'}`,
       html: emailHtml,
       text: `Invoice ${invoice.invoiceNo} for ${invoice.courseTitle || 'Course Registration'}. Amount: $${invoice.amount.toFixed(2)}. Due date: ${invoice.dueDate.toLocaleDateString()}. Please find the invoice PDF attached.`,
-      attachments: [
-        {
-          filename: `${invoice.invoiceNo}.pdf`,
-          path: pdfPath,
-          contentType: 'application/pdf',
-        },
-      ],
+      attachments: [attachment],
     })
 
     if (!emailSent) {

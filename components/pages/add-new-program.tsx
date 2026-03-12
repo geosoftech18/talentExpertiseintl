@@ -584,21 +584,27 @@ export default function AddNewProgram({ onBack, editId }: { onBack?: () => void;
                 required
               >
                 <option value="">Choose Category</option>
-                <option value="Admin & Secretarial">Admin & Secretarial</option>
+                <option value="Administration & Secretarial">Administration & Secretarial</option>
+                <option value="Artificial Intelligence (AI)">Artificial Intelligence (AI)</option>
+                <option value="Banking, Finance & Accounting">Banking, Finance & Accounting</option>
+                <option value="Construction Management">Construction Management</option>
                 <option value="Contracts Management">Contracts Management</option>
                 <option value="Customer Service">Customer Service</option>
                 <option value="Electrical Engineering">Electrical Engineering</option>
-                <option value="Finance & Accounting">Finance & Accounting</option>
-                <option value="Health & Safety">Health & Safety</option>
-                <option value="HR Management">HR Management</option>
+                <option value="Quality, Health & Safety">Quality, Health & Safety</option>
+                <option value="Human Resources">Human Resources</option>
                 <option value="Information Technology">Information Technology</option>
+                <option value="Law & Legal Training Programs">Law & Legal Training Programs</option>
                 <option value="Maintenance Management">Maintenance Management</option>
                 <option value="Management & Leadership">Management & Leadership</option>
                 <option value="Mechanical Engineering">Mechanical Engineering</option>
+                <option value="Mining Engineering">Mining Engineering</option>
                 <option value="Oil & Gas">Oil & Gas</option>
+                <option value="Police and Law Enforcement">Police and Law Enforcement</option>
                 <option value="Project Management">Project Management</option>
                 <option value="Public Relations">Public Relations</option>
                 <option value="Purchasing Management">Purchasing Management</option>
+                <option value="Ships & Port Management">Ships & Port Management</option>
                 <option value="Urban Planning & Development">Urban Planning & Development</option>
               </select>
             </div>
