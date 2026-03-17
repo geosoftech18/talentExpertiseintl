@@ -13,6 +13,7 @@ interface Mentor {
   imageUrl: string | null
   bio: string | null
   yearsOfExperience: number | null
+  categories?: string[]
 }
 
 export default function Mentors({ onAddMentor, onEditMentor }: { onAddMentor?: () => void; onEditMentor?: (id: string) => void }) {
@@ -264,6 +265,22 @@ export default function Mentors({ onAddMentor, onEditMentor }: { onAddMentor?: (
                 <div>
                   <h3 className="font-semibold theme-text mb-2">Bio</h3>
                   <p className="theme-muted">{previewMentor.bio}</p>
+                </div>
+              )}
+
+              {previewMentor.categories && previewMentor.categories.length > 0 && (
+                <div>
+                  <h3 className="font-semibold theme-text mb-2">Categories he teaches</h3>
+                  <div className="flex flex-wrap gap-2">
+                    {previewMentor.categories.map((cat) => (
+                      <span
+                        key={cat}
+                        className="px-3 py-1 rounded-full text-sm bg-primary/10 text-primary theme-text font-medium"
+                      >
+                        {cat}
+                      </span>
+                    ))}
+                  </div>
                 </div>
               )}
             </div>

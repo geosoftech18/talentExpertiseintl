@@ -272,6 +272,7 @@ model Mentor {
   bio                   String?
   yearsOfExperience     Int?
   imageUrl              String?
+  categories            String[]  @default([]) // Program categories this mentor can teach
   // Relations
   schedules             Schedule[]
   // Metadata

@@ -10,11 +10,37 @@ export default function AddNewMentor({ onBack, editId }: { onBack?: () => void; 
     email: "",
     bio: "",
     yearsOfExperience: "",
+    categories: [] as string[],
   })
 
+  const [categories, setCategories] = useState<string[]>([])
+  const [loadingCategories, setLoadingCategories] = useState(true)
   const [image, setImage] = useState<File | null>(null)
   const [imagePreview, setImagePreview] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
+
+  // Fetch available categories from programs
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        setLoadingCategories(true)
+        const response = await fetch('/api/admin/programs?limit=500')
+        const result = await response.json()
+        if (result.success && Array.isArray(result.data)) {
+          const categorySet = new Set<string>()
+          result.data.forEach((p: { category?: string }) => {
+            if (p.category && p.category.trim()) categorySet.add(p.category.trim())
+          })
+          setCategories(Array.from(categorySet).sort())
+        }
+      } catch (err) {
+        console.error('Error fetching categories:', err)
+      } finally {
+        setLoadingCategories(false)
+      }
+    }
+    fetchCategories()
+  }, [])
 
   // Load mentor data if editing
   useEffect(() => {
@@ -33,6 +59,7 @@ export default function AddNewMentor({ onBack, editId }: { onBack?: () => void; 
                 email: mentor.email || "",
                 bio: mentor.bio || "",
                 yearsOfExperience: mentor.yearsOfExperience ? String(mentor.yearsOfExperience) : "",
+                categories: Array.isArray(mentor.categories) ? mentor.categories : [],
               })
               if (mentor.imageUrl) {
                 setImagePreview(mentor.imageUrl)
@@ -51,6 +78,16 @@ export default function AddNewMentor({ onBack, editId }: { onBack?: () => void; 
 
   const handleInputChange = (field: string, value: string) => {
     setFormData((prev) => ({ ...prev, [field]: value }))
+  }
+
+  const toggleCategory = (category: string) => {
+    setFormData((prev) => {
+      const current = prev.categories || []
+      if (current.includes(category)) {
+        return { ...prev, categories: current.filter((c) => c !== category) }
+      }
+      return { ...prev, categories: [...current, category] }
+    })
   }
 
   const handleImageUpload = (file: File | null) => {
@@ -94,6 +131,7 @@ export default function AddNewMentor({ onBack, editId }: { onBack?: () => void; 
         bio: formData.bio,
         yearsOfExperience: formData.yearsOfExperience ? parseInt(formData.yearsOfExperience) : null,
         imageUrl: imageUrl || null,
+        categories: formData.categories || [],
       }
 
       const response = await fetch('/api/admin/mentors', {
@@ -262,6 +300,41 @@ export default function AddNewMentor({ onBack, editId }: { onBack?: () => void; 
                 required
               />
               <p className="text-xs theme-muted">Enter the number of years of professional experience</p>
+            </div>
+
+            {/* Categories (multi-select) */}
+            <div className="space-y-2">
+              <label className="block text-sm font-semibold theme-text">
+                Categories
+              </label>
+              <p className="text-xs theme-muted">Select the program categories this mentor can teach</p>
+              {loadingCategories ? (
+                <p className="text-sm theme-muted">Loading categories...</p>
+              ) : categories.length === 0 ? (
+                <p className="text-sm theme-muted">No categories found. Create programs first to see categories.</p>
+              ) : (
+                <div className="max-h-48 overflow-y-auto rounded-lg border border-border bg-input p-3 space-y-2">
+                  {categories.map((cat) => (
+                    <label
+                      key={cat}
+                      className="flex items-center gap-2 cursor-pointer hover:bg-muted/50 rounded px-2 py-1.5 transition-colors"
+                    >
+                      <input
+                        type="checkbox"
+                        checked={(formData.categories || []).includes(cat)}
+                        onChange={() => toggleCategory(cat)}
+                        className="rounded border-border text-primary focus:ring-primary"
+                      />
+                      <span className="text-sm theme-text">{cat}</span>
+                    </label>
+                  ))}
+                </div>
+              )}
+              {(formData.categories?.length ?? 0) > 0 && (
+                <p className="text-xs theme-muted">
+                  Selected: {formData.categories!.join(", ")}
+                </p>
+              )}
             </div>
           </div>
 

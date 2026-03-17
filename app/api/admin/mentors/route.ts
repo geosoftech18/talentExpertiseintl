@@ -12,6 +12,7 @@ export async function POST(request: NextRequest) {
         bio: body.bio || null,
         yearsOfExperience: body.yearsOfExperience ? parseInt(body.yearsOfExperience) : null,
         imageUrl: body.imageUrl || null,
+        categories: Array.isArray(body.categories) ? body.categories : [],
       },
     })
 
@@ -46,6 +47,7 @@ export async function GET(request: NextRequest) {
           bio: true,
           yearsOfExperience: true,
           imageUrl: true,
+          categories: true,
           createdAt: true,
           updatedAt: true,
         },
@@ -95,6 +97,7 @@ export async function PUT(request: NextRequest) {
           ? parseInt(updateData.yearsOfExperience) 
           : null,
         imageUrl: updateData.imageUrl || null,
+        categories: Array.isArray(updateData.categories) ? updateData.categories : undefined,
       },
     })
 

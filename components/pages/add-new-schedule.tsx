@@ -46,6 +46,7 @@ interface Mentor {
   imageUrl: string | null
   bio: string | null
   yearsOfExperience: number | null
+  categories?: string[]
 }
 
 // Venue interface
@@ -213,7 +214,22 @@ export default function AddNewSchedule({ onBack, editId }: { onBack?: () => void
   }, [])
 
   const handleInputChange = (field: string, value: string | boolean) => {
-    setFormData((prev) => ({ ...prev, [field]: value }))
+    setFormData((prev) => {
+      const next = { ...prev, [field]: value }
+      // When course changes, clear mentor if they don't teach this course's category
+      if (field === "program" && typeof value === "string") {
+        const program = programs.find((p) => p.name === value)
+        if (program?.category && prev.mentor) {
+          const mentor = mentors.find((m) => m.id === prev.mentor)
+          const teachesCategory =
+            mentor &&
+            Array.isArray(mentor.categories) &&
+            mentor.categories.includes(program.category)
+          if (!teachesCategory) next.mentor = ""
+        }
+      }
+      return next
+    })
   }
 
   const resetForm = () => {
@@ -313,6 +329,24 @@ export default function AddNewSchedule({ onBack, editId }: { onBack?: () => void
 
   // Get selected program details
   const selectedProgram = programs.find((p) => p.name === formData.program)
+
+  // Mentors filtered by course category: only show mentors who teach this course's category
+  const mentorsMatchingCategory = selectedProgram?.category
+    ? mentors.filter(
+        (m) =>
+          Array.isArray(m.categories) &&
+          m.categories.length > 0 &&
+          m.categories.includes(selectedProgram.category)
+      )
+    : []
+  // Include currently selected mentor in edit mode so existing assignment stays visible
+  const mentorsForCourse =
+    formData.mentor && !mentorsMatchingCategory.some((m) => m.id === formData.mentor)
+      ? [
+          ...mentorsMatchingCategory,
+          ...mentors.filter((m) => m.id === formData.mentor),
+        ]
+      : mentorsMatchingCategory
 
   return (
     <div className="min-h-screen theme-bg p-6">
@@ -436,12 +470,16 @@ export default function AddNewSchedule({ onBack, editId }: { onBack?: () => void
               )}
             </div>
 
-            {/* Mentor Field - Dropdown */}
+            {/* Mentor Field - Dropdown (filtered by course category) */}
             <div className="space-y-2 mb-6">
               <Label htmlFor="mentor" className="text-sm font-medium theme-text">
                 Mentor <span className="text-destructive">*</span>
               </Label>
-              {loadingMentors ? (
+              {!selectedProgram ? (
+                <div className="p-4 border border-border rounded-lg bg-muted/30">
+                  <p className="text-sm theme-muted">Select a course first to see mentors who teach that category.</p>
+                </div>
+              ) : loadingMentors ? (
                 <div className="p-4 text-center theme-muted">
                   Loading mentors...
                 </div>
@@ -449,6 +487,13 @@ export default function AddNewSchedule({ onBack, editId }: { onBack?: () => void
                 <div className="p-4 border border-border rounded-lg">
                   <p className="text-sm theme-muted mb-2">No mentors found.</p>
                   <p className="text-xs theme-muted">Please create a mentor first before scheduling.</p>
+                </div>
+              ) : mentorsForCourse.length === 0 ? (
+                <div className="p-4 border border-border rounded-lg">
+                  <p className="text-sm theme-muted mb-2">No mentors teach this course&apos;s category.</p>
+                  <p className="text-xs theme-muted">
+                    Course category: <span className="font-medium theme-text">{selectedProgram.category}</span>. Add this category to a mentor&apos;s profile so they appear here.
+                  </p>
                 </div>
               ) : (
                 <>
@@ -461,13 +506,16 @@ export default function AddNewSchedule({ onBack, editId }: { onBack?: () => void
                       <SelectValue placeholder="Select a mentor..." />
                     </SelectTrigger>
                     <SelectContent>
-                      {mentors.map((mentor) => (
+                      {mentorsForCourse.map((mentor) => (
                         <SelectItem key={mentor.id} value={mentor.id}>
                           {mentor.name}
                         </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
+                  <p className="text-xs theme-muted mt-1">
+                    Showing {mentorsForCourse.length} mentor{mentorsForCourse.length !== 1 ? "s" : ""} who teach {selectedProgram.category}.
+                  </p>
                   {formData.mentor && (
                     <div className="text-xs theme-muted mt-1 space-y-1">
                       {(() => {
