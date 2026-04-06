@@ -2,6 +2,7 @@ import { prisma } from '@/lib/prisma'
 import { generateInvoicePDF, generateInvoicePDFBuffer } from '@/lib/utils/invoice-pdf'
 import { sendEmail } from '@/lib/email'
 import { uploadToR2, isR2Configured } from '@/lib/storage/cloudflare-r2'
+import { getInvoiceStorageDir, getLocalInvoicePdfUrl } from '@/lib/invoice-storage'
 import path from 'path'
 import fs from 'fs'
 
@@ -238,20 +239,18 @@ export async function createInvoice(params: CreateInvoiceParams) {
     } catch (r2Error) {
       console.error('❌ Error uploading to R2, falling back to local storage:', r2Error)
       // Fallback to local storage if R2 upload fails
-      const publicDir = path.join(process.cwd(), 'public')
-      const invoicesDir = path.join(publicDir, 'invoices')
+      const invoicesDir = getInvoiceStorageDir()
       pdfPath = path.join(invoicesDir, pdfFileName)
       await generateInvoicePDF(invoicePdfData, pdfPath)
-      pdfUrl = `/invoices/${pdfFileName}`
+      pdfUrl = getLocalInvoicePdfUrl(pdfFileName)
       pdfBuffer = null // Clear buffer since we're using local file
     }
   } else {
-    // Use local storage if R2 is not configured
-    const publicDir = path.join(process.cwd(), 'public')
-    const invoicesDir = path.join(publicDir, 'invoices')
+    // Local disk (use INVOICE_STORAGE_PATH on Coolify for persistent volume)
+    const invoicesDir = getInvoiceStorageDir()
     pdfPath = path.join(invoicesDir, pdfFileName)
     await generateInvoicePDF(invoicePdfData, pdfPath)
-    pdfUrl = `/invoices/${pdfFileName}`
+    pdfUrl = getLocalInvoicePdfUrl(pdfFileName)
   }
 
   // Update invoice with PDF URL

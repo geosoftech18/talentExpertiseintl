@@ -3,7 +3,7 @@ import { prisma } from '@/lib/prisma'
 import { sendEmail } from '@/lib/email'
 import { generateOrderNotificationEmailHTML, generateOrderNotificationEmailText } from '@/lib/utils/order-notification-email'
 import { createInvoice } from '@/lib/services/invoice-service'
-import path from 'path'
+import { resolveLocalInvoicePdfPath } from '@/lib/invoice-storage'
 import fs from 'fs'
 
 export async function GET(request: NextRequest) {
@@ -295,7 +295,8 @@ export async function POST(request: NextRequest) {
         })
 
         invoiceNo = invoiceResult.invoiceNo
-        invoicePdfPath = path.join(process.cwd(), 'public', invoiceResult.pdfUrl)
+        invoicePdfPath =
+          resolveLocalInvoicePdfPath(invoiceResult.pdfUrl) ?? undefined
         
         console.log(`✅ Invoice generated for order: ${invoiceResult.invoiceNo}`)
       } catch (invoiceError) {

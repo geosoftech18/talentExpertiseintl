@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { sendEmail } from '@/lib/email'
 import { downloadFromR2, extractKeyFromUrl, isR2Configured } from '@/lib/storage/cloudflare-r2'
-import path from 'path'
+import { resolveLocalInvoicePdfPath } from '@/lib/invoice-storage'
 import fs from 'fs'
 
 /**
@@ -59,9 +59,8 @@ export async function POST(
         }
       } catch (r2Error) {
         console.error('Error downloading from R2, trying local fallback:', r2Error)
-        // Fallback to local file if R2 download fails
-        const pdfPath = path.join(process.cwd(), 'public', invoice.pdfUrl)
-        if (!fs.existsSync(pdfPath)) {
+        const pdfPath = resolveLocalInvoicePdfPath(invoice.pdfUrl)
+        if (!pdfPath || !fs.existsSync(pdfPath)) {
           return NextResponse.json(
             { success: false, error: 'Invoice PDF file not found' },
             { status: 404 }
@@ -74,9 +73,8 @@ export async function POST(
         }
       }
     } else {
-      // Local file path
-      const pdfPath = path.join(process.cwd(), 'public', invoice.pdfUrl)
-      if (!fs.existsSync(pdfPath)) {
+      const pdfPath = resolveLocalInvoicePdfPath(invoice.pdfUrl)
+      if (!pdfPath || !fs.existsSync(pdfPath)) {
         return NextResponse.json(
           { success: false, error: 'Invoice PDF file not found on server' },
           { status: 404 }
