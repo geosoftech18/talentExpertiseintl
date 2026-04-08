@@ -144,7 +144,7 @@ export default function Header() {
             <div className="flex items-center gap-4">
               <div className="flex items-center gap-2">
                 <Phone className="w-4 h-4" />
-                <span>+971-4-5473010</span>
+                <span>+971-5-61792284</span>
               </div>
               <div className="flex items-center gap-2">
                 <Mail className="w-4 h-4" />
@@ -371,7 +371,7 @@ export default function Header() {
               {/* New Programs - Highlighted with Flowing Animation */}
               <Link
                 href="/courses/new"
-                className="relative flex items-center gap-1.5 px-2 py-1 text-white font-semibold transition-all rounded-lg shadow-lg hover:shadow-xl overflow-hidden"
+                className="relative flex items-center gap-1.5 px-4 py-1 text-white font-semibold transition-all rounded-lg shadow-lg hover:shadow-xl overflow-hidden"
               >
                 {/* Base background */}
                 <span className="absolute inset-0 bg-[#0A3049]"></span>
@@ -379,7 +379,7 @@ export default function Header() {
                 <span 
                   className="absolute inset-0 w-full bg-[#fd2f2f] animate-flow-full"
                 ></span>
-                <span className="relative z-10">New Programs</span>
+                <span className="relative z-10">New</span>
               </Link>
 
               <Link
@@ -648,7 +648,7 @@ export default function Header() {
                   <span 
                     className="absolute inset-0 w-full bg-[#fa3f2e] rounded-lg animate-flow-full"
                   ></span>
-                  <span className="relative z-10">New Programs</span>
+                  <span className="relative z-10">New</span>
                 </Link>
 
                 <Link

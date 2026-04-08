@@ -100,7 +100,7 @@ export default function ModernHeroSection() {
           <div className={`flex justify-center transition-all duration-1000 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-10'}`}>
             <Badge className="bg-[#06b6d4]/20 text-[#06b6d4] border-[#06b6d4]/30 backdrop-blur-sm px-4 py-1.5 hover:scale-110 transition-transform duration-300">
               <Sparkles className="w-3 h-3 mr-2 animate-pulse" />
-              World-Class Training Since 1983
+              World-Class Training Since 2013
             </Badge>
           </div>
 

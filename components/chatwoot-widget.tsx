@@ -19,7 +19,7 @@ export default function ChatwootWidget() {
     if (typeof window === 'undefined') return
 
     const BASE_URL = 'https://app.chatwoot.com'
-    const WEBSITE_TOKEN = 'Qf8msJG7zGv85erZhQ7pjzir'
+    const WEBSITE_TOKEN = 'TcVufujfUKFqyprQBUy3UmuQ'
 
     // Check if script is already loaded
     const existingScript = document.querySelector('script[src*="chatwoot"]')

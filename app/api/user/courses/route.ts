@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { auth } from '@/lib/auth'
+import { generateSlug } from '@/lib/utils/slug'
 
 export async function GET(request: NextRequest) {
   try {
@@ -205,6 +206,7 @@ export async function GET(request: NextRequest) {
       return {
         id: reg.id,
         courseId: reg.courseId,
+        courseSlug: program?.programName ? generateSlug(program.programName) : null,
         courseTitle: reg.courseTitle || program?.programName || 'Course',
         courseCode: program?.refCode || null,
         category: program?.category || null,

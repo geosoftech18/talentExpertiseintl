@@ -41,6 +41,7 @@ import { Textarea } from "@/components/ui/textarea"
 interface Course {
   id: string
   courseId: string | null
+  courseSlug: string | null
   courseTitle: string
   courseCode: string | null
   category: string | null
@@ -65,6 +66,7 @@ export default function UserProfile() {
   const [isLoading, setIsLoading] = useState(false)
   const [enrolledCourses, setEnrolledCourses] = useState<Course[]>([])
   const [coursesLoading, setCoursesLoading] = useState(true)
+  const [downloadingCertificateId, setDownloadingCertificateId] = useState<string | null>(null)
   
   // Get tab from URL query parameter, default to "overview"
   const tabFromUrl = searchParams.get('tab')
@@ -137,10 +139,54 @@ export default function UserProfile() {
     await signOut({ redirect: true, callbackUrl: "/" })
   }
 
+  const isCertificateEligible = (course: Course) => {
+    if (!course.schedule?.endDate || !course.id) return false
+    if ((course.orderStatus || '').toLowerCase() !== 'completed') return false
+    const endDate = new Date(course.schedule.endDate)
+    if (Number.isNaN(endDate.getTime())) return false
+    const now = new Date()
+    return endDate.getTime() <= now.getTime()
+  }
+
+  const getCourseDisplayStatus = (course: Course): "Pending" | "Incomplete" | "Completed" => {
+    const rawStatus = (course.orderStatus || '').toLowerCase()
+    if (rawStatus !== 'completed') return "Pending"
+    if (!course.schedule?.endDate) return "Incomplete"
+    const endDate = new Date(course.schedule.endDate)
+    if (Number.isNaN(endDate.getTime())) return "Incomplete"
+    return endDate.getTime() <= Date.now() ? "Completed" : "Incomplete"
+  }
+
+  const handleDownloadCertificate = async (registrationId: string) => {
+    try {
+      setDownloadingCertificateId(registrationId)
+      const response = await fetch(`/api/user/certificates/${registrationId}?preview=1`)
+      if (!response.ok) {
+        const data = await response.json().catch(() => null)
+        throw new Error(data?.error || 'Failed to generate certificate')
+      }
+
+      const blob = await response.blob()
+      const url = URL.createObjectURL(blob)
+      const anchor = document.createElement('a')
+      anchor.href = url
+      anchor.download = `certificate-${registrationId}.pdf`
+      document.body.appendChild(anchor)
+      anchor.click()
+      anchor.remove()
+      URL.revokeObjectURL(url)
+    } catch (error) {
+      console.error('Error downloading certificate:', error)
+      alert(error instanceof Error ? error.message : 'Failed to download certificate')
+    } finally {
+      setDownloadingCertificateId(null)
+    }
+  }
+
   const stats = [
     { label: "Courses Enrolled", value: enrolledCourses.length.toString(), icon: BookOpen, color: "text-blue-600" },
     { label: "Certificates", value: "0", icon: Award, color: "text-purple-600" },
-    { label: "Hours Learned", value: "0", icon: Clock, color: "text-green-600" },
+    
     { label: "Achievements", value: "0", icon: Star, color: "text-yellow-600" },
   ]
 
@@ -239,7 +285,7 @@ export default function UserProfile() {
         </div>
 
         {/* Stats Grid */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+        <div className="grid grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
           {stats.map((stat, index) => {
             const Icon = stat.icon
             return (
@@ -469,30 +515,52 @@ export default function UserProfile() {
                                         {course.orderStatus && (
                                           <div className="flex items-center gap-1">
                                             <span className="text-slate-400">•</span>
+                                            {(() => {
+                                              const displayStatus = getCourseDisplayStatus(course)
+                                              return (
                                             <Badge 
-                                              variant={course.orderStatus === 'Completed' ? 'default' : 'secondary'}
+                                              variant={displayStatus === 'Completed' ? 'default' : 'secondary'}
                                               className="text-xs"
                                             >
-                                              {course.orderStatus}
+                                              {displayStatus}
                                             </Badge>
+                                              )
+                                            })()}
                                           </div>
                                         )}
                                       </div>
                                     </div>
                                   </div>
                                 </div>
-                                {course.courseId && (
-                                  <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    className="ml-4 opacity-0 group-hover:opacity-100 transition-opacity"
-                                    asChild
-                                  >
-                                    <a href={`/courses/${course.courseId}`}>
-                                      View Course
-                                    </a>
-                                  </Button>
-                                )}
+                                <div className="ml-4 flex flex-col gap-2">
+                                  {course.courseSlug && (
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      className="opacity-0 group-hover:opacity-100 transition-opacity"
+                                      asChild
+                                    >
+                                      <a href={`/courses/${course.courseSlug}`}>
+                                        View Course
+                                      </a>
+                                    </Button>
+                                  )}
+                                  {isCertificateEligible(course) ? (
+                                    <Button
+                                      variant="outline"
+                                      size="sm"
+                                      className="opacity-100 border-amber-300 !text-amber-700 hover:bg-amber-50"
+                                      onClick={() => handleDownloadCertificate(course.id)}
+                                      disabled={downloadingCertificateId === course.id}
+                                    >
+                                      {downloadingCertificateId === course.id ? 'Generating...' : 'Download Certificate'}
+                                    </Button>
+                                  ) : (
+                                    <p className="text-xs text-amber-800 bg-amber-50 border border-amber-200 rounded-md px-2.5 py-1.5 max-w-[220px] leading-snug font-medium">
+                                      Certificate will generate after course completion.
+                                    </p>
+                                  )}
+                                </div>
                               </div>
                             </div>
                           ))
@@ -596,39 +664,19 @@ export default function UserProfile() {
                 <Button variant="outline" className="w-full justify-start" asChild>
                   <a href="/certificates">
                     <Award className="w-4 h-4 mr-2" />
-                    View Certificates
+                    Certificates
                   </a>
                 </Button>
                 <Button variant="outline" className="w-full justify-start" asChild>
                   <a href="/calendar">
                     <Calendar className="w-4 h-4 mr-2" />
-                    My Calendar
+                    Calendar
                   </a>
                 </Button>
               </CardContent>
             </Card>
 
-            <Card>
-              <CardHeader>
-                <CardTitle>Learning Streak</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-center">
-                  <div className="text-4xl font-bold text-blue-600 mb-2">7</div>
-                  <p className="text-sm text-slate-600">Days in a row</p>
-                  <div className="mt-4 flex justify-center gap-1">
-                    {[...Array(7)].map((_, i) => (
-                      <div
-                        key={i}
-                        className={`w-8 h-8 rounded-full ${
-                          i < 7 ? "bg-green-500" : "bg-slate-200"
-                        }`}
-                      ></div>
-                    ))}
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+           
           </div>
         </div>
       </div>
