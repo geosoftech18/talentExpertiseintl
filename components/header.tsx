@@ -144,7 +144,7 @@ export default function Header() {
             <div className="flex items-center gap-4">
               <div className="flex items-center gap-2">
                 <Phone className="w-4 h-4" />
-                <span>+971-5-61792284</span>
+                <span>+971-56-1792284</span>
               </div>
               <div className="flex items-center gap-2">
                 <Mail className="w-4 h-4" />

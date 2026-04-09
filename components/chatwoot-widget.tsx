@@ -4,72 +4,39 @@ import { useEffect } from 'react'
 
 declare global {
   interface Window {
-    chatwootSDK?: {
-      run: (config: {
-        websiteToken: string
-        baseUrl: string
-      }) => void
-    }
+    Tawk_API?: Record<string, unknown>
+    Tawk_LoadStart?: Date
   }
 }
 
 export default function ChatwootWidget() {
   useEffect(() => {
-    // Only load Chatwoot on client side
+    // Only load on client side
     if (typeof window === 'undefined') return
 
-    const BASE_URL = 'https://app.chatwoot.com'
-    const WEBSITE_TOKEN = 'TcVufujfUKFqyprQBUy3UmuQ'
+    const propertyId = '667a5ddaeaf3bd8d4d141600'
+    const widgetId = '1i214b5ql'
 
-    // Check if script is already loaded
-    const existingScript = document.querySelector('script[src*="chatwoot"]')
-    if (existingScript) {
-      // Script already exists, wait a bit and initialize if SDK is available
-      const initWidget = () => {
-        if (window.chatwootSDK) {
-          window.chatwootSDK.run({
-            websiteToken: WEBSITE_TOKEN,
-            baseUrl: BASE_URL
-          })
-        } else {
-          // Retry after a short delay if SDK not yet available
-          setTimeout(initWidget, 100)
-        }
-      }
-      initWidget()
+    // Keep flow safe if Tawk config is not set
+    if (!propertyId) {
+      console.warn('Tawk.to is not configured. Set NEXT_PUBLIC_TAWK_PROPERTY_ID.')
       return
     }
 
-    // Load Chatwoot script (matching the original pattern)
-    const script = document.createElement('script')
-    script.src = `${BASE_URL}/packs/js/sdk.js`
-    script.async = true
-    
-    script.onload = () => {
-      // Initialize Chatwoot widget once SDK is loaded
-      if (window.chatwootSDK) {
-        window.chatwootSDK.run({
-          websiteToken: WEBSITE_TOKEN,
-          baseUrl: BASE_URL
-        })
-      } else {
-        // Retry initialization if SDK not immediately available
-        const retryInit = setInterval(() => {
-          if (window.chatwootSDK) {
-            window.chatwootSDK.run({
-              websiteToken: WEBSITE_TOKEN,
-              baseUrl: BASE_URL
-            })
-            clearInterval(retryInit)
-          }
-        }, 100)
-        
-        // Stop retrying after 5 seconds
-        setTimeout(() => clearInterval(retryInit), 5000)
-      }
-    }
+    // Avoid duplicate injection
+    const src = `https://embed.tawk.to/${propertyId}/${widgetId}`
+    const existingScript = document.querySelector(`script[src="${src}"]`)
+    if (existingScript) return
 
-    // Insert script before the first script tag (matching original pattern)
+    window.Tawk_API = window.Tawk_API || {}
+    window.Tawk_LoadStart = new Date()
+
+    const script = document.createElement('script')
+    script.src = src
+    script.async = true
+    script.setAttribute('crossorigin', '*')
+
+    // Insert script before first script tag
     const firstScript = document.getElementsByTagName('script')[0]
     if (firstScript && firstScript.parentNode) {
       firstScript.parentNode.insertBefore(script, firstScript)
@@ -77,15 +44,11 @@ export default function ChatwootWidget() {
       document.body.appendChild(script)
     }
 
-    // Cleanup function
-    return () => {
-      // Note: We don't remove the script on unmount to prevent widget flickering
-      // The script will remain loaded for the session
-    }
+    // Keep script loaded for session to avoid widget flicker
+    return () => {}
   }, [])
 
-  // This component doesn't render anything visible
-  // Chatwoot handles the floating widget UI automatically
+  // Tawk.to handles floating widget UI automatically
   return null
 }
 

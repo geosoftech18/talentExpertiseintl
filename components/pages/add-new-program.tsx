@@ -320,7 +320,8 @@ export default function AddNewProgram({ onBack, editId }: { onBack?: () => void;
 
   const courseTypes = [
     { value: "Public Program", label: "Public Course" },
-    { value: "Signature Program", label: "Signature Course" },
+    { value: "Virtual Program", label: "Virtual Course" },
+    { value: "In-House Program", label: "In-House Course" },
   ]
 
   const handleImageUpload = (type: "main" | "card", file: File | null) => {
