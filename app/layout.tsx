@@ -4,6 +4,7 @@ import { Analytics } from "@vercel/analytics/next"
 import { ThemeProvider } from "@/components/theme-provider"
 import PublicLayout from "@/components/public-layout"
 import CopyProtection from "@/components/copy-protection"
+import RouteMetadata from "@/components/route-metadata"
 import "./globals.css"
 
 export const metadata: Metadata = {
@@ -27,6 +28,7 @@ export default function RootLayout({
           enableSystem={false}
           disableTransitionOnChange={false}
         >
+          <RouteMetadata />
           <PublicLayout>{children}</PublicLayout>
           <Analytics />
         </ThemeProvider>
