@@ -1,16 +1,24 @@
 import type React from "react"
 import type { Metadata } from "next"
+import { headers } from "next/headers"
 import { Analytics } from "@vercel/analytics/next"
 import { ThemeProvider } from "@/components/theme-provider"
 import PublicLayout from "@/components/public-layout"
 import CopyProtection from "@/components/copy-protection"
 import RouteMetadata from "@/components/route-metadata"
+import { getMetaForPath } from "@/lib/route-meta"
 import "./globals.css"
 
-export const metadata: Metadata = {
-  title: "TEI Training & Consultancy | Professional Development Courses",
-  description: "Talent Expertise International - World-class training programs and professional development courses",
-  generator: "v0.app",
+export async function generateMetadata(): Promise<Metadata> {
+  const h = await headers()
+  const pathname = h.get("x-pathname") || "/"
+  const meta = getMetaForPath(pathname)
+
+  return {
+    title: meta.title,
+    description: meta.description,
+    generator: "v0.app",
+  }
 }
 
 export default function RootLayout({
