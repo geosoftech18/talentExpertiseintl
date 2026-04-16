@@ -250,10 +250,21 @@ export default function UpcomingProgramsCarousel() {
                               <div className="font-medium text-slate-700">Date</div>
                               <div className="text-slate-600">
                                 {program.startDate ? (
-                                  <>
-                                    {format(new Date(program.startDate), 'MMM dd')}
-                                    {program.endDate && ` - ${format(new Date(program.endDate), 'MMM dd, yyyy')}`}
-                                  </>
+                                  (() => {
+                                    const start = new Date(program.startDate)
+                                    if (!program.endDate) return format(start, 'MMM dd')
+
+                                    const end = new Date(program.endDate)
+                                    const sameMonth =
+                                      start.getMonth() === end.getMonth() &&
+                                      start.getFullYear() === end.getFullYear()
+
+                                    if (sameMonth) {
+                                      return `${format(start, 'MMM dd')} - ${format(end, 'dd, yyyy')}`
+                                    }
+
+                                    return `${format(start, 'MMM dd')} - ${format(end, 'MMM dd, yyyy')}`
+                                  })()
                                 ) : (
                                   'TBD'
                                 )}

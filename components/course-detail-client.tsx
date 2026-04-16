@@ -135,6 +135,40 @@ export default function CourseDetailClient({
     return benefits.filter(b => b.benefit_type === type)
   }
 
+  const hasParsedContent = (parsed: ReturnType<typeof parseContent>) => {
+    if (parsed.type === 'mixed') {
+      return Boolean(
+        (parsed.descriptionHtml && parsed.descriptionHtml.trim()) ||
+          (parsed.description && parsed.description.trim()) ||
+          (parsed.itemsHtml && parsed.itemsHtml.length > 0) ||
+          (parsed.items && parsed.items.length > 0)
+      )
+    }
+    if (parsed.type === 'list') {
+      return Boolean(
+        (parsed.itemsHtml && parsed.itemsHtml.length > 0) ||
+          (parsed.items && parsed.items.length > 0)
+      )
+    }
+    if (parsed.type === 'html') {
+      return Boolean(parsed.html && parsed.html.trim())
+    }
+    return Boolean(parsed.plainText && parsed.plainText.trim())
+  }
+
+  const outlineWithContent = outline.filter((day) => {
+    const dayContent = (day as any).content || ''
+    const parsed = parseContent(dayContent)
+    const hasTopics = Array.isArray(day.topics) && day.topics.some((t) => typeof t === 'string' && t.trim())
+    return hasParsedContent(parsed) || hasTopics
+  })
+
+  const faqsWithContent = faqs.filter((faq) => {
+    const hasQuestion = typeof faq.question === 'string' && faq.question.trim().length > 0
+    const hasAnswer = typeof faq.answer === 'string' && faq.answer.trim().length > 0
+    return hasQuestion && hasAnswer
+  })
+
   const handleRegisterClick = () => {
     // Check if user is authenticated
     if (status === 'loading') {
@@ -672,6 +706,7 @@ export default function CourseDetailClient({
               {getSectionByType('introduction') && (() => {
                 const intro = getSectionByType('introduction')
                 const parsed = parseContent(intro?.content)
+                if (!hasParsedContent(parsed)) return null
                 
                 return (
                   <Card className="border-l-4 border-l-blue-500 shadow-md hover:shadow-lg transition-shadow">
@@ -758,6 +793,7 @@ export default function CourseDetailClient({
               {getSectionByType('objectives') && (() => {
                 const objectives = getSectionByType('objectives')
                 const parsed = parseContent(objectives?.content)
+                if (!hasParsedContent(parsed)) return null
                 
                 return (
                   <Card className="border-l-4 border-l-emerald-500 shadow-md hover:shadow-lg transition-shadow">
@@ -842,6 +878,7 @@ export default function CourseDetailClient({
               {getSectionByType('methodology') && (() => {
                 const methodology = getSectionByType('methodology')
                 const parsed = parseContent(methodology?.content)
+                if (!hasParsedContent(parsed)) return null
                 
                 return (
                   <Card className="border-l-4 border-l-purple-500 shadow-md hover:shadow-lg transition-shadow">
@@ -928,6 +965,7 @@ export default function CourseDetailClient({
               {getSectionByType('who_should_attend') && (() => {
                 const whoShouldAttend = getSectionByType('who_should_attend')
                 const parsed = parseContent(whoShouldAttend?.content)
+                if (!hasParsedContent(parsed)) return null
                 
                 return (
                   <Card className="border-l-4 border-l-amber-500 shadow-md hover:shadow-lg transition-shadow">
@@ -1214,12 +1252,13 @@ export default function CourseDetailClient({
               })()}
             </div>
 
+            {outlineWithContent.length > 0 && (
             <div className="space-y-6" ref={curriculumRef}>
               <Card className="shadow-md">
                 <CardContent className="pt-6">
                   <h2 className="text-2xl font-bold mb-6">Course Outline</h2>
                   <Accordion type="single" collapsible className="w-full space-y-4">
-                    {outline.map((day) => (
+                    {outlineWithContent.map((day) => (
                       <AccordionItem
                         key={day.id}
                         value={`day-${day.day_number}`}
@@ -1286,13 +1325,15 @@ export default function CourseDetailClient({
                 </CardContent>
               </Card>
             </div>
+            )}
 
+            {faqsWithContent.length > 0 && (
             <div className="space-y-6" ref={faqRef}>
               <Card className="shadow-md">
                 <CardContent className="pt-6">
                   <h2 className="text-2xl font-bold mb-6">Frequently Asked Questions</h2>
                   <Accordion type="single" collapsible className="w-full space-y-3">
-                    {faqs.map((faq, index) => (
+                    {faqsWithContent.map((faq, index) => (
                       <AccordionItem
                         key={faq.id}
                         value={`faq-${index}`}
@@ -1317,6 +1358,7 @@ export default function CourseDetailClient({
                 </CardContent>
               </Card>
             </div>
+            )}
           </div>
 
           <div className="space-y-6">

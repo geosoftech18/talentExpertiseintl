@@ -261,9 +261,11 @@ export default function CertificateCoursesPage() {
               </div>
             </div>
             <p className="text-base sm:text-lg md:text-xl text-blue-100 leading-relaxed">
-              {certificateName 
-                ? `Explore our comprehensive training programs that lead to ${certificateName} certification.`
-                : 'Explore our comprehensive training programs for professional certification.'}
+              {certificateName?.toUpperCase().includes("SHRM")
+                ? "Talent Expertise International is recognized by SHRM to offer Professional Development Credits (PDCs) for SHRM-CP® or SHRM-SCP® recertification activities."
+                : certificateName
+                  ? `Explore our comprehensive training programs that lead to ${certificateName} certification.`
+                  : "Explore our comprehensive training programs for professional certification."}
             </p>
           </div>
         </div>
