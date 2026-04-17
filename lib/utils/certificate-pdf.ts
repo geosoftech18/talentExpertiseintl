@@ -180,8 +180,8 @@ export async function generateCertificatePdfBuffer(data: CertificatePdfData): Pr
   })
 
   page.drawLine({
-    start: { x: width * 0.65, y: height * 0.078 },
-    end: { x: width * 0.85, y: height * 0.078 },
+    start: { x: width * 0.65, y: height * 0.095 },
+    end: { x: width * 0.85, y: height * 0.095 },
     thickness: 1.6,
     color: rgb(0.22, 0.22, 0.62),
   })
@@ -190,7 +190,7 @@ export async function generateCertificatePdfBuffer(data: CertificatePdfData): Pr
   const directorSize = 30
   page.drawText(director, {
     x: width * 0.67,
-    y: height * 0.05,
+    y: height * 0.07,
     size: directorSize,
     font: regular,
     color: black,
@@ -200,7 +200,7 @@ export async function generateCertificatePdfBuffer(data: CertificatePdfData): Pr
   const certNoSize = 30
   page.drawText(certificateNo, {
     x: width * 0.115,
-    y: height * 0.05,
+    y: height * 0.07,
     size: certNoSize,
     font: regular,
     color: black,

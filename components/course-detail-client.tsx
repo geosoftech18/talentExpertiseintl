@@ -136,24 +136,35 @@ export default function CourseDetailClient({
   }
 
   const hasParsedContent = (parsed: ReturnType<typeof parseContent>) => {
+    const hasMeaningfulText = (value?: string | null) => {
+      if (!value) return false
+      const stripped = value
+        .replace(/<br\s*\/?>/gi, ' ')
+        .replace(/<\/?[^>]+(>|$)/g, ' ')
+        .replace(/&nbsp;/gi, ' ')
+        .replace(/\s+/g, ' ')
+        .trim()
+      return stripped.length > 0
+    }
+
     if (parsed.type === 'mixed') {
       return Boolean(
-        (parsed.descriptionHtml && parsed.descriptionHtml.trim()) ||
-          (parsed.description && parsed.description.trim()) ||
-          (parsed.itemsHtml && parsed.itemsHtml.length > 0) ||
-          (parsed.items && parsed.items.length > 0)
+        hasMeaningfulText(parsed.descriptionHtml) ||
+          hasMeaningfulText(parsed.description) ||
+          (parsed.itemsHtml && parsed.itemsHtml.some((item) => hasMeaningfulText(item))) ||
+          (parsed.items && parsed.items.some((item) => hasMeaningfulText(item)))
       )
     }
     if (parsed.type === 'list') {
       return Boolean(
-        (parsed.itemsHtml && parsed.itemsHtml.length > 0) ||
-          (parsed.items && parsed.items.length > 0)
+        (parsed.itemsHtml && parsed.itemsHtml.some((item) => hasMeaningfulText(item))) ||
+          (parsed.items && parsed.items.some((item) => hasMeaningfulText(item)))
       )
     }
     if (parsed.type === 'html') {
-      return Boolean(parsed.html && parsed.html.trim())
+      return hasMeaningfulText(parsed.html)
     }
-    return Boolean(parsed.plainText && parsed.plainText.trim())
+    return hasMeaningfulText(parsed.plainText)
   }
 
   const outlineWithContent = outline.filter((day) => {
@@ -643,7 +654,28 @@ export default function CourseDetailClient({
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-slate-200">
-                        {schedules.map((schedule) => {
+                        {(() => {
+                          const today = new Date()
+                          today.setHours(0, 0, 0, 0)
+
+                          const activeSchedules = schedules.filter((schedule) => {
+                            if (!schedule.end_date) return true
+                            const endDate = new Date(schedule.end_date)
+                            endDate.setHours(0, 0, 0, 0)
+                            return endDate.getTime() >= today.getTime()
+                          })
+
+                          if (activeSchedules.length === 0) {
+                            return (
+                              <tr>
+                                <td colSpan={4} className="py-8 px-4 text-center text-slate-500">
+                                  No active classroom schedules available.
+                                </td>
+                              </tr>
+                            )
+                          }
+
+                          return activeSchedules.map((schedule) => {
                           const formatScheduleDate = (dateString: string) => {
                             const date = new Date(dateString)
                             const day = date.getDate()
@@ -694,7 +726,8 @@ export default function CourseDetailClient({
                               </td>
                             </tr>
                           )
-                        })}
+                          })
+                        })()}
                       </tbody>
                     </table>
                   </div>
@@ -1055,12 +1088,7 @@ export default function CourseDetailClient({
                 const combinedContent = orgBenefits.map(b => b.description).filter(Boolean).join('\n')
                 const parsed = parseContent(combinedContent)
                 
-                // Check if we have any content to display
-                const hasContent = 
-                  (parsed.type === 'mixed' && (parsed.description || parsed.items?.length || parsed.itemsHtml?.length)) ||
-                  (parsed.type === 'list' && (parsed.items?.length || parsed.itemsHtml?.length)) ||
-                  (parsed.type === 'html' && parsed.html) ||
-                  (parsed.plainText && parsed.plainText.trim())
+                const hasContent = hasParsedContent(parsed)
                 
                 if (!hasContent) return null
                 
@@ -1156,12 +1184,7 @@ export default function CourseDetailClient({
                 const combinedContent = personalBenefits.map(b => b.description).filter(Boolean).join('\n')
                 const parsed = parseContent(combinedContent)
                 
-                // Check if we have any content to display
-                const hasContent = 
-                  (parsed.type === 'mixed' && (parsed.description || parsed.items?.length || parsed.itemsHtml?.length)) ||
-                  (parsed.type === 'list' && (parsed.items?.length || parsed.itemsHtml?.length)) ||
-                  (parsed.type === 'html' && parsed.html) ||
-                  (parsed.plainText && parsed.plainText.trim())
+                const hasContent = hasParsedContent(parsed)
                 
                 if (!hasContent) return null
                 

@@ -605,7 +605,7 @@ export default function EditOrder() {
                   Payment Status:
                 </label>
                 <select
-                  value={order.paymentStatus}
+                  value={editValues.paymentStatus || order.paymentStatus || "Unpaid"}
                   onChange={(e) => {
                     setEditValues({ ...editValues, paymentStatus: e.target.value })
                   }}
@@ -951,8 +951,8 @@ export default function EditOrder() {
                   <option value="mark_completed">Mark as Completed</option>
                   <option value="mark_incomplete">Mark as Incomplete</option>
                   <option value="mark_cancelled">Mark as Cancelled</option>
-                  <option value="notify_customer">Notify Customer</option>
-                  <option value="send_invoice">Send Invoice</option>
+                  {/* <option value="notify_customer">Notify Customer</option> */}
+                  {/* <option value="send_invoice">Send Invoice</option> */}
                   
                 
                 </select>
