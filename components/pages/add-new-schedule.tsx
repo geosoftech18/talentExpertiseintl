@@ -38,6 +38,8 @@ interface Program {
   duration: string
 }
 
+const MENTOR_SELECT_NONE = "__mentor_none__"
+
 // Mentor interface (for database mentors)
 interface Mentor {
   id: string
@@ -473,7 +475,8 @@ export default function AddNewSchedule({ onBack, editId }: { onBack?: () => void
             {/* Mentor Field - Dropdown (filtered by course category) */}
             <div className="space-y-2 mb-6">
               <Label htmlFor="mentor" className="text-sm font-medium theme-text">
-                Mentor <span className="text-destructive">*</span>
+                Mentor{" "}
+                {/* <span className="text-muted-foreground font-normal">(optional)</span> */}
               </Label>
               {!selectedProgram ? (
                 <div className="p-4 border border-border rounded-lg bg-muted/30">
@@ -485,27 +488,29 @@ export default function AddNewSchedule({ onBack, editId }: { onBack?: () => void
                 </div>
               ) : mentors.length === 0 ? (
                 <div className="p-4 border border-border rounded-lg">
-                  <p className="text-sm theme-muted mb-2">No mentors found.</p>
-                  <p className="text-xs theme-muted">Please create a mentor first before scheduling.</p>
+                  <p className="text-sm theme-muted mb-2">No mentors in the system yet.</p>
+                  <p className="text-xs theme-muted">You can still save this schedule without a mentor, or add mentors first.</p>
                 </div>
               ) : mentorsForCourse.length === 0 ? (
                 <div className="p-4 border border-border rounded-lg">
                   <p className="text-sm theme-muted mb-2">No mentors teach this course&apos;s category.</p>
                   <p className="text-xs theme-muted">
-                    Course category: <span className="font-medium theme-text">{selectedProgram.category}</span>. Add this category to a mentor&apos;s profile so they appear here.
+                    Course category: <span className="font-medium theme-text">{selectedProgram.category}</span>. Add this category to a mentor&apos;s profile to assign one here, or save without a mentor.
                   </p>
                 </div>
               ) : (
                 <>
                   <Select
-                    value={formData.mentor}
-                    onValueChange={(value) => handleInputChange("mentor", value)}
-                    required
+                    value={formData.mentor || MENTOR_SELECT_NONE}
+                    onValueChange={(value) =>
+                      handleInputChange("mentor", value === MENTOR_SELECT_NONE ? "" : value)
+                    }
                   >
                     <SelectTrigger className="w-full bg-input border-border theme-text h-11">
                       <SelectValue placeholder="Select a mentor..." />
                     </SelectTrigger>
                     <SelectContent>
+                      <SelectItem value={MENTOR_SELECT_NONE}>No mentor</SelectItem>
                       {mentorsForCourse.map((mentor) => (
                         <SelectItem key={mentor.id} value={mentor.id}>
                           {mentor.name}
@@ -514,7 +519,7 @@ export default function AddNewSchedule({ onBack, editId }: { onBack?: () => void
                     </SelectContent>
                   </Select>
                   <p className="text-xs theme-muted mt-1">
-                    Showing {mentorsForCourse.length} mentor{mentorsForCourse.length !== 1 ? "s" : ""} who teach {selectedProgram.category}.
+                    Showing {mentorsForCourse.length} mentor{mentorsForCourse.length !== 1 ? "s" : ""} who teach {selectedProgram.category}. Mentor is optional.
                   </p>
                   {formData.mentor && (
                     <div className="text-xs theme-muted mt-1 space-y-1">

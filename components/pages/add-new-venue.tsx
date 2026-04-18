@@ -17,6 +17,9 @@ import {
   CommandList,
 } from "@/components/ui/command"
 
+/** Always available in the country picker (in addition to countries from existing venues). */
+const VENUE_COUNTRY_EXTRAS = ["Jordan"]
+
 export default function AddNewVenue({ onBack, editId }: { onBack?: () => void; editId?: string | null }) {
   const isEditMode = !!editId
   const [formData, setFormData] = useState({
@@ -46,10 +49,10 @@ export default function AddNewVenue({ onBack, editId }: { onBack?: () => void; e
               typeof country === 'string' && country.trim().length > 0
             )
           
-          const uniqueCountries = Array.from(new Set(countryArray)).sort((a, b) => 
-            a.localeCompare(b)
-          )
-          
+          const uniqueCountries = Array.from(
+            new Set([...countryArray, ...VENUE_COUNTRY_EXTRAS])
+          ).sort((a, b) => a.localeCompare(b))
+
           setCountries(uniqueCountries)
         }
       } catch (err) {

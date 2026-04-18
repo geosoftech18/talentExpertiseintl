@@ -1,3 +1,8 @@
+import path from "path"
+import { fileURLToPath } from "url"
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url))
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   experimental: {
@@ -32,8 +37,11 @@ const nextConfig = {
       },
     ],
   },
-  // Turbopack config (Next.js 16+)
-  turbopack: {},
+  // Turbopack config (Next.js 16+): pin root when multiple lockfiles exist (e.g. user
+  // home + this repo); otherwise Next may infer the wrong workspace and routes 404.
+  turbopack: {
+    root: __dirname,
+  },
   // Webpack config (for production builds)
   webpack: (config) => {
     // Suppress warnings for optional dependencies
