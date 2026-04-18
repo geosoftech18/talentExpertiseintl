@@ -16,9 +16,7 @@ import {
   CommandItem,
   CommandList,
 } from "@/components/ui/command"
-
-/** Always available in the country picker (in addition to countries from existing venues). */
-const VENUE_COUNTRY_EXTRAS = ["Jordan"]
+import { WORLD_COUNTRY_NAMES } from "@/lib/world-countries"
 
 export default function AddNewVenue({ onBack, editId }: { onBack?: () => void; editId?: string | null }) {
   const isEditMode = !!editId
@@ -49,8 +47,9 @@ export default function AddNewVenue({ onBack, editId }: { onBack?: () => void; e
               typeof country === 'string' && country.trim().length > 0
             )
           
+          // Venue countries preserved as-is; world list fills gaps. Set dedupes exact name matches only.
           const uniqueCountries = Array.from(
-            new Set([...countryArray, ...VENUE_COUNTRY_EXTRAS])
+            new Set([...countryArray, ...WORLD_COUNTRY_NAMES])
           ).sort((a, b) => a.localeCompare(b))
 
           setCountries(uniqueCountries)
