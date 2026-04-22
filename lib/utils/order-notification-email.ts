@@ -260,6 +260,18 @@ export function generateOrderNotificationEmailHTML(data: OrderNotificationData):
       <p style="margin: 0; font-size: 14px; color: #1f2937; line-height: 1.6;">
         ${nextSteps}
       </p>
+      <p style="margin: 10px 0 0; font-size: 14px; color: #1f2937; line-height: 1.6;">
+        To access further materials or download your certificate, please register/sign in at
+        using the same email ID.
+      </p>
+      <div style="margin-top: 12px;">
+        <a
+          href="https://talentexpertiseintl.com/auth"
+          style="display: inline-block; background: #2563eb; color: #ffffff; text-decoration: none; font-size: 14px; font-weight: 600; padding: 10px 16px; border-radius: 6px;"
+        >
+          Login / Register
+        </a>
+      </div>
     </div>
 
     <!-- Contact Information -->
@@ -370,6 +382,10 @@ SCHEDULE INFORMATION:
 ${scheduleEndDate ? `- End Date: ${formatDate(scheduleEndDate)}` : ''}
 ${venue ? `- Venue: ${venue}${city ? `, ${city}` : ''}${country ? `, ${country}` : ''}` : ''}
 ` : ''}
+
+To access further materials or download your certificate, please register/sign in at:
+https://talentexpertiseintl.com/auth
+Use the same email ID used for this order.
 
 If you have any questions or concerns about your order, please contact us:
 Email: ${supportEmail}
