@@ -155,8 +155,8 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
 
-    // Validate required fields - mobile is now required instead of telephone
-    if (!body.name || !body.email || !body.address || !body.city || !body.country || !body.mobile || !body.paymentMethod) {
+    // Validate required fields (address is optional for admin-created orders)
+    if (!body.name || !body.email || !body.city || !body.country || !body.mobile || !body.paymentMethod) {
       return NextResponse.json(
         { success: false, error: 'Missing required fields' },
         { status: 400 }
@@ -210,7 +210,7 @@ export async function POST(request: NextRequest) {
         email: body.email,
         designation: body.designation || null,
         company: body.company || null,
-        address: body.address,
+        address: body.address || '',
         city: body.city,
         country: body.country,
         telephone: body.telephone || null,

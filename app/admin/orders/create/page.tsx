@@ -1,12 +1,15 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useMemo } from "react"
 import { useRouter } from "next/navigation"
-import { ArrowLeft, Loader2 } from "lucide-react"
+import { ArrowLeft, Loader2, CheckIcon, ChevronDownIcon } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command"
+import { WORLD_COUNTRY_NAMES } from "@/lib/world-countries"
 
 export default function CreateOrderPage() {
   const router = useRouter()
@@ -43,6 +46,10 @@ export default function CreateOrderPage() {
   const [schedules, setSchedules] = useState<any[]>([])
   const [loadingCourses, setLoadingCourses] = useState(false)
   const [loadingSchedules, setLoadingSchedules] = useState(false)
+  const [courseSearchOpen, setCourseSearchOpen] = useState(false)
+  const [courseSearch, setCourseSearch] = useState("")
+  const [countrySearchOpen, setCountrySearchOpen] = useState(false)
+  const [countrySearch, setCountrySearch] = useState("")
 
   // Fetch programs for dropdown
   useEffect(() => {
@@ -81,20 +88,34 @@ export default function CreateOrderPage() {
 
       try {
         setLoadingSchedules(true)
-        const response = await fetch("/api/schedules?limit=1000")
+        // Use admin schedules endpoint so create-order can see all schedules
+        // (including unpublished/expired ones), not only public upcoming schedules.
+        const response = await fetch("/api/admin/schedules?limit=10000")
         const result = await response.json()
 
         if (result.success) {
+          const selectedProgram = courses.find((c) => c.id === formData.courseId)
+          const normalize = (value?: string | null) => (value || "").trim().toLowerCase()
+
           // Filter schedules for selected program
           const programSchedules = result.data
-            .filter((schedule: any) => schedule.programId === formData.courseId)
+            .filter((schedule: any) => {
+              const matchesProgramId = schedule.programId === formData.courseId
+              const matchesProgramRelation = schedule.program?.id === formData.courseId
+              const matchesLegacyProgramName =
+                !matchesProgramId &&
+                !matchesProgramRelation &&
+                normalize(schedule.programName) === normalize(selectedProgram?.title)
+
+              return matchesProgramId || matchesProgramRelation || matchesLegacyProgramName
+            })
             .map((schedule: any) => ({
-              id: schedule.scheduleId,
+              id: schedule.id,
               programId: schedule.programId,
               startDate: schedule.startDate,
               endDate: schedule.endDate,
               venue: schedule.venue,
-              fee: schedule.price,
+              fee: schedule.fee,
             }))
           setSchedules(programSchedules)
         }
@@ -135,13 +156,33 @@ export default function CreateOrderPage() {
     return `${startDate} - ${endDate} | ${venue} | ${fee}`
   }
 
+  const filteredCourses = useMemo(() => {
+    const query = courseSearch.trim().toLowerCase()
+    if (!query) return courses
+
+    return courses.filter((program) => {
+      const title = (program.title || "").toLowerCase()
+      const refCode = (program.refCode || "").toLowerCase()
+      return title.includes(query) || refCode.includes(query)
+    })
+  }, [courses, courseSearch])
+
+  const filteredCountries = useMemo(() => {
+    const query = countrySearch.trim().toLowerCase()
+    if (!query) return WORLD_COUNTRY_NAMES
+
+    return WORLD_COUNTRY_NAMES.filter((country) =>
+      country.toLowerCase().includes(query)
+    )
+  }, [countrySearch])
+
   const handleCreateOrder = async () => {
     setIsCreating(true)
     setCreateError(null)
 
     try {
-      // Validate required fields - mobile is now required instead of telephone
-      if (!formData.name || !formData.email || !formData.address || !formData.city || !formData.country || !formData.mobile || !formData.paymentMethod) {
+      // Validate required fields
+      if (!formData.name || !formData.email || !formData.city || !formData.country || !formData.mobile || !formData.paymentMethod) {
         setCreateError("Please fill in all required fields")
         setIsCreating(false)
         return
@@ -215,6 +256,7 @@ export default function CreateOrderPage() {
                     <SelectItem value="Mrs">Mrs</SelectItem>
                     <SelectItem value="Ms">Ms</SelectItem>
                     <SelectItem value="Dr">Dr</SelectItem>
+                    <SelectItem value="Eng">Eng</SelectItem>
                     <SelectItem value="Prof">Prof</SelectItem>
                   </SelectContent>
                 </Select>
@@ -265,7 +307,7 @@ export default function CreateOrderPage() {
           <div className="space-y-4">
             <h3 className="text-lg font-semibold theme-text border-b pb-2">Address Information</h3>
             <div>
-              <Label htmlFor="address">Address *</Label>
+              <Label htmlFor="address">Address</Label>
               <Input
                 id="address"
                 value={formData.address}
@@ -285,12 +327,50 @@ export default function CreateOrderPage() {
               </div>
               <div>
                 <Label htmlFor="country">Country *</Label>
-                <Input
-                  id="country"
-                  value={formData.country}
-                  onChange={(e) => setFormData({ ...formData, country: e.target.value })}
-                  placeholder="Country"
-                />
+                <Popover open={countrySearchOpen} onOpenChange={setCountrySearchOpen}>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      role="combobox"
+                      aria-expanded={countrySearchOpen}
+                      className="w-full justify-between bg-input border-border theme-text h-10 font-normal"
+                    >
+                      <span className="truncate">{formData.country || "Select country"}</span>
+                      <ChevronDownIcon className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0" align="start">
+                    <Command shouldFilter={false}>
+                      <CommandInput
+                        placeholder="Search country..."
+                        value={countrySearch}
+                        onValueChange={setCountrySearch}
+                      />
+                      <CommandList>
+                        <CommandEmpty>No country found matching "{countrySearch}".</CommandEmpty>
+                        <CommandGroup>
+                          {filteredCountries.map((country) => (
+                            <CommandItem
+                              key={country}
+                              value={country}
+                              onSelect={() => {
+                                setFormData({ ...formData, country })
+                                setCountrySearchOpen(false)
+                                setCountrySearch("")
+                              }}
+                              className="cursor-pointer"
+                            >
+                              <CheckIcon
+                                className={`mr-2 h-4 w-4 ${formData.country === country ? "opacity-100" : "opacity-0"}`}
+                              />
+                              <span>{country}</span>
+                            </CommandItem>
+                          ))}
+                        </CommandGroup>
+                      </CommandList>
+                    </Command>
+                  </PopoverContent>
+                </Popover>
               </div>
             </div>
             <div className="grid grid-cols-2 gap-4">
@@ -321,30 +401,71 @@ export default function CreateOrderPage() {
             <h3 className="text-lg font-semibold theme-text border-b pb-2">Course Information</h3>
             <div>
               <Label htmlFor="courseId">Program/Course</Label>
-              <Select
-                value={formData.courseId}
-                onValueChange={(value) => {
-                  const selectedProgram = courses.find((c) => c.id === value)
-                  setFormData({
-                    ...formData,
-                    courseId: value,
-                    courseTitle: selectedProgram?.title || "",
-                    scheduleId: "", // Reset schedule when program changes
-                  })
-                }}
-                disabled={loadingCourses}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder={loadingCourses ? "Loading programs..." : "Select program"} />
-                </SelectTrigger>
-                <SelectContent>
-                  {courses.map((program) => (
-                    <SelectItem key={program.id} value={program.id}>
-                      {program.title} {program.refCode ? `(${program.refCode})` : ""}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <Popover open={courseSearchOpen} onOpenChange={setCourseSearchOpen}>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    role="combobox"
+                    aria-expanded={courseSearchOpen}
+                    disabled={loadingCourses}
+                    className="w-full justify-between bg-input border-border theme-text h-10 font-normal"
+                  >
+                    <span className="truncate">
+                      {formData.courseId
+                        ? (() => {
+                            const selectedProgram = courses.find((c) => c.id === formData.courseId)
+                            return selectedProgram
+                              ? `${selectedProgram.title}${selectedProgram.refCode ? ` (${selectedProgram.refCode})` : ""}`
+                              : "Select program"
+                          })()
+                        : loadingCourses
+                          ? "Loading programs..."
+                          : "Select program"}
+                    </span>
+                    <ChevronDownIcon className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0" align="start">
+                  <Command shouldFilter={false}>
+                    <CommandInput
+                      placeholder="Search by program name or ref code..."
+                      value={courseSearch}
+                      onValueChange={setCourseSearch}
+                    />
+                    <CommandList>
+                      <CommandEmpty>No program found matching "{courseSearch}".</CommandEmpty>
+                      <CommandGroup>
+                        {filteredCourses.map((program) => (
+                          <CommandItem
+                            key={program.id}
+                            value={`${program.title} ${program.refCode || ""}`}
+                            onSelect={() => {
+                              setFormData({
+                                ...formData,
+                                courseId: program.id,
+                                courseTitle: program.title || "",
+                                scheduleId: "", // Reset schedule when program changes
+                              })
+                              setCourseSearchOpen(false)
+                              setCourseSearch("")
+                            }}
+                            className="cursor-pointer"
+                          >
+                            <CheckIcon
+                              className={`mr-2 h-4 w-4 ${
+                                formData.courseId === program.id ? "opacity-100" : "opacity-0"
+                              }`}
+                            />
+                            <span>
+                              {program.title} {program.refCode ? `(${program.refCode})` : ""}
+                            </span>
+                          </CommandItem>
+                        ))}
+                      </CommandGroup>
+                    </CommandList>
+                  </Command>
+                </PopoverContent>
+              </Popover>
             </div>
             <div>
               <Label htmlFor="scheduleId">Schedule</Label>
@@ -400,10 +521,10 @@ export default function CreateOrderPage() {
                     <SelectValue placeholder="Select method" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="credit">Credit Card</SelectItem>
-                    <SelectItem value="bank">Bank Transfer</SelectItem>
+                    <SelectItem value="credit">Stripe</SelectItem>
+           
                     <SelectItem value="invoice">Invoice</SelectItem>
-                    <SelectItem value="purchase">Purchase Order</SelectItem>
+                    
                   </SelectContent>
                 </Select>
               </div>
@@ -419,8 +540,7 @@ export default function CreateOrderPage() {
                   <SelectContent>
                     <SelectItem value="Paid">Paid</SelectItem>
                     <SelectItem value="Unpaid">Unpaid</SelectItem>
-                    <SelectItem value="Partially Refunded">Partially Refunded</SelectItem>
-                    <SelectItem value="Refunded">Refunded</SelectItem>
+                
                   </SelectContent>
                 </Select>
               </div>
@@ -435,8 +555,8 @@ export default function CreateOrderPage() {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="Completed">Completed</SelectItem>
-                    <SelectItem value="Incomplete">Incomplete</SelectItem>
-                    <SelectItem value="Cancelled">Cancelled</SelectItem>
+                    <SelectItem value="Incomplete">Inprogress</SelectItem>
+                    
                   </SelectContent>
                 </Select>
               </div>

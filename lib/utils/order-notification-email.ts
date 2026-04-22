@@ -151,8 +151,8 @@ export function generateOrderNotificationEmailHTML(data: OrderNotificationData):
 
   // Company name from env or default
   const companyNameEnv = process.env.COMPANY_NAME || 'Talent Expertise Institute'
-  const supportEmail = process.env.SUPPORT_EMAIL || process.env.BREVO_FROM_EMAIL || 'support@example.com'
-  const supportPhone = process.env.SUPPORT_PHONE || '+971-XXX-XXXX'
+  const supportEmail = process.env.SUPPORT_EMAIL ||'info@talentexpertiseintl.com'
+  const supportPhone = process.env.SUPPORT_PHONE || '+971-4547-3010'
 
   return `
 <!DOCTYPE html>
