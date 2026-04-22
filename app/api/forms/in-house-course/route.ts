@@ -76,3 +76,32 @@ export async function GET(request: NextRequest) {
     )
   }
 }
+
+export async function DELETE(request: NextRequest) {
+  try {
+    const { searchParams } = new URL(request.url)
+    const id = searchParams.get('id')
+
+    if (!id) {
+      return NextResponse.json(
+        { success: false, error: 'Request id is required' },
+        { status: 400 }
+      )
+    }
+
+    await prisma.inHouseCourseRequest.delete({
+      where: { id },
+    })
+
+    return NextResponse.json({
+      success: true,
+      data: { id },
+    })
+  } catch (error) {
+    console.error('Error deleting in-house request:', error)
+    return NextResponse.json(
+      { success: false, error: 'Failed to delete request' },
+      { status: 500 }
+    )
+  }
+}

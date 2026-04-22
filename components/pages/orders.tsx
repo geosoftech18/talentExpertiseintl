@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
-import { Search, RefreshCw, Calendar, ChevronUp, ChevronDown, Edit, Loader2, Plus } from "lucide-react"
+import { Search, RefreshCw, Calendar, ChevronUp, ChevronDown, Edit, Loader2, Plus, Trash2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 
 interface Order {
@@ -316,6 +316,36 @@ export default function Orders() {
     setSelectedOrders([])
   }
 
+  const handleDeleteOrder = async (order: Order) => {
+    if (!order.registrationId) {
+      alert("This order cannot be deleted.")
+      return
+    }
+
+    const confirmed = window.confirm(
+      `Are you sure you want to delete order #${order.id}? This action cannot be undone.`
+    )
+
+    if (!confirmed) return
+
+    try {
+      const response = await fetch(`/api/admin/orders/${order.registrationId}`, {
+        method: "DELETE",
+      })
+      const result = await response.json()
+
+      if (!response.ok || !result?.success) {
+        throw new Error(result?.error || "Failed to delete order")
+      }
+
+      setAllOrders((prev) => prev.filter((o) => o.registrationId !== order.registrationId))
+      setSelectedOrders((prev) => prev.filter((id) => id !== order.id))
+    } catch (err) {
+      console.error("Error deleting order:", err)
+      alert(err instanceof Error ? err.message : "Failed to delete order. Please try again.")
+    }
+  }
+
 
 
   if (loading) {
@@ -589,17 +619,26 @@ export default function Orders() {
                     </td>
                     <td className="px-6 py-4 theme-text font-semibold">${order.total.toFixed(2)}</td>
                     <td className="px-6 py-4">
-                      <button 
-                        onClick={() => {
-                          if (order.registrationId) {
-                            router.push(`/admin/orders/${order.registrationId}`)
-                          }
-                        }}
-                        className="px-3 py-1 bg-primary/10 text-primary rounded-lg text-sm font-medium hover:bg-primary/20 transition-colors flex items-center gap-2"
-                      >
-                        <Edit size={14} />
-                        Edit
-                      </button>
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => {
+                            if (order.registrationId) {
+                              router.push(`/admin/orders/${order.registrationId}`)
+                            }
+                          }}
+                          className="px-3 py-1 bg-primary/10 text-primary rounded-lg text-sm font-medium hover:bg-primary/20 transition-colors flex items-center gap-2"
+                        >
+                          <Edit size={14} />
+                          Edit
+                        </button>
+                        <button
+                          onClick={() => handleDeleteOrder(order)}
+                          className="px-3 py-1 bg-destructive/10 text-destructive rounded-lg text-sm font-medium hover:bg-destructive/20 transition-colors flex items-center gap-2"
+                        >
+                          <Trash2 size={14} />
+                          Delete
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))

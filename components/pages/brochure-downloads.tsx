@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect, useMemo } from "react"
-import { Search, Eye, X, Download } from "lucide-react"
+import { Search, Eye, X, Download, Trash2 } from "lucide-react"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
@@ -80,6 +80,36 @@ export default function BrochureDownloads() {
   const handlePreview = (download: BrochureDownload) => {
     setPreviewDownload(download)
     setShowPreview(true)
+  }
+
+  const handleDeleteDownload = async (downloadId: string) => {
+    const confirmed = window.confirm("Are you sure you want to delete this brochure download record?")
+    if (!confirmed) return
+
+    try {
+      const response = await fetch(`/api/forms/brochure-download?id=${downloadId}`, {
+        method: "DELETE",
+      })
+      const result = await response.json()
+
+      if (!response.ok || !result.success) {
+        throw new Error(result.error || "Failed to delete download")
+      }
+
+      setDownloads((prev) => prev.filter((d) => d.id !== downloadId))
+      setSelectedDownloads((prev) => {
+        const next = new Set(prev)
+        next.delete(downloadId)
+        return next
+      })
+      if (previewDownload?.id === downloadId) {
+        setShowPreview(false)
+        setPreviewDownload(null)
+      }
+    } catch (err) {
+      console.error("Error deleting brochure download:", err)
+      alert(err instanceof Error ? err.message : "Failed to delete download")
+    }
   }
 
   // Selection handlers
@@ -308,13 +338,22 @@ export default function BrochureDownloads() {
                       {download.downloadedAt ? format(new Date(download.downloadedAt), 'MMM dd, yyyy') : 'N/A'}
                     </td>
                     <td className="px-6 py-4">
-                      <button
-                        onClick={() => handlePreview(download)}
-                        className="p-2 hover:bg-primary/10 rounded-lg transition-colors theme-primary"
-                        title="View Details"
-                      >
-                        <Eye size={18} />
-                      </button>
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => handlePreview(download)}
+                          className="p-2 hover:bg-primary/10 rounded-lg transition-colors theme-primary"
+                          title="View Details"
+                        >
+                          <Eye size={18} />
+                        </button>
+                        <button
+                          onClick={() => handleDeleteDownload(download.id)}
+                          className="p-2 hover:bg-destructive/10 rounded-lg transition-colors text-destructive"
+                          title="Delete"
+                        >
+                          <Trash2 size={18} />
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))}

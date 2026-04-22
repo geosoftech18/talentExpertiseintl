@@ -112,3 +112,31 @@ export async function PATCH(
   }
 }
 
+/**
+ * DELETE /api/admin/enquiries/[id]
+ * Delete enquiry
+ */
+export async function DELETE(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const { id } = await params
+
+    await prisma.courseEnquiry.delete({
+      where: { id },
+    })
+
+    return NextResponse.json({
+      success: true,
+      data: { id },
+    })
+  } catch (error) {
+    console.error('Error deleting enquiry:', error)
+    return NextResponse.json(
+      { success: false, error: 'Failed to delete enquiry' },
+      { status: 500 }
+    )
+  }
+}
+

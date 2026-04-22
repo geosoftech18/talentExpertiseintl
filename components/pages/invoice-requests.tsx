@@ -175,6 +175,38 @@ export default function InvoiceRequests() {
     }
   }
 
+  const handleDeleteRequest = async () => {
+    if (!selectedRequest) return
+
+    const confirmed = window.confirm(
+      "Are you sure you want to delete this invoice request? This action cannot be undone."
+    )
+    if (!confirmed) return
+
+    try {
+      setProcessing(true)
+      const response = await fetch(`/api/admin/invoice-requests/${selectedRequest.id}`, {
+        method: "DELETE",
+      })
+      const result = await response.json()
+
+      if (result.success) {
+        setRequests((prev) => prev.filter((r) => r.id !== selectedRequest.id))
+        setActionDialogOpen(false)
+        setSelectedRequest(null)
+        setRejectionReason("")
+        alert("Invoice request deleted.")
+      } else {
+        alert(result.error || "Failed to delete invoice request")
+      }
+    } catch (err) {
+      console.error("Error deleting invoice request:", err)
+      alert("Failed to delete invoice request. Please try again.")
+    } finally {
+      setProcessing(false)
+    }
+  }
+
   const openActionDialog = (request: InvoiceRequest, action: "approve" | "reject") => {
     setSelectedRequest(request)
     setActionType(action)
@@ -553,6 +585,16 @@ export default function InvoiceRequests() {
             <Button variant="outline" onClick={() => setActionDialogOpen(false)}>
               Cancel
             </Button>
+            {actionType === "reject" && (
+              <Button
+                onClick={handleDeleteRequest}
+                disabled={processing}
+                variant="destructive"
+                className="mr-auto"
+              >
+                Delete Request
+              </Button>
+            )}
             <Button
               onClick={actionType === "approve" ? handleApprove : handleReject}
               disabled={processing}

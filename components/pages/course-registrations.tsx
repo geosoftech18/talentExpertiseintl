@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Search, Eye, Loader2 } from "lucide-react"
+import { Search, Eye, Loader2, Trash2 } from "lucide-react"
 
 interface Registration {
   id: string
@@ -148,6 +148,27 @@ export default function CourseRegistrations() {
     }
   }
 
+  const handleDeleteRegistration = async (registrationId: string) => {
+    const confirmed = window.confirm("Are you sure you want to delete this registration?")
+    if (!confirmed) return
+
+    try {
+      const response = await fetch(`/api/forms/course-registration?id=${registrationId}`, {
+        method: "DELETE",
+      })
+      const result = await response.json()
+
+      if (!response.ok || !result.success) {
+        throw new Error(result.error || "Failed to delete registration")
+      }
+
+      setRegistrations((prev) => prev.filter((r) => r.id !== registrationId))
+    } catch (err) {
+      console.error("Error deleting registration:", err)
+      alert(err instanceof Error ? err.message : "Failed to delete registration")
+    }
+  }
+
   if (loading) {
     return (
       <div className="p-8 space-y-6 theme-bg">
@@ -251,9 +272,18 @@ export default function CourseRegistrations() {
                     </span>
                   </td>
                   <td className="px-6 py-4">
-                    <button className="p-2 hover:bg-primary/10 rounded-lg transition-colors theme-primary">
-                      <Eye size={18} />
-                    </button>
+                    <div className="flex items-center gap-2">
+                      <button className="p-2 hover:bg-primary/10 rounded-lg transition-colors theme-primary" title="View">
+                        <Eye size={18} />
+                      </button>
+                      <button
+                        onClick={() => handleDeleteRegistration(reg.id)}
+                        className="p-2 hover:bg-destructive/10 rounded-lg transition-colors text-destructive"
+                        title="Delete"
+                      >
+                        <Trash2 size={18} />
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))

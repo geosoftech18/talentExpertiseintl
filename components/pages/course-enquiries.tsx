@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useMemo } from "react"
 import { useRouter } from "next/navigation"
-import { Search, Eye, X, Download, Clock, CheckCircle, XCircle } from "lucide-react"
+import { Search, Eye, X, Download, Clock, CheckCircle, XCircle, Trash2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
 import { format } from "date-fns"
@@ -116,6 +116,32 @@ export default function CourseEnquiries() {
       alert(err instanceof Error ? err.message : 'Failed to update status')
     } finally {
       setUpdatingStatus(null)
+    }
+  }
+
+  const handleDeleteEnquiry = async (enquiryId: string) => {
+    const confirmed = window.confirm("Are you sure you want to delete this enquiry?")
+    if (!confirmed) return
+
+    try {
+      const response = await fetch(`/api/admin/enquiries/${enquiryId}`, {
+        method: "DELETE",
+      })
+      const result = await response.json()
+
+      if (!response.ok || !result.success) {
+        throw new Error(result.error || "Failed to delete enquiry")
+      }
+
+      setEnquiries((prev) => prev.filter((e) => e.id !== enquiryId))
+      setSelectedEnquiries((prev) => {
+        const next = new Set(prev)
+        next.delete(enquiryId)
+        return next
+      })
+    } catch (err) {
+      console.error("Error deleting enquiry:", err)
+      alert(err instanceof Error ? err.message : "Failed to delete enquiry")
     }
   }
 
@@ -341,7 +367,8 @@ export default function CourseEnquiries() {
               )}
             </div>
           ) : (
-            <table className="w-full">
+            <div className="overflow-x-auto">
+            <table className="w-full min-w-[1100px]">
               <thead>
                 <tr className="border-b border-border bg-muted/50">
                   <th className="px-6 py-4 text-center text-sm font-semibold theme-text w-12">
@@ -359,7 +386,7 @@ export default function CourseEnquiries() {
                   <th className="px-6 py-4 text-left text-sm font-semibold theme-text">Course</th>
                   <th className="px-6 py-4 text-left text-sm font-semibold theme-text">Participants</th>
                   <th className="px-6 py-4 text-left text-sm font-semibold theme-text">Submitted Date</th>
-                  <th className="px-6 py-4 text-left text-sm font-semibold theme-text">Actions</th>
+                  <th className="px-6 py-4 text-left text-sm font-semibold theme-text whitespace-nowrap min-w-[170px]">Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -372,7 +399,7 @@ export default function CourseEnquiries() {
                         className="border border-gray-500"
                       />
                     </td>
-                    <td className="px-6 py-4">
+                    <td className="px-6 py-4 whitespace-nowrap">
                       {getStatusBadge(enquiry.status || 'Pending')}
                     </td>
                     <td className="px-6 py-4 theme-text font-medium">
@@ -419,12 +446,21 @@ export default function CourseEnquiries() {
                             </button>
                           </>
                         )}
+                        <button
+                          onClick={() => handleDeleteEnquiry(enquiry.id)}
+                          className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-md border border-destructive/30 bg-destructive/10 text-destructive hover:bg-destructive/20 transition-colors text-xs font-medium"
+                          title="Delete"
+                        >
+                          <Trash2 size={14} />
+                          Delete
+                        </button>
                       </div>
                     </td>
                   </tr>
                 ))}
               </tbody>
             </table>
+            </div>
           )}
         </div>
       )}

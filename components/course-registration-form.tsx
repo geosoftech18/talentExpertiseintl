@@ -296,7 +296,9 @@ export function CourseRegistrationForm({ course, schedules, selectedScheduleId, 
     contactPerson: '',
     department: '',
     invoiceEmail: '',
-    invoiceAddress: ''
+    invoiceAddress: '',
+    invoiceMobile: '',
+    invoiceMobileCountryCode: '+971'
   })
 
   // Generate random CAPTCHA on mount and when needed
@@ -337,7 +339,6 @@ export function CourseRegistrationForm({ course, schedules, selectedScheduleId, 
         ...prev,
         name: prev.name || session.user.name || '',
         email: prev.email || session.user.email || '',
-        invoiceEmail: prev.invoiceEmail || session.user.email || '',
       }))
     }
   }, [session])
@@ -496,8 +497,8 @@ export function CourseRegistrationForm({ course, schedules, selectedScheduleId, 
       if (!formData.invoiceAddress.trim()) {
         newErrors.invoiceAddress = 'Address is required'
       }
-      if (!formData.mobile.trim()) {
-        newErrors.mobile = 'Mobile number is required'
+      if (!formData.invoiceMobile.trim()) {
+        newErrors.invoiceMobile = 'Mobile number is required'
       }
     }
 
@@ -557,6 +558,8 @@ export function CourseRegistrationForm({ course, schedules, selectedScheduleId, 
             department: formData.department,
             invoiceEmail: formData.invoiceEmail, // Company email (separate from user email)
             invoiceAddress: formData.invoiceAddress, // Company address (separate from user address)
+            mobile: formData.invoiceMobile,
+            mobileCountryCode: formData.invoiceMobileCountryCode,
           }),
         })
 
@@ -657,7 +660,7 @@ export function CourseRegistrationForm({ course, schedules, selectedScheduleId, 
              formData.invoiceEmail.trim() &&
              validateEmail(formData.invoiceEmail) &&
              formData.invoiceAddress.trim() &&
-             formData.mobile.trim()
+             formData.invoiceMobile.trim()
     }
     return true
   }
@@ -776,6 +779,7 @@ export function CourseRegistrationForm({ course, schedules, selectedScheduleId, 
                         <SelectItem value="mr">Mr.</SelectItem>
                         <SelectItem value="mrs">Mrs.</SelectItem>
                         <SelectItem value="ms">Ms.</SelectItem>
+                        <SelectItem value="eng">Eng.</SelectItem>
                         <SelectItem value="dr">Dr.</SelectItem>
                         <SelectItem value="prof">Prof.</SelectItem>
                       </SelectContent>
@@ -976,8 +980,8 @@ export function CourseRegistrationForm({ course, schedules, selectedScheduleId, 
                   </div>
 
                   <div className="space-y-1.5">
-                    <Label htmlFor="mobile" className="text-xs font-semibold text-slate-700">Mobile No.</Label>
-                    <div className="flex border border-slate-300 rounded-md overflow-hidden focus-within:ring-2 focus-within:ring-blue-500 focus-within:border-blue-500">
+                    <Label htmlFor="mobile" className="text-xs font-semibold text-slate-700">Mobile No. *</Label>
+                    <div className={`flex border rounded-md overflow-hidden focus-within:ring-2 focus-within:ring-blue-500 focus-within:border-blue-500 ${errors.mobile ? 'border-red-500' : 'border-slate-300'}`}>
                       <Select
                         value={formData.mobileCountryCode}
                         onValueChange={(value) => handleFieldChange('mobileCountryCode', value)}
@@ -1015,6 +1019,7 @@ export function CourseRegistrationForm({ course, schedules, selectedScheduleId, 
                         type="tel"
                         placeholder="Mobile No."
                         className="h-9 text-sm border-0 rounded-none focus-visible:ring-0 flex-1"
+                        required
                         value={formData.mobile}
                         onChange={(e) => {
                           const phoneValue = e.target.value
@@ -1024,6 +1029,7 @@ export function CourseRegistrationForm({ course, schedules, selectedScheduleId, 
                         }}
                       />
                     </div>
+                    {errors.mobile && <p className="text-xs text-red-600 mt-1">{errors.mobile}</p>}
                   </div>
                 </div>
 
@@ -1190,7 +1196,7 @@ export function CourseRegistrationForm({ course, schedules, selectedScheduleId, 
                       <Label htmlFor="contactPerson" className="text-xs font-semibold text-slate-700">Contact Person *</Label>
                       <Input
                         id="contactPerson"
-                        placeholder="Enter Contact Person"
+                        placeholder="Enter Contact Person Name"
                         className={`h-9 text-sm ${errors.contactPerson ? 'border-red-500' : ''}`}
                         value={formData.contactPerson}
                         onChange={(e) => handleFieldChange('contactPerson', e.target.value)}
@@ -1199,10 +1205,10 @@ export function CourseRegistrationForm({ course, schedules, selectedScheduleId, 
                     </div>
 
                     <div className="space-y-1.5">
-                      <Label htmlFor="invoiceDesignation" className="text-xs font-semibold text-slate-700">Your Designation *</Label>
+                      <Label htmlFor="invoiceDesignation" className="text-xs font-semibold text-slate-700">Designation *</Label>
                       <Input
                         id="invoiceDesignation"
-                        placeholder="Enter Your Designation"
+                        placeholder="Enter Contact Person Designation"
                         className={`h-9 text-sm ${errors.designation ? 'border-red-500' : ''}`}
                         value={formData.designation}
                         onChange={(e) => handleFieldChange('designation', e.target.value)}
@@ -1227,23 +1233,23 @@ export function CourseRegistrationForm({ course, schedules, selectedScheduleId, 
                   <div className="space-y-3">
                     <div className="space-y-1.5">
                       <Label htmlFor="invoiceMobile" className="text-xs font-semibold text-slate-700">Mobile *</Label>
-                      <div className={`flex border rounded-md overflow-hidden focus-within:ring-2 focus-within:ring-blue-500 focus-within:border-blue-500 ${errors.mobile ? 'border-red-500' : 'border-slate-300'}`}>
+                      <div className={`flex border rounded-md overflow-hidden focus-within:ring-2 focus-within:ring-blue-500 focus-within:border-blue-500 ${errors.invoiceMobile ? 'border-red-500' : 'border-slate-300'}`}>
                         <Select
-                          value={formData.mobileCountryCode}
-                          onValueChange={(value) => handleFieldChange('mobileCountryCode', value)}
+                          value={formData.invoiceMobileCountryCode}
+                          onValueChange={(value) => handleFieldChange('invoiceMobileCountryCode', value)}
                         >
                           <SelectTrigger className="w-auto min-w-[100px] h-9 border-0 rounded-none border-r border-slate-300 bg-transparent focus:ring-0 px-2">
                             <div className="flex items-center gap-1.5">
                               <div className="relative w-5 h-4 rounded-sm overflow-hidden shrink-0">
                                 <Image
-                                  src={getFlagImageUrl(formData.mobileCountryCode)}
-                                  alt={countries.find(c => c.code === formData.mobileCountryCode)?.name || "Country flag"}
+                                  src={getFlagImageUrl(formData.invoiceMobileCountryCode)}
+                                  alt={countries.find(c => c.code === formData.invoiceMobileCountryCode)?.name || "Country flag"}
                                   fill
                                   className="object-cover"
                                   onError={(e) => { e.currentTarget.style.display = 'none' }}
                                 />
                               </div>
-                              <span className="text-xs font-medium text-slate-700">{formData.mobileCountryCode}</span>
+                              <span className="text-xs font-medium text-slate-700">{formData.invoiceMobileCountryCode}</span>
                             </div>
                           </SelectTrigger>
                           <SelectContent className="max-h-[300px]">
@@ -1265,16 +1271,16 @@ export function CourseRegistrationForm({ course, schedules, selectedScheduleId, 
                           type="tel"
                           placeholder="Phone Number"
                           className={`h-9 text-sm border-0 rounded-none focus-visible:ring-0 flex-1`}
-                          value={formData.mobile}
+                          value={formData.invoiceMobile}
                           onChange={(e) => {
                             const phoneValue = e.target.value
-                            const detectedCode = detectCountryCode(phoneValue, formData.mobileCountryCode)
-                            handleFieldChange('mobileCountryCode', detectedCode)
-                            handleFieldChange('mobile', phoneValue)
+                            const detectedCode = detectCountryCode(phoneValue, formData.invoiceMobileCountryCode)
+                            handleFieldChange('invoiceMobileCountryCode', detectedCode)
+                            handleFieldChange('invoiceMobile', phoneValue)
                           }}
                         />
                       </div>
-                      {errors.mobile && <p className="text-xs text-red-600 mt-1">{errors.mobile}</p>}
+                      {errors.invoiceMobile && <p className="text-xs text-red-600 mt-1">{errors.invoiceMobile}</p>}
                     </div>
 
                     <div className="space-y-1.5">

@@ -221,6 +221,47 @@ export async function GET(
 }
 
 /**
+ * DELETE /api/admin/invoice-requests/[id]
+ * Delete an invoice request permanently
+ */
+export async function DELETE(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const { id } = await params
+
+    const existing = await prisma.invoiceRequest.findUnique({
+      where: { id },
+      select: { id: true },
+    })
+
+    if (!existing) {
+      return NextResponse.json(
+        { success: false, error: 'Invoice request not found' },
+        { status: 404 }
+      )
+    }
+
+    await prisma.invoiceRequest.delete({
+      where: { id },
+    })
+
+    return NextResponse.json({
+      success: true,
+      message: 'Invoice request deleted successfully',
+      data: { id },
+    })
+  } catch (error) {
+    console.error('Error deleting invoice request:', error)
+    return NextResponse.json(
+      { success: false, error: 'Failed to delete invoice request' },
+      { status: 500 }
+    )
+  }
+}
+
+/**
  * Generate HTML email for invoice request rejection notification
  */
 function generateInvoiceRejectionEmail(data: {

@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect, useMemo } from "react"
-import { Search, Eye, X, Building2 } from "lucide-react"
+import { Search, Eye, X, Building2, Trash2 } from "lucide-react"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog"
 import { format } from "date-fns"
 
@@ -92,6 +92,31 @@ export default function InHouseRequests() {
   const handlePreview = (request: InHouseCourseRequest) => {
     setPreviewRequest(request)
     setShowPreview(true)
+  }
+
+  const handleDeleteRequest = async (requestId: string) => {
+    const confirmed = window.confirm("Are you sure you want to delete this in-house request?")
+    if (!confirmed) return
+
+    try {
+      const response = await fetch(`/api/forms/in-house-course?id=${requestId}`, {
+        method: "DELETE",
+      })
+      const result = await response.json()
+
+      if (!response.ok || !result.success) {
+        throw new Error(result.error || "Failed to delete request")
+      }
+
+      setRequests((prev) => prev.filter((r) => r.id !== requestId))
+      if (previewRequest?.id === requestId) {
+        setShowPreview(false)
+        setPreviewRequest(null)
+      }
+    } catch (err) {
+      console.error("Error deleting in-house request:", err)
+      alert(err instanceof Error ? err.message : "Failed to delete request")
+    }
   }
 
   return (
@@ -192,13 +217,22 @@ export default function InHouseRequests() {
                       {request.submittedAt ? format(new Date(request.submittedAt), 'MMM dd, yyyy') : 'N/A'}
                     </td>
                     <td className="px-6 py-4">
-                      <button
-                        onClick={() => handlePreview(request)}
-                        className="p-2 hover:bg-primary/10 rounded-lg transition-colors theme-primary"
-                        title="View Details"
-                      >
-                        <Eye size={18} />
-                      </button>
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => handlePreview(request)}
+                          className="p-2 hover:bg-primary/10 rounded-lg transition-colors theme-primary"
+                          title="View Details"
+                        >
+                          <Eye size={18} />
+                        </button>
+                        <button
+                          onClick={() => handleDeleteRequest(request.id)}
+                          className="p-2 hover:bg-destructive/10 rounded-lg transition-colors text-destructive"
+                          title="Delete"
+                        >
+                          <Trash2 size={18} />
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))}

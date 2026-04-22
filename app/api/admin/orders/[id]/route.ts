@@ -379,18 +379,26 @@ export async function DELETE(
   try {
     const { id } = await params
 
-    // For now, we'll just update the status to Cancelled
-    // In a full implementation, you might want to add a deletedAt field
-    const updatedRegistration = await prisma.courseRegistration.update({
+    const existingOrder = await prisma.courseRegistration.findUnique({
       where: { id },
-      data: {
-        // You could add a deleted flag here if needed
-      },
+      select: { id: true },
+    })
+
+    if (!existingOrder) {
+      return NextResponse.json(
+        { success: false, error: 'Order not found' },
+        { status: 404 }
+      )
+    }
+
+    // Hard delete so the order does not reappear after refresh.
+    await prisma.courseRegistration.delete({
+      where: { id },
     })
 
     return NextResponse.json({
       success: true,
-      data: updatedRegistration,
+      data: { id },
     })
   } catch (error) {
     console.error('Error deleting order:', error)

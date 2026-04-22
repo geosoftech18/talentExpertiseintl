@@ -63,3 +63,32 @@ export async function GET(request: NextRequest) {
     )
   }
 }
+
+export async function DELETE(request: NextRequest) {
+  try {
+    const { searchParams } = new URL(request.url)
+    const id = searchParams.get('id')
+
+    if (!id) {
+      return NextResponse.json(
+        { success: false, error: 'Download id is required' },
+        { status: 400 }
+      )
+    }
+
+    await prisma.brochureDownload.delete({
+      where: { id },
+    })
+
+    return NextResponse.json({
+      success: true,
+      data: { id },
+    })
+  } catch (error) {
+    console.error('Error deleting brochure download:', error)
+    return NextResponse.json(
+      { success: false, error: 'Failed to delete brochure download' },
+      { status: 500 }
+    )
+  }
+}
