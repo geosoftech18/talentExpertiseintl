@@ -90,12 +90,16 @@ export default function CreateOrderPage() {
         setLoadingSchedules(true)
         // Use admin schedules endpoint so create-order can see all schedules
         // (including unpublished/expired ones), not only public upcoming schedules.
-        const response = await fetch("/api/admin/schedules?limit=10000")
+        // includeExpired=true is required here because some valid ongoing schedules
+        // may have startDate in the past but endDate still active.
+        const response = await fetch("/api/admin/schedules?limit=10000&includeExpired=true")
         const result = await response.json()
 
         if (result.success) {
           const selectedProgram = courses.find((c) => c.id === formData.courseId)
           const normalize = (value?: string | null) => (value || "").trim().toLowerCase()
+          const today = new Date()
+          today.setHours(0, 0, 0, 0)
 
           // Filter schedules for selected program
           const programSchedules = result.data
@@ -107,7 +111,17 @@ export default function CreateOrderPage() {
                 !matchesProgramRelation &&
                 normalize(schedule.programName) === normalize(selectedProgram?.title)
 
-              return matchesProgramId || matchesProgramRelation || matchesLegacyProgramName
+              const belongsToSelectedProgram =
+                matchesProgramId || matchesProgramRelation || matchesLegacyProgramName
+
+              if (!belongsToSelectedProgram) return false
+
+              // Keep only non-expired schedules:
+              // - If endDate exists, endDate must be today or later
+              // - Else startDate must be today or later
+              const scheduleEndOrStart = new Date(schedule.endDate || schedule.startDate)
+              scheduleEndOrStart.setHours(0, 0, 0, 0)
+              return scheduleEndOrStart >= today
             })
             .map((schedule: any) => ({
               id: schedule.id,
@@ -128,7 +142,7 @@ export default function CreateOrderPage() {
     }
 
     fetchSchedules()
-  }, [formData.courseId])
+  }, [formData.courseId, courses])
 
   // Update course title when schedule is selected
   useEffect(() => {
