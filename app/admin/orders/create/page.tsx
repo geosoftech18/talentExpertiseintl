@@ -3,6 +3,7 @@
 import { useState, useEffect, useMemo } from "react"
 import { useRouter } from "next/navigation"
 import { ArrowLeft, Loader2, CheckIcon, ChevronDownIcon } from "lucide-react"
+import Image from "next/image"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -10,6 +11,44 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command"
 import { WORLD_COUNTRY_NAMES } from "@/lib/world-countries"
+
+const phoneCountries = [
+  { code: "+971", name: "United Arab Emirates", iso: "ae" },
+  { code: "+1", name: "United States", iso: "us" },
+  { code: "+44", name: "United Kingdom", iso: "gb" },
+  { code: "+65", name: "Singapore", iso: "sg" },
+  { code: "+966", name: "Saudi Arabia", iso: "sa" },
+  { code: "+974", name: "Qatar", iso: "qa" },
+  { code: "+968", name: "Oman", iso: "om" },
+  { code: "+965", name: "Kuwait", iso: "kw" },
+  { code: "+973", name: "Bahrain", iso: "bh" },
+  { code: "+91", name: "India", iso: "in" },
+  { code: "+86", name: "China", iso: "cn" },
+  { code: "+81", name: "Japan", iso: "jp" },
+  { code: "+49", name: "Germany", iso: "de" },
+  { code: "+33", name: "France", iso: "fr" },
+  { code: "+39", name: "Italy", iso: "it" },
+  { code: "+34", name: "Spain", iso: "es" },
+  { code: "+61", name: "Australia", iso: "au" },
+  { code: "+27", name: "South Africa", iso: "za" },
+  { code: "+234", name: "Nigeria", iso: "ng" },
+  { code: "+254", name: "Kenya", iso: "ke" },
+  { code: "+20", name: "Egypt", iso: "eg" },
+  { code: "+60", name: "Malaysia", iso: "my" },
+  { code: "+66", name: "Thailand", iso: "th" },
+  { code: "+62", name: "Indonesia", iso: "id" },
+  { code: "+84", name: "Vietnam", iso: "vn" },
+  { code: "+82", name: "South Korea", iso: "kr" },
+]
+
+const getCountryISO = (phoneCode: string): string => {
+  return phoneCountries.find((c) => c.code === phoneCode)?.iso || "xx"
+}
+
+const getFlagImageUrl = (phoneCode: string): string => {
+  const isoCode = getCountryISO(phoneCode)
+  return `https://flagcdn.com/w40/${isoCode}.png`
+}
 
 export default function CreateOrderPage() {
   const router = useRouter()
@@ -29,7 +68,9 @@ export default function CreateOrderPage() {
     city: "",
     country: "",
     telephone: "",
+    telephoneCountryCode: "+971",
     mobile: "",
+    mobileCountryCode: "+971",
     // Course Information
     courseId: "",
     scheduleId: "",
@@ -209,9 +250,6 @@ export default function CreateOrderPage() {
         },
         body: JSON.stringify({
           ...formData,
-          // Remove country code fields from the request
-          telephoneCountryCode: undefined,
-          mobileCountryCode: undefined,
         }),
       })
 
@@ -390,22 +428,92 @@ export default function CreateOrderPage() {
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <Label htmlFor="telephone">Telephone</Label>
-                <Input
-                  id="telephone"
-                  value={formData.telephone}
-                  onChange={(e) => setFormData({ ...formData, telephone: e.target.value })}
-                  placeholder="Telephone number"
-                />
+                <div className="flex border border-slate-300 rounded-md overflow-hidden focus-within:ring-2 focus-within:ring-blue-500 focus-within:border-blue-500">
+                  <Select
+                    value={formData.telephoneCountryCode}
+                    onValueChange={(value) => setFormData({ ...formData, telephoneCountryCode: value })}
+                  >
+                    <SelectTrigger className="w-auto min-w-[100px] h-10 border-0 rounded-none border-r border-slate-300 bg-transparent focus:ring-0 px-2">
+                      <div className="flex items-center gap-1.5">
+                        <div className="relative w-5 h-4 rounded-sm overflow-hidden shrink-0">
+                          <Image
+                            src={getFlagImageUrl(formData.telephoneCountryCode)}
+                            alt={phoneCountries.find(c => c.code === formData.telephoneCountryCode)?.name || "Country flag"}
+                            fill
+                            className="object-cover"
+                            onError={(e) => { e.currentTarget.style.display = "none" }}
+                          />
+                        </div>
+                        <span className="text-xs font-medium text-slate-700">{formData.telephoneCountryCode}</span>
+                      </div>
+                    </SelectTrigger>
+                    <SelectContent className="max-h-[300px]">
+                      {phoneCountries.map((country) => (
+                        <SelectItem key={country.code} value={country.code}>
+                          <div className="flex items-center gap-2">
+                            <div className="relative w-5 h-4 rounded-sm overflow-hidden shrink-0">
+                              <Image src={getFlagImageUrl(country.code)} alt={country.name} fill className="object-cover" onError={(e) => { e.currentTarget.style.display = "none" }} />
+                            </div>
+                            <span className="text-sm">{country.name}</span>
+                            <span className="text-xs text-slate-500 ml-auto">{country.code}</span>
+                          </div>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <Input
+                    id="telephone"
+                    value={formData.telephone}
+                    onChange={(e) => setFormData({ ...formData, telephone: e.target.value })}
+                    placeholder="Telephone number"
+                    className="h-10 text-sm border-0 rounded-none focus-visible:ring-0 flex-1"
+                  />
+                </div>
               </div>
               <div>
                 <Label htmlFor="mobile">Mobile *</Label>
-                <Input
-                  id="mobile"
-                  value={formData.mobile}
-                  onChange={(e) => setFormData({ ...formData, mobile: e.target.value })}
-                  placeholder="Mobile number"
-                  required
-                />
+                <div className="flex border border-slate-300 rounded-md overflow-hidden focus-within:ring-2 focus-within:ring-blue-500 focus-within:border-blue-500">
+                  <Select
+                    value={formData.mobileCountryCode}
+                    onValueChange={(value) => setFormData({ ...formData, mobileCountryCode: value })}
+                  >
+                    <SelectTrigger className="w-auto min-w-[100px] h-10 border-0 rounded-none border-r border-slate-300 bg-transparent focus:ring-0 px-2">
+                      <div className="flex items-center gap-1.5">
+                        <div className="relative w-5 h-4 rounded-sm overflow-hidden shrink-0">
+                          <Image
+                            src={getFlagImageUrl(formData.mobileCountryCode)}
+                            alt={phoneCountries.find(c => c.code === formData.mobileCountryCode)?.name || "Country flag"}
+                            fill
+                            className="object-cover"
+                            onError={(e) => { e.currentTarget.style.display = "none" }}
+                          />
+                        </div>
+                        <span className="text-xs font-medium text-slate-700">{formData.mobileCountryCode}</span>
+                      </div>
+                    </SelectTrigger>
+                    <SelectContent className="max-h-[300px]">
+                      {phoneCountries.map((country) => (
+                        <SelectItem key={country.code} value={country.code}>
+                          <div className="flex items-center gap-2">
+                            <div className="relative w-5 h-4 rounded-sm overflow-hidden shrink-0">
+                              <Image src={getFlagImageUrl(country.code)} alt={country.name} fill className="object-cover" onError={(e) => { e.currentTarget.style.display = "none" }} />
+                            </div>
+                            <span className="text-sm">{country.name}</span>
+                            <span className="text-xs text-slate-500 ml-auto">{country.code}</span>
+                          </div>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <Input
+                    id="mobile"
+                    value={formData.mobile}
+                    onChange={(e) => setFormData({ ...formData, mobile: e.target.value })}
+                    placeholder="Mobile number"
+                    required
+                    className="h-10 text-sm border-0 rounded-none focus-visible:ring-0 flex-1"
+                  />
+                </div>
               </div>
             </div>
           </div>

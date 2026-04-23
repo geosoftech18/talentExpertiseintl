@@ -219,15 +219,17 @@ async function sendViaResend(options: EmailOptions): Promise<boolean> {
 async function sendViaSendGrid(options: EmailOptions): Promise<boolean> {
   try {
     // Dynamic import with error handling - only load if needed
-    let sgMail
+    let sgMail: any
     try {
-      // Use eval to prevent Next.js from analyzing this import at build time
-      const sendgridModule = await import('@sendgrid/mail' as any).catch(() => null)
+      // Runtime-only import so Next.js doesn't statically resolve optional dependency
+      const dynamicImport = new Function('m', 'return import(m)') as (m: string) => Promise<any>
+      const sendgridPkg = '@sendgrid' + '/mail'
+      const sendgridModule = await dynamicImport(sendgridPkg).catch(() => null)
       if (!sendgridModule) {
         console.error('SendGrid package not installed. Install it with: npm install @sendgrid/mail')
         return false
       }
-      sgMail = sendgridModule
+      sgMail = sendgridModule.default || sendgridModule
     } catch (error) {
       console.error('SendGrid package not installed. Install it with: npm install @sendgrid/mail')
       return false
@@ -278,15 +280,17 @@ async function sendViaSendGrid(options: EmailOptions): Promise<boolean> {
 async function sendViaSMTP(options: EmailOptions): Promise<boolean> {
   try {
     // Dynamic import with error handling - only load if needed
-    let nodemailer
+    let nodemailer: any
     try {
-      // Use eval to prevent Next.js from analyzing this import at build time
-      const nodemailerModule = await import('nodemailer' as any).catch(() => null)
+      // Runtime-only import so Next.js doesn't statically resolve optional dependency
+      const dynamicImport = new Function('m', 'return import(m)') as (m: string) => Promise<any>
+      const nodemailerPkg = 'node' + 'mailer'
+      const nodemailerModule = await dynamicImport(nodemailerPkg).catch(() => null)
       if (!nodemailerModule) {
         console.error('Nodemailer package not installed. Install it with: npm install nodemailer')
         return false
       }
-      nodemailer = nodemailerModule
+      nodemailer = nodemailerModule.default || nodemailerModule
     } catch (error) {
       console.error('Nodemailer package not installed. Install it with: npm install nodemailer')
       return false

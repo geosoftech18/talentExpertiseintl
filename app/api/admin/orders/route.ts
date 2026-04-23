@@ -213,10 +213,12 @@ export async function POST(request: NextRequest) {
         address: body.address || '',
         city: body.city,
         country: body.country,
-        telephone: body.telephone || null,
-        telephoneCountryCode: '+971', // Default country code
+        // telephone is optional in admin form, but DB column is non-nullable String
+        // so persist empty string when not provided.
+        telephone: body.telephone || '',
+        telephoneCountryCode: body.telephoneCountryCode || '+971',
         mobile: body.mobile,
-        mobileCountryCode: '+971', // Default country code
+        mobileCountryCode: body.mobileCountryCode || '+971',
         paymentMethod: body.paymentMethod,
         paymentStatus: body.paymentStatus || 'Unpaid',
         orderStatus: body.orderStatus || 'Incomplete',
