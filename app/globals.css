@@ -353,6 +353,66 @@
   flex: 1 1 auto;
 }
 
+/*
+ * Course outline modules on /courses/[slug]: HTML from TipTap is rendered outside .ProseMirror.
+ * Tailwind preflight resets ul/ol to list-style: none, so bullets/numbers vanished on the public page.
+ */
+/*
+ * Outline HTML is shown inside Radix accordion (overflow hidden when closed).
+ * `data-[state=open]:overflow-visible` on AccordionContent avoids clipping markers.
+ * Preflight resets `list-style: none` — use explicit list-style (+ !important) so nothing overrides bullets.
+ */
+.course-outline-module-content ul,
+.course-outline-module-content ol {
+  margin-block: 0.5rem;
+  margin-inline: 0;
+  padding-inline-start: 1.25rem !important;
+  padding-left: 1.25rem !important;
+  list-style-position: inside !important;
+}
+
+.course-outline-module-content ul:not([data-type="taskList"]) {
+  list-style-type: disc !important;
+}
+
+.course-outline-module-content ol {
+  list-style-type: decimal !important;
+}
+
+.course-outline-module-content ul:not([data-type="taskList"]) ul:not([data-type="taskList"]) {
+  list-style-type: circle !important;
+}
+
+.course-outline-module-content ul:not([data-type="taskList"]) ul:not([data-type="taskList"]) ul:not([data-type="taskList"]) {
+  list-style-type: square !important;
+}
+
+.course-outline-module-content li {
+  display: list-item !important;
+  margin: 0.25rem 0;
+  line-height: 1.6;
+}
+
+.course-outline-module-content ul:not([data-type="taskList"]) li::marker,
+.course-outline-module-content ol li::marker {
+  color: inherit;
+}
+
+.course-outline-module-content li p {
+  margin: 0;
+  display: inline;
+}
+
+.course-outline-module-content ul[data-type="taskList"] {
+  list-style: none;
+  padding-left: 0;
+}
+
+.course-outline-module-content ul[data-type="taskList"] li {
+  display: flex;
+  align-items: flex-start;
+}
+
 /* Course Registration Form Animations */
 @keyframes fade-in {
   from {

@@ -58,6 +58,9 @@ interface CourseOutline {
   day_number: number
   day_title: string
   topics: string[]
+  /** Raw module body from RichTextEditor; prefer rendering as-is when HTML */
+  content?: string
+  isHTML?: boolean
 }
 
 interface CourseBenefit {
@@ -1297,28 +1300,98 @@ export default function CourseDetailClient({
                         </AccordionTrigger>
                         <AccordionContent className="pt-4">
                           {(() => {
-                            const dayContent = (day as any).content || ''
+                            const dayContent = day.content ?? ''
+                            // Rich-text outline: show HTML exactly as saved (multiple blocks, headings, nested lists).
+                            // parseContent splits/rebuilds markup and loses structure from the editor.
+                            if (
+                              typeof dayContent === 'string' &&
+                              dayContent.trim().length > 0 &&
+                              (day.isHTML ?? dayContent.includes('<'))
+                            ) {
+                              return (
+                                <div
+                                  className="course-outline-module-content prose prose-slate max-w-none text-slate-700 prose-p:my-3 prose-ul:my-3 prose-ol:my-3 prose-li:my-1"
+                                  dangerouslySetInnerHTML={{ __html: dayContent }}
+                                />
+                              )
+                            }
+
                             const parsed = parseContent(dayContent)
-                            
-                            if (parsed.type === 'list' && parsed.items && parsed.items.length > 0) {
+
+                            if (parsed.type === 'mixed') {
+                              return (
+                                <div className="space-y-4">
+                                  {parsed.descriptionHtml ? (
+                                    <div
+                                      className="text-slate-700 leading-relaxed prose prose-slate max-w-none"
+                                      dangerouslySetInnerHTML={{ __html: parsed.descriptionHtml }}
+                                    />
+                                  ) : parsed.description ? (
+                                    <p className="text-slate-700 leading-relaxed whitespace-pre-line">
+                                      {parsed.description}
+                                    </p>
+                                  ) : null}
+                                  {parsed.itemsHtml && parsed.itemsHtml.length > 0 ? (
+                                    <ul className="space-y-3">
+                                      {parsed.itemsHtml.map((item, index) => (
+                                        <li key={index} className="flex items-start gap-3">
+                                          <CheckCircle2 className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" />
+                                          <span
+                                            className="text-slate-700"
+                                            dangerouslySetInnerHTML={{ __html: item }}
+                                          />
+                                        </li>
+                                      ))}
+                                    </ul>
+                                  ) : parsed.items && parsed.items.length > 0 ? (
+                                    <ul className="space-y-3">
+                                      {parsed.items.map((item, index) => (
+                                        <li key={index} className="flex items-start gap-3">
+                                          <CheckCircle2 className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" />
+                                          <span className="text-slate-700">{item}</span>
+                                        </li>
+                                      ))}
+                                    </ul>
+                                  ) : null}
+                                </div>
+                              )
+                            }
+
+                            if (parsed.type === 'list' && (parsed.itemsHtml?.length || parsed.items?.length)) {
                               return (
                                 <ul className="space-y-3">
-                                  {parsed.items.map((item, index) => (
-                                    <li key={index} className="flex items-start gap-3">
-                                      <CheckCircle2 className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" />
-                                      <span className="text-slate-700">{item}</span>
-                                    </li>
-                                  ))}
+                                  {parsed.itemsHtml && parsed.itemsHtml.length > 0 ? (
+                                    parsed.itemsHtml.map((item, index) => (
+                                      <li key={index} className="flex items-start gap-3">
+                                        <CheckCircle2 className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" />
+                                        <span
+                                          className="text-slate-700"
+                                          dangerouslySetInnerHTML={{ __html: item }}
+                                        />
+                                      </li>
+                                    ))
+                                  ) : (
+                                    parsed.items!.map((item, index) => (
+                                      <li key={index} className="flex items-start gap-3">
+                                        <CheckCircle2 className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" />
+                                        <span className="text-slate-700">{item}</span>
+                                      </li>
+                                    ))
+                                  )}
                                 </ul>
                               )
-                            } else if (parsed.type === 'html' && parsed.html) {
+                            }
+
+                            if (parsed.type === 'html' && parsed.html) {
                               return (
-                                <div 
+                                <div
                                   className="prose prose-slate max-w-none"
                                   dangerouslySetInnerHTML={{ __html: parsed.html }}
                                 />
                               )
-                            } else if (day.topics && day.topics.length > 0) {
+                            }
+
+                            if (day.topics && day.topics.length > 0) {
                               return (
                                 <ul className="space-y-3">
                                   {day.topics.map((topic, index) => (
@@ -1329,17 +1402,17 @@ export default function CourseDetailClient({
                                   ))}
                                 </ul>
                               )
-                            } else if (parsed.plainText) {
+                            }
+
+                            if (parsed.plainText && parsed.plainText.trim()) {
                               return (
                                 <p className="text-slate-700 leading-relaxed whitespace-pre-line">
                                   {parsed.plainText}
                                 </p>
                               )
-                            } else {
-                              return (
-                                <p className="text-slate-500 italic">No content available</p>
-                              )
                             }
+
+                            return <p className="text-slate-500 italic">No content available</p>
                           })()}
                         </AccordionContent>
                       </AccordionItem>

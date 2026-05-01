@@ -613,8 +613,8 @@ export default function EditOrder() {
                 >
                   <option value="Paid">Paid</option>
                   <option value="Unpaid">Unpaid</option>
-                  <option value="Partially Refunded">Partially Refunded</option>
-                  <option value="Refunded">Refunded</option>
+                  {/* <option value="Partially Refunded">Partially Refunded</option>
+                  <option value="Refunded">Refunded</option> */}
                 </select>
               </div>
               <div>

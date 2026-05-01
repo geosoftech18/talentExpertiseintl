@@ -1,9 +1,17 @@
 "use client"
 
 import { useEffect } from "react"
+import { usePathname } from "next/navigation"
 
 export default function CopyProtection() {
+  const pathname = usePathname()
+
   useEffect(() => {
+    // Admin panel: allow normal copy/paste, selection, and context menu
+    if (pathname?.startsWith("/admin")) {
+      return
+    }
+
     // Disable right-click context menu
     const handleContextMenu = (e: MouseEvent) => {
       e.preventDefault()
@@ -118,7 +126,7 @@ export default function CopyProtection() {
       document.removeEventListener('cut', handleCut)
       document.head.removeChild(style)
     }
-  }, [])
+  }, [pathname])
 
   return null
 }
