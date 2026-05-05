@@ -11,77 +11,14 @@ import { Textarea } from '@/components/ui/textarea'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import type { Course } from '@/lib/supabase'
-
-// Map phone country codes to ISO country codes for flags
-const getCountryISO = (phoneCode: string): string => {
-  const codeMap: { [key: string]: string } = {
-    "+971": "ae", // United Arab Emirates
-    "+1": "us", // United States (default, can be ca, mx, etc.)
-    "+44": "gb", // United Kingdom
-    "+65": "sg", // Singapore
-    "+966": "sa", // Saudi Arabia
-    "+974": "qa", // Qatar
-    "+968": "om", // Oman
-    "+965": "kw", // Kuwait
-    "+973": "bh", // Bahrain
-    "+91": "in", // India
-    "+86": "cn", // China
-    "+81": "jp", // Japan
-    "+49": "de", // Germany
-    "+33": "fr", // France
-    "+39": "it", // Italy
-    "+34": "es", // Spain
-    "+61": "au", // Australia
-    "+27": "za", // South Africa
-    "+234": "ng", // Nigeria
-    "+254": "ke", // Kenya
-    "+20": "eg", // Egypt
-    "+60": "my", // Malaysia
-    "+66": "th", // Thailand
-    "+62": "id", // Indonesia
-    "+84": "vn", // Vietnam
-    "+82": "kr", // South Korea
-  }
-  return codeMap[phoneCode] || "xx"
-}
-
-// Function to get flag image URL
-const getFlagImageUrl = (phoneCode: string): string => {
-  const isoCode = getCountryISO(phoneCode)
-  return `https://flagcdn.com/w40/${isoCode}.png`
-}
-
-const countries = [
-  { code: "+971", name: "United Arab Emirates", iso: "ae" },
-  { code: "+1", name: "United States", iso: "us" },
-  { code: "+44", name: "United Kingdom", iso: "gb" },
-  { code: "+65", name: "Singapore", iso: "sg" },
-  { code: "+966", name: "Saudi Arabia", iso: "sa" },
-  { code: "+974", name: "Qatar", iso: "qa" },
-  { code: "+968", name: "Oman", iso: "om" },
-  { code: "+965", name: "Kuwait", iso: "kw" },
-  { code: "+973", name: "Bahrain", iso: "bh" },
-  { code: "+91", name: "India", iso: "in" },
-  { code: "+86", name: "China", iso: "cn" },
-  { code: "+81", name: "Japan", iso: "jp" },
-  { code: "+49", name: "Germany", iso: "de" },
-  { code: "+33", name: "France", iso: "fr" },
-  { code: "+39", name: "Italy", iso: "it" },
-  { code: "+34", name: "Spain", iso: "es" },
-  { code: "+61", name: "Australia", iso: "au" },
-  { code: "+27", name: "South Africa", iso: "za" },
-  { code: "+234", name: "Nigeria", iso: "ng" },
-  { code: "+254", name: "Kenya", iso: "ke" },
-  { code: "+20", name: "Egypt", iso: "eg" },
-  { code: "+60", name: "Malaysia", iso: "my" },
-  { code: "+66", name: "Thailand", iso: "th" },
-  { code: "+62", name: "Indonesia", iso: "id" },
-  { code: "+84", name: "Vietnam", iso: "vn" },
-  { code: "+82", name: "South Korea", iso: "kr" },
-]
+import {
+  DEFAULT_PHONE_COUNTRY_CODE,
+  PHONE_COUNTRIES as countries,
+  getPhoneFlagImageUrl as getFlagImageUrl,
+} from '@/lib/phone-country-codes'
 
 // Function to detect country code from phone number
-const detectCountryCode = (phoneNumber: string, currentCountryCode: string = '+971'): string => {
+const detectCountryCode = (phoneNumber: string, currentCountryCode: string = DEFAULT_PHONE_COUNTRY_CODE): string => {
   if (!phoneNumber || phoneNumber.trim().length === 0) {
     return currentCountryCode
   }
@@ -240,7 +177,7 @@ export function CourseEnquiryForm({ course, onClose }: CourseEnquiryFormProps) {
     lastName: '',
     email: '',
     phone: '',
-    countryCode: '+971',
+    countryCode: DEFAULT_PHONE_COUNTRY_CODE,
     company: '',
     jobTitle: '',
     schedulePreference: '',

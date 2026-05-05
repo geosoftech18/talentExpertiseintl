@@ -11,44 +11,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command"
 import { WORLD_COUNTRY_NAMES } from "@/lib/world-countries"
-
-const phoneCountries = [
-  { code: "+971", name: "United Arab Emirates", iso: "ae" },
-  { code: "+1", name: "United States", iso: "us" },
-  { code: "+44", name: "United Kingdom", iso: "gb" },
-  { code: "+65", name: "Singapore", iso: "sg" },
-  { code: "+966", name: "Saudi Arabia", iso: "sa" },
-  { code: "+974", name: "Qatar", iso: "qa" },
-  { code: "+968", name: "Oman", iso: "om" },
-  { code: "+965", name: "Kuwait", iso: "kw" },
-  { code: "+973", name: "Bahrain", iso: "bh" },
-  { code: "+91", name: "India", iso: "in" },
-  { code: "+86", name: "China", iso: "cn" },
-  { code: "+81", name: "Japan", iso: "jp" },
-  { code: "+49", name: "Germany", iso: "de" },
-  { code: "+33", name: "France", iso: "fr" },
-  { code: "+39", name: "Italy", iso: "it" },
-  { code: "+34", name: "Spain", iso: "es" },
-  { code: "+61", name: "Australia", iso: "au" },
-  { code: "+27", name: "South Africa", iso: "za" },
-  { code: "+234", name: "Nigeria", iso: "ng" },
-  { code: "+254", name: "Kenya", iso: "ke" },
-  { code: "+20", name: "Egypt", iso: "eg" },
-  { code: "+60", name: "Malaysia", iso: "my" },
-  { code: "+66", name: "Thailand", iso: "th" },
-  { code: "+62", name: "Indonesia", iso: "id" },
-  { code: "+84", name: "Vietnam", iso: "vn" },
-  { code: "+82", name: "South Korea", iso: "kr" },
-]
-
-const getCountryISO = (phoneCode: string): string => {
-  return phoneCountries.find((c) => c.code === phoneCode)?.iso || "xx"
-}
-
-const getFlagImageUrl = (phoneCode: string): string => {
-  const isoCode = getCountryISO(phoneCode)
-  return `https://flagcdn.com/w40/${isoCode}.png`
-}
+import {
+  DEFAULT_PHONE_COUNTRY_CODE,
+  PHONE_COUNTRIES as phoneCountries,
+  getPhoneFlagImageUrl as getFlagImageUrl,
+} from "@/lib/phone-country-codes"
 
 export default function CreateOrderPage() {
   const router = useRouter()
@@ -68,9 +35,9 @@ export default function CreateOrderPage() {
     city: "",
     country: "",
     telephone: "",
-    telephoneCountryCode: "+971",
+    telephoneCountryCode: DEFAULT_PHONE_COUNTRY_CODE,
     mobile: "",
-    mobileCountryCode: "+971",
+    mobileCountryCode: DEFAULT_PHONE_COUNTRY_CODE,
     // Course Information
     courseId: "",
     scheduleId: "",
@@ -91,6 +58,10 @@ export default function CreateOrderPage() {
   const [courseSearch, setCourseSearch] = useState("")
   const [countrySearchOpen, setCountrySearchOpen] = useState(false)
   const [countrySearch, setCountrySearch] = useState("")
+  const [telephoneCodeSearchOpen, setTelephoneCodeSearchOpen] = useState(false)
+  const [telephoneCodeSearch, setTelephoneCodeSearch] = useState("")
+  const [mobileCodeSearchOpen, setMobileCodeSearchOpen] = useState(false)
+  const [mobileCodeSearch, setMobileCodeSearch] = useState("")
 
   // Fetch programs for dropdown
   useEffect(() => {
@@ -230,6 +201,30 @@ export default function CreateOrderPage() {
       country.toLowerCase().includes(query)
     )
   }, [countrySearch])
+
+  const filteredTelephonePhoneCountries = useMemo(() => {
+    const query = telephoneCodeSearch.trim().toLowerCase()
+    if (!query) return phoneCountries
+
+    return phoneCountries.filter((country) => {
+      return (
+        country.name.toLowerCase().includes(query) ||
+        country.code.toLowerCase().includes(query)
+      )
+    })
+  }, [telephoneCodeSearch])
+
+  const filteredMobilePhoneCountries = useMemo(() => {
+    const query = mobileCodeSearch.trim().toLowerCase()
+    if (!query) return phoneCountries
+
+    return phoneCountries.filter((country) => {
+      return (
+        country.name.toLowerCase().includes(query) ||
+        country.code.toLowerCase().includes(query)
+      )
+    })
+  }, [mobileCodeSearch])
 
   const handleCreateOrder = async () => {
     setIsCreating(true)
@@ -429,38 +424,65 @@ export default function CreateOrderPage() {
               <div>
                 <Label htmlFor="telephone">Telephone</Label>
                 <div className="flex border border-slate-300 rounded-md overflow-hidden focus-within:ring-2 focus-within:ring-blue-500 focus-within:border-blue-500">
-                  <Select
-                    value={formData.telephoneCountryCode}
-                    onValueChange={(value) => setFormData({ ...formData, telephoneCountryCode: value })}
-                  >
-                    <SelectTrigger className="w-auto min-w-[100px] h-10 border-0 rounded-none border-r border-slate-300 bg-transparent focus:ring-0 px-2">
-                      <div className="flex items-center gap-1.5">
-                        <div className="relative w-5 h-4 rounded-sm overflow-hidden shrink-0">
-                          <Image
-                            src={getFlagImageUrl(formData.telephoneCountryCode)}
-                            alt={phoneCountries.find(c => c.code === formData.telephoneCountryCode)?.name || "Country flag"}
-                            fill
-                            className="object-cover"
-                            onError={(e) => { e.currentTarget.style.display = "none" }}
-                          />
-                        </div>
-                        <span className="text-xs font-medium text-slate-700">{formData.telephoneCountryCode}</span>
-                      </div>
-                    </SelectTrigger>
-                    <SelectContent className="max-h-[300px]">
-                      {phoneCountries.map((country) => (
-                        <SelectItem key={country.code} value={country.code}>
-                          <div className="flex items-center gap-2">
-                            <div className="relative w-5 h-4 rounded-sm overflow-hidden shrink-0">
-                              <Image src={getFlagImageUrl(country.code)} alt={country.name} fill className="object-cover" onError={(e) => { e.currentTarget.style.display = "none" }} />
-                            </div>
-                            <span className="text-sm">{country.name}</span>
-                            <span className="text-xs text-slate-500 ml-auto">{country.code}</span>
+                  <Popover open={telephoneCodeSearchOpen} onOpenChange={setTelephoneCodeSearchOpen}>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        role="combobox"
+                        aria-expanded={telephoneCodeSearchOpen}
+                        className="w-auto min-w-[110px] h-10 border-0 rounded-none border-r border-slate-300 bg-transparent focus:ring-0 px-2 justify-between hover:bg-transparent"
+                      >
+                        <div className="flex items-center gap-1.5">
+                          <div className="relative w-5 h-4 rounded-sm overflow-hidden shrink-0">
+                            <Image
+                              src={getFlagImageUrl(formData.telephoneCountryCode)}
+                              alt={phoneCountries.find(c => c.code === formData.telephoneCountryCode)?.name || "Country flag"}
+                              fill
+                              className="object-cover"
+                              onError={(e) => { e.currentTarget.style.display = "none" }}
+                            />
                           </div>
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                          <span className="text-xs font-medium text-slate-700">{formData.telephoneCountryCode}</span>
+                        </div>
+                        <ChevronDownIcon className="ml-1 h-4 w-4 shrink-0 opacity-50" />
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-[320px] p-0" align="start">
+                      <Command shouldFilter={false}>
+                        <CommandInput
+                          placeholder="Search country code..."
+                          value={telephoneCodeSearch}
+                          onValueChange={setTelephoneCodeSearch}
+                        />
+                        <CommandList>
+                          <CommandEmpty>No country code found matching "{telephoneCodeSearch}".</CommandEmpty>
+                          <CommandGroup>
+                            {filteredTelephonePhoneCountries.map((country) => (
+                              <CommandItem
+                                key={country.code}
+                                value={`${country.name} ${country.code}`}
+                                onSelect={() => {
+                                  setFormData({ ...formData, telephoneCountryCode: country.code })
+                                  setTelephoneCodeSearchOpen(false)
+                                  setTelephoneCodeSearch("")
+                                }}
+                                className="cursor-pointer"
+                              >
+                                <CheckIcon
+                                  className={`mr-2 h-4 w-4 ${formData.telephoneCountryCode === country.code ? "opacity-100" : "opacity-0"}`}
+                                />
+                                <div className="relative w-5 h-4 rounded-sm overflow-hidden shrink-0 mr-2">
+                                  <Image src={getFlagImageUrl(country.code)} alt={country.name} fill className="object-cover" onError={(e) => { e.currentTarget.style.display = "none" }} />
+                                </div>
+                                <span className="text-sm">{country.name}</span>
+                                <span className="text-xs text-slate-500 ml-auto">{country.code}</span>
+                              </CommandItem>
+                            ))}
+                          </CommandGroup>
+                        </CommandList>
+                      </Command>
+                    </PopoverContent>
+                  </Popover>
                   <Input
                     id="telephone"
                     value={formData.telephone}
@@ -473,38 +495,65 @@ export default function CreateOrderPage() {
               <div>
                 <Label htmlFor="mobile">Mobile *</Label>
                 <div className="flex border border-slate-300 rounded-md overflow-hidden focus-within:ring-2 focus-within:ring-blue-500 focus-within:border-blue-500">
-                  <Select
-                    value={formData.mobileCountryCode}
-                    onValueChange={(value) => setFormData({ ...formData, mobileCountryCode: value })}
-                  >
-                    <SelectTrigger className="w-auto min-w-[100px] h-10 border-0 rounded-none border-r border-slate-300 bg-transparent focus:ring-0 px-2">
-                      <div className="flex items-center gap-1.5">
-                        <div className="relative w-5 h-4 rounded-sm overflow-hidden shrink-0">
-                          <Image
-                            src={getFlagImageUrl(formData.mobileCountryCode)}
-                            alt={phoneCountries.find(c => c.code === formData.mobileCountryCode)?.name || "Country flag"}
-                            fill
-                            className="object-cover"
-                            onError={(e) => { e.currentTarget.style.display = "none" }}
-                          />
-                        </div>
-                        <span className="text-xs font-medium text-slate-700">{formData.mobileCountryCode}</span>
-                      </div>
-                    </SelectTrigger>
-                    <SelectContent className="max-h-[300px]">
-                      {phoneCountries.map((country) => (
-                        <SelectItem key={country.code} value={country.code}>
-                          <div className="flex items-center gap-2">
-                            <div className="relative w-5 h-4 rounded-sm overflow-hidden shrink-0">
-                              <Image src={getFlagImageUrl(country.code)} alt={country.name} fill className="object-cover" onError={(e) => { e.currentTarget.style.display = "none" }} />
-                            </div>
-                            <span className="text-sm">{country.name}</span>
-                            <span className="text-xs text-slate-500 ml-auto">{country.code}</span>
+                  <Popover open={mobileCodeSearchOpen} onOpenChange={setMobileCodeSearchOpen}>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        role="combobox"
+                        aria-expanded={mobileCodeSearchOpen}
+                        className="w-auto min-w-[110px] h-10 border-0 rounded-none border-r border-slate-300 bg-transparent focus:ring-0 px-2 justify-between hover:bg-transparent"
+                      >
+                        <div className="flex items-center gap-1.5">
+                          <div className="relative w-5 h-4 rounded-sm overflow-hidden shrink-0">
+                            <Image
+                              src={getFlagImageUrl(formData.mobileCountryCode)}
+                              alt={phoneCountries.find(c => c.code === formData.mobileCountryCode)?.name || "Country flag"}
+                              fill
+                              className="object-cover"
+                              onError={(e) => { e.currentTarget.style.display = "none" }}
+                            />
                           </div>
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                          <span className="text-xs font-medium text-slate-700">{formData.mobileCountryCode}</span>
+                        </div>
+                        <ChevronDownIcon className="ml-1 h-4 w-4 shrink-0 opacity-50" />
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-[320px] p-0" align="start">
+                      <Command shouldFilter={false}>
+                        <CommandInput
+                          placeholder="Search country code..."
+                          value={mobileCodeSearch}
+                          onValueChange={setMobileCodeSearch}
+                        />
+                        <CommandList>
+                          <CommandEmpty>No country code found matching "{mobileCodeSearch}".</CommandEmpty>
+                          <CommandGroup>
+                            {filteredMobilePhoneCountries.map((country) => (
+                              <CommandItem
+                                key={country.code}
+                                value={`${country.name} ${country.code}`}
+                                onSelect={() => {
+                                  setFormData({ ...formData, mobileCountryCode: country.code })
+                                  setMobileCodeSearchOpen(false)
+                                  setMobileCodeSearch("")
+                                }}
+                                className="cursor-pointer"
+                              >
+                                <CheckIcon
+                                  className={`mr-2 h-4 w-4 ${formData.mobileCountryCode === country.code ? "opacity-100" : "opacity-0"}`}
+                                />
+                                <div className="relative w-5 h-4 rounded-sm overflow-hidden shrink-0 mr-2">
+                                  <Image src={getFlagImageUrl(country.code)} alt={country.name} fill className="object-cover" onError={(e) => { e.currentTarget.style.display = "none" }} />
+                                </div>
+                                <span className="text-sm">{country.name}</span>
+                                <span className="text-xs text-slate-500 ml-auto">{country.code}</span>
+                              </CommandItem>
+                            ))}
+                          </CommandGroup>
+                        </CommandList>
+                      </Command>
+                    </PopoverContent>
+                  </Popover>
                   <Input
                     id="mobile"
                     value={formData.mobile}

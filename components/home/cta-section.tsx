@@ -13,21 +13,11 @@ import { Badge } from "@/components/ui/badge"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Checkbox } from "@/components/ui/checkbox"
 import { useRouter } from "next/navigation"
-// Map phone country codes to ISO country codes for flags
-const getCountryISO = (phoneCode: string): string => {
-  const codeMap: { [key: string]: string } = {
-    "+971": "ae", "+1": "us", "+44": "gb", "+65": "sg", "+966": "sa", "+974": "qa",
-    "+968": "om", "+965": "kw", "+973": "bh", "+91": "in", "+86": "cn", "+81": "jp",
-    "+49": "de", "+33": "fr", "+39": "it", "+34": "es", "+31": "nl", "+41": "ch",
-    "+61": "au", "+1340": "vi", "+688": "tv", "+256": "ug", "+380": "ua",
-  }
-  return codeMap[phoneCode] || "xx"
-}
-
-const getFlagImageUrl = (phoneCode: string): string => {
-  const isoCode = getCountryISO(phoneCode)
-  return `https://flagcdn.com/w40/${isoCode}.png`
-}
+import {
+  DEFAULT_PHONE_COUNTRY_CODE,
+  PHONE_COUNTRIES as countries,
+  getPhoneFlagImageUrl as getFlagImageUrl,
+} from "@/lib/phone-country-codes"
 
 import {
   Send,
@@ -50,33 +40,7 @@ import {
   MessageCircle,
 } from "lucide-react"
 
-const countries = [
-  { code: "+971", name: "United Arab Emirates", iso: "ae" },
-  { code: "+1", name: "United States", iso: "us" },
-  { code: "+44", name: "United Kingdom", iso: "gb" },
-  { code: "+65", name: "Singapore", iso: "sg" },
-  { code: "+966", name: "Saudi Arabia", iso: "sa" },
-  { code: "+974", name: "Qatar", iso: "qa" },
-  { code: "+968", name: "Oman", iso: "om" },
-  { code: "+965", name: "Kuwait", iso: "kw" },
-  { code: "+973", name: "Bahrain", iso: "bh" },
-  { code: "+1340", name: "U.S. Virgin Islands", iso: "vi" },
-  { code: "+688", name: "Tuvalu", iso: "tv" },
-  { code: "+256", name: "Uganda", iso: "ug" },
-  { code: "+380", name: "Ukraine", iso: "ua" },
-  { code: "+91", name: "India", iso: "in" },
-  { code: "+86", name: "China", iso: "cn" },
-  { code: "+81", name: "Japan", iso: "jp" },
-  { code: "+49", name: "Germany", iso: "de" },
-  { code: "+33", name: "France", iso: "fr" },
-  { code: "+39", name: "Italy", iso: "it" },
-  { code: "+34", name: "Spain", iso: "es" },
-  { code: "+31", name: "Netherlands", iso: "nl" },
-  { code: "+41", name: "Switzerland", iso: "ch" },
-  { code: "+61", name: "Australia", iso: "au" },
-]
-
-const detectCountryCode = (phoneNumber: string, currentCountryCode: string = '+971'): string => {
+const detectCountryCode = (phoneNumber: string, currentCountryCode: string = DEFAULT_PHONE_COUNTRY_CODE): string => {
   if (!phoneNumber || phoneNumber.trim().length === 0) {
     return currentCountryCode
   }
@@ -226,7 +190,7 @@ export default function CTASection() {
     lastName: "",
     email: "",
     phone: "",
-    countryCode: "+971",
+    countryCode: DEFAULT_PHONE_COUNTRY_CODE,
     message: "",
     interestedIn: "",
     company: "",

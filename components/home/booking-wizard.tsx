@@ -12,54 +12,34 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Separator } from "@/components/ui/separator"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import {
+  ChevronLeft,
+  ChevronRight,
+  CreditCard,
+  CheckCircle,
+  Calendar,
+  MapPin,
+  Clock,
+  Users,
+  Star,
+  Shield,
+  Mail,
+  Phone,
+  Building,
+  Globe,
+  Lock,
+  Check,
+  AlertCircle,
+  Download,
+  Share2,
+} from "lucide-react"
+import {
+  DEFAULT_PHONE_COUNTRY_CODE,
+  PHONE_COUNTRIES as phoneCountries,
+  getPhoneFlagImageUrl as getFlagImageUrl,
+} from "@/lib/phone-country-codes"
 
-// Map phone country codes to ISO country codes for flags
-const getCountryISO = (phoneCode: string): string => {
-  const codeMap: { [key: string]: string } = {
-    "+971": "ae", "+1": "us", "+44": "gb", "+65": "sg", "+966": "sa", "+974": "qa",
-    "+968": "om", "+965": "kw", "+973": "bh", "+91": "in", "+86": "cn", "+81": "jp",
-    "+49": "de", "+33": "fr", "+39": "it", "+34": "es", "+61": "au", "+27": "za",
-    "+234": "ng", "+254": "ke", "+20": "eg", "+60": "my", "+66": "th", "+62": "id",
-    "+84": "vn", "+82": "kr", "+31": "nl", "+41": "ch",
-  }
-  return codeMap[phoneCode] || "xx"
-}
-
-const getFlagImageUrl = (phoneCode: string): string => {
-  const isoCode = getCountryISO(phoneCode)
-  return `https://flagcdn.com/w40/${isoCode}.png`
-}
-
-const phoneCountries = [
-  { code: "+971", name: "United Arab Emirates", iso: "ae" },
-  { code: "+1", name: "United States", iso: "us" },
-  { code: "+44", name: "United Kingdom", iso: "gb" },
-  { code: "+65", name: "Singapore", iso: "sg" },
-  { code: "+966", name: "Saudi Arabia", iso: "sa" },
-  { code: "+974", name: "Qatar", iso: "qa" },
-  { code: "+968", name: "Oman", iso: "om" },
-  { code: "+965", name: "Kuwait", iso: "kw" },
-  { code: "+973", name: "Bahrain", iso: "bh" },
-  { code: "+91", name: "India", iso: "in" },
-  { code: "+86", name: "China", iso: "cn" },
-  { code: "+81", name: "Japan", iso: "jp" },
-  { code: "+49", name: "Germany", iso: "de" },
-  { code: "+33", name: "France", iso: "fr" },
-  { code: "+39", name: "Italy", iso: "it" },
-  { code: "+34", name: "Spain", iso: "es" },
-  { code: "+61", name: "Australia", iso: "au" },
-  { code: "+27", name: "South Africa", iso: "za" },
-  { code: "+234", name: "Nigeria", iso: "ng" },
-  { code: "+254", name: "Kenya", iso: "ke" },
-  { code: "+20", name: "Egypt", iso: "eg" },
-  { code: "+60", name: "Malaysia", iso: "my" },
-  { code: "+66", name: "Thailand", iso: "th" },
-  { code: "+62", name: "Indonesia", iso: "id" },
-  { code: "+84", name: "Vietnam", iso: "vn" },
-  { code: "+82", name: "South Korea", iso: "kr" },
-]
-
-const detectCountryCode = (phoneNumber: string, currentCountryCode: string = '+971'): string => {
+const detectCountryCode = (phoneNumber: string, currentCountryCode: string = DEFAULT_PHONE_COUNTRY_CODE): string => {
   if (!phoneNumber || phoneNumber.trim().length === 0) {
     return currentCountryCode
   }
@@ -118,28 +98,6 @@ const detectCountryCode = (phoneNumber: string, currentCountryCode: string = '+9
   
   return currentCountryCode
 }
-
-import {
-  ChevronLeft,
-  ChevronRight,
-  CreditCard,
-  CheckCircle,
-  Calendar,
-  MapPin,
-  Clock,
-  Users,
-  Star,
-  Shield,
-  Mail,
-  Phone,
-  Building,
-  Globe,
-  Lock,
-  Check,
-  AlertCircle,
-  Download,
-  Share2,
-} from "lucide-react"
 
 interface BookingStep {
   id: number
@@ -209,7 +167,7 @@ export default function BookingWizard({
     lastName: "",
     email: "",
     phone: "",
-    phoneCountryCode: "+971",
+    phoneCountryCode: DEFAULT_PHONE_COUNTRY_CODE,
     company: "",
     jobTitle: "",
     country: "",
@@ -419,21 +377,21 @@ export default function BookingWizard({
           <Label htmlFor="phone">Phone Number *</Label>
           <div className="flex border border-slate-300 rounded-md overflow-hidden focus-within:ring-2 focus-within:ring-blue-500 focus-within:border-blue-500">
             <Select
-              value={bookingData.phoneCountryCode || "+971"}
+              value={bookingData.phoneCountryCode || DEFAULT_PHONE_COUNTRY_CODE}
               onValueChange={(value) => updateBookingData("phoneCountryCode", value)}
             >
               <SelectTrigger className="w-auto min-w-[100px] h-10 border-0 rounded-none border-r border-slate-300 bg-transparent focus:ring-0 px-2">
                 <div className="flex items-center gap-1.5">
                   <div className="relative w-5 h-4 rounded-sm overflow-hidden shrink-0">
                     <Image
-                      src={getFlagImageUrl(bookingData.phoneCountryCode || "+971")}
-                      alt={phoneCountries.find(c => c.code === (bookingData.phoneCountryCode || "+971"))?.name || "Country flag"}
+                      src={getFlagImageUrl(bookingData.phoneCountryCode || DEFAULT_PHONE_COUNTRY_CODE)}
+                      alt={phoneCountries.find(c => c.code === (bookingData.phoneCountryCode || DEFAULT_PHONE_COUNTRY_CODE))?.name || "Country flag"}
                       fill
                       className="object-cover"
                       onError={(e) => { e.currentTarget.style.display = 'none' }}
                     />
                   </div>
-                  <span className="text-xs font-medium text-slate-700">{bookingData.phoneCountryCode || "+971"}</span>
+                  <span className="text-xs font-medium text-slate-700">{bookingData.phoneCountryCode || DEFAULT_PHONE_COUNTRY_CODE}</span>
                 </div>
               </SelectTrigger>
               <SelectContent className="max-h-[300px]">
@@ -459,7 +417,7 @@ export default function BookingWizard({
               value={bookingData.phone}
               onChange={(e) => {
                 const phoneValue = e.target.value
-                const detectedCode = detectCountryCode(phoneValue, bookingData.phoneCountryCode || "+971")
+                const detectedCode = detectCountryCode(phoneValue, bookingData.phoneCountryCode || DEFAULT_PHONE_COUNTRY_CODE)
                 if (detectedCode) {
                   updateBookingData("phoneCountryCode", detectedCode)
                 }

@@ -11,54 +11,13 @@ import { Textarea } from '@/components/ui/textarea'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import type { Course } from '@/lib/supabase'
+import {
+  DEFAULT_PHONE_COUNTRY_CODE,
+  PHONE_COUNTRIES as countries,
+  getPhoneFlagImageUrl as getFlagImageUrl,
+} from '@/lib/phone-country-codes'
 
-// Map phone country codes to ISO country codes for flags
-const getCountryISO = (phoneCode: string): string => {
-  const codeMap: { [key: string]: string } = {
-    "+971": "ae", "+1": "us", "+44": "gb", "+65": "sg", "+966": "sa", "+974": "qa",
-    "+968": "om", "+965": "kw", "+973": "bh", "+91": "in", "+86": "cn", "+81": "jp",
-    "+49": "de", "+33": "fr", "+39": "it", "+34": "es", "+61": "au", "+27": "za",
-    "+234": "ng", "+254": "ke", "+20": "eg", "+60": "my", "+66": "th", "+62": "id",
-    "+84": "vn", "+82": "kr",
-  }
-  return codeMap[phoneCode] || "xx"
-}
-
-const getFlagImageUrl = (phoneCode: string): string => {
-  const isoCode = getCountryISO(phoneCode)
-  return `https://flagcdn.com/w40/${isoCode}.png`
-}
-
-const countries = [
-  { code: "+971", name: "United Arab Emirates", iso: "ae" },
-  { code: "+1", name: "United States", iso: "us" },
-  { code: "+44", name: "United Kingdom", iso: "gb" },
-  { code: "+65", name: "Singapore", iso: "sg" },
-  { code: "+966", name: "Saudi Arabia", iso: "sa" },
-  { code: "+974", name: "Qatar", iso: "qa" },
-  { code: "+968", name: "Oman", iso: "om" },
-  { code: "+965", name: "Kuwait", iso: "kw" },
-  { code: "+973", name: "Bahrain", iso: "bh" },
-  { code: "+91", name: "India", iso: "in" },
-  { code: "+86", name: "China", iso: "cn" },
-  { code: "+81", name: "Japan", iso: "jp" },
-  { code: "+49", name: "Germany", iso: "de" },
-  { code: "+33", name: "France", iso: "fr" },
-  { code: "+39", name: "Italy", iso: "it" },
-  { code: "+34", name: "Spain", iso: "es" },
-  { code: "+61", name: "Australia", iso: "au" },
-  { code: "+27", name: "South Africa", iso: "za" },
-  { code: "+234", name: "Nigeria", iso: "ng" },
-  { code: "+254", name: "Kenya", iso: "ke" },
-  { code: "+20", name: "Egypt", iso: "eg" },
-  { code: "+60", name: "Malaysia", iso: "my" },
-  { code: "+66", name: "Thailand", iso: "th" },
-  { code: "+62", name: "Indonesia", iso: "id" },
-  { code: "+84", name: "Vietnam", iso: "vn" },
-  { code: "+82", name: "South Korea", iso: "kr" },
-]
-
-const detectCountryCode = (phoneNumber: string, currentCountryCode: string = '+971'): string => {
+const detectCountryCode = (phoneNumber: string, currentCountryCode: string = DEFAULT_PHONE_COUNTRY_CODE): string => {
   if (!phoneNumber || phoneNumber.trim().length === 0) {
     return currentCountryCode
   }
@@ -144,9 +103,9 @@ export function InHouseCourseForm({ course, onClose }: InHouseCourseFormProps) {
     city: '',
     country: '',
     telephone: '',
-    telephoneCountryCode: '+971',
+    telephoneCountryCode: DEFAULT_PHONE_COUNTRY_CODE,
     mobile: '',
-    mobileCountryCode: '+971',
+    mobileCountryCode: DEFAULT_PHONE_COUNTRY_CODE,
     preferredDates: '',
     participants: '',
     location: '',
