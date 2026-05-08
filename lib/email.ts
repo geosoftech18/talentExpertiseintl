@@ -37,10 +37,27 @@ export async function sendEmail(options: EmailOptions): Promise<boolean> {
   if (process.env.SENDGRID_API_KEY) configuredProviders.push('sendgrid')
   if (process.env.SMTP_HOST) configuredProviders.push('smtp')
 
-  const preferredProvider = (process.env.EMAIL_PROVIDER || '').toLowerCase() as Provider | ''
-  const providerOrder: Provider[] = preferredProvider && configuredProviders.includes(preferredProvider)
-    ? [preferredProvider]
-    : configuredProviders
+  const preferredProvider = (process.env.EMAIL_PROVIDER || '').trim().toLowerCase() as Provider | ''
+
+  let providerOrder: Provider[] = [...configuredProviders]
+  if (
+    preferredProvider &&
+    (preferredProvider === 'brevo' ||
+      preferredProvider === 'resend' ||
+      preferredProvider === 'sendgrid' ||
+      preferredProvider === 'smtp')
+  ) {
+    if (configuredProviders.includes(preferredProvider)) {
+      providerOrder = [
+        preferredProvider,
+        ...configuredProviders.filter((p) => p !== preferredProvider),
+      ]
+    } else {
+      console.warn(
+        `[email] EMAIL_PROVIDER=${JSON.stringify(process.env.EMAIL_PROVIDER)} requested "${preferredProvider}" but it is not configured (missing API key / SMTP env). Falling back to: ${configuredProviders.join(', ') || 'none'}.`,
+      )
+    }
+  }
 
   try {
     if (useGlobalInsecureTls) {
@@ -51,6 +68,9 @@ export async function sendEmail(options: EmailOptions): Promise<boolean> {
     for (const provider of providerOrder) {
       const ok = await providerSenders[provider]()
       if (ok) {
+        if (providerOrder.length > 1) {
+          console.log(`✅ Email sent successfully via ${provider}`)
+        }
         return true
       }
       console.warn(`⚠️ Email send failed via ${provider}. Trying next configured provider...`)
@@ -184,7 +204,13 @@ async function sendViaBrevo(options: EmailOptions): Promise<boolean> {
     }
 
     if (result && result.body && result.body.messageId) {
-      console.log(`✅ Brevo email sent successfully. Message ID: ${result.body.messageId}`)
+      const fromAddr = sendSmtpEmail.sender?.email || '(unknown)'
+      console.log(
+        `✅ Brevo accepted email for delivery. Message ID: ${result.body.messageId} | to: ${options.to} | from: ${fromAddr}`,
+      )
+      console.log(
+        `   If the recipient sees nothing: check Spam/Promotions, wait 1–2 min, then Brevo → Transactional → Email logs for delivery/bounce status.`,
+      )
       return true
     }
 
