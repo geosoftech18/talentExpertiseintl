@@ -18,33 +18,71 @@ interface EmailOptions {
 
 export async function sendEmail(options: EmailOptions): Promise<boolean> {
   const { to, subject, html, text, attachments } = options
+  const useGlobalInsecureTls =
+    process.env.EMAIL_INSECURE_TLS === 'true' && process.env.NODE_ENV !== 'production'
 
-  // Check which email provider is configured (Brevo is preferred)
-  if (process.env.BREVO_API_KEY) {
-    return sendViaBrevo({ to, subject, html, text, attachments })
-  } else if (process.env.RESEND_API_KEY) {
-    return sendViaResend({ to, subject, html, text, attachments })
-  } else if (process.env.SENDGRID_API_KEY) {
-    return sendViaSendGrid({ to, subject, html, text, attachments })
-  } else if (process.env.SMTP_HOST) {
-    return sendViaSMTP({ to, subject, html, text, attachments })
-  } else {
-    // Fallback: Log email in development
-    console.log('📧 Email would be sent (no email provider configured):')
-    console.log('To:', to)
-    console.log('Subject:', subject)
-    console.log('Body:', text || html)
-    if (attachments && attachments.length > 0) {
-      console.log('Attachments:', attachments.map(a => a.filename).join(', '))
+  const previousTlsSetting = process.env.NODE_TLS_REJECT_UNAUTHORIZED
+
+  type Provider = 'brevo' | 'resend' | 'sendgrid' | 'smtp'
+  const providerSenders: Record<Provider, () => Promise<boolean>> = {
+    brevo: () => sendViaBrevo({ to, subject, html, text, attachments }),
+    resend: () => sendViaResend({ to, subject, html, text, attachments }),
+    sendgrid: () => sendViaSendGrid({ to, subject, html, text, attachments }),
+    smtp: () => sendViaSMTP({ to, subject, html, text, attachments }),
+  }
+
+  const configuredProviders: Provider[] = []
+  if (process.env.BREVO_API_KEY) configuredProviders.push('brevo')
+  if (process.env.RESEND_API_KEY) configuredProviders.push('resend')
+  if (process.env.SENDGRID_API_KEY) configuredProviders.push('sendgrid')
+  if (process.env.SMTP_HOST) configuredProviders.push('smtp')
+
+  const preferredProvider = (process.env.EMAIL_PROVIDER || '').toLowerCase() as Provider | ''
+  const providerOrder: Provider[] = preferredProvider && configuredProviders.includes(preferredProvider)
+    ? [preferredProvider]
+    : configuredProviders
+
+  try {
+    if (useGlobalInsecureTls) {
+      process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0'
+      console.warn('⚠️ EMAIL_INSECURE_TLS enabled: TLS cert verification disabled for all email providers in local development.')
     }
-    console.warn('⚠️  No email provider configured! Emails are only logged to console.')
-    console.warn('💡 Configure one of these in your .env file:')
-    console.warn('   - BREVO_API_KEY (recommended: npm install @getbrevo/brevo)')
-    console.warn('   - RESEND_API_KEY (npm install resend)')
-    console.warn('   - SENDGRID_API_KEY (npm install @sendgrid/mail)')
-    console.warn('   - SMTP_HOST, SMTP_USER, SMTP_PASSWORD (npm install nodemailer)')
-    console.warn('   See BREVO_SETUP.md for detailed setup instructions')
-    return false // Return false so caller knows email wasn't actually sent
+
+    for (const provider of providerOrder) {
+      const ok = await providerSenders[provider]()
+      if (ok) {
+        return true
+      }
+      console.warn(`⚠️ Email send failed via ${provider}. Trying next configured provider...`)
+    }
+
+    if (providerOrder.length === 0) {
+      // Fallback: Log email in development
+      console.log('📧 Email would be sent (no email provider configured):')
+      console.log('To:', to)
+      console.log('Subject:', subject)
+      console.log('Body:', text || html)
+      if (attachments && attachments.length > 0) {
+        console.log('Attachments:', attachments.map(a => a.filename).join(', '))
+      }
+      console.warn('⚠️  No email provider configured! Emails are only logged to console.')
+      console.warn('💡 Configure one of these in your .env file:')
+      console.warn('   - BREVO_API_KEY (recommended: npm install @getbrevo/brevo)')
+      console.warn('   - RESEND_API_KEY (npm install resend)')
+      console.warn('   - SENDGRID_API_KEY (npm install @sendgrid/mail)')
+      console.warn('   - SMTP_HOST, SMTP_USER, SMTP_PASSWORD (npm install nodemailer)')
+      console.warn('   Optional: set EMAIL_PROVIDER=brevo|resend|sendgrid|smtp')
+      console.warn('   Optional (dev-only): set EMAIL_INSECURE_TLS=true')
+      console.warn('   See BREVO_SETUP.md for detailed setup instructions')
+    }
+
+    return false
+  } finally {
+    if (typeof previousTlsSetting === 'undefined') {
+      delete process.env.NODE_TLS_REJECT_UNAUTHORIZED
+    } else {
+      process.env.NODE_TLS_REJECT_UNAUTHORIZED = previousTlsSetting
+    }
   }
 }
 
@@ -121,8 +159,29 @@ async function sendViaBrevo(options: EmailOptions): Promise<boolean> {
       sendSmtpEmail.attachment = attachmentObjects
     }
 
+    // Optional local-only TLS workaround for corporate/firewalled networks.
+    // Never enable this in production.
+    const useInsecureTls =
+      process.env.BREVO_INSECURE_TLS === 'true' ||
+      process.env.NODE_TLS_REJECT_UNAUTHORIZED === '0'
+
+    let previousTlsSetting: string | undefined
+    if (useInsecureTls && process.env.NODE_ENV !== 'production') {
+      previousTlsSetting = process.env.NODE_TLS_REJECT_UNAUTHORIZED
+      process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0'
+      console.warn('⚠️ BREVO_INSECURE_TLS enabled: TLS cert verification disabled for local development.')
+    }
+
     // Send email
     const result = await apiInstance.sendTransacEmail(sendSmtpEmail)
+
+    if (useInsecureTls && process.env.NODE_ENV !== 'production') {
+      if (typeof previousTlsSetting === 'undefined') {
+        delete process.env.NODE_TLS_REJECT_UNAUTHORIZED
+      } else {
+        process.env.NODE_TLS_REJECT_UNAUTHORIZED = previousTlsSetting
+      }
+    }
 
     if (result && result.body && result.body.messageId) {
       console.log(`✅ Brevo email sent successfully. Message ID: ${result.body.messageId}`)
@@ -138,6 +197,12 @@ async function sendViaBrevo(options: EmailOptions): Promise<boolean> {
       console.error('Brevo error details:', JSON.stringify(error.body, null, 2))
     } else if (error.message) {
       console.error('Brevo error message:', error.message)
+      if (
+        error.message.includes('unable to verify the first certificate') ||
+        error.message.includes('UNABLE_TO_VERIFY_LEAF_SIGNATURE')
+      ) {
+        console.error('💡 If this is local/dev on a restricted network, set BREVO_INSECURE_TLS=true in .env and restart dev server.')
+      }
     }
     return false
   }

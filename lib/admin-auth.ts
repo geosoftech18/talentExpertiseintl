@@ -135,7 +135,8 @@ export const ADMIN_EMAILS = [
   'pranavkhandekar152@gmail.com',
   'info@talentexpertiseintl.com',
   'admin@talentexpertiseintl.com',
-  'mitchelle.bob@talentexpertiseintl.com'
+  'mitchelle.bob@talentexpertiseintl.com',
+  'info@geosoftech.com'
 ]
 
 /**

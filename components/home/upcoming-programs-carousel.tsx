@@ -4,7 +4,7 @@ import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { useSession } from "next-auth/react"
 import { format } from "date-fns"
-import { Calendar, MapPin, DollarSign, ArrowRight, Loader2 } from "lucide-react"
+import { Calendar, MapPin, DollarSign, ArrowRight } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import {
@@ -29,6 +29,12 @@ interface UpcomingProgram {
   endDate: string | null
   venue: string
   price: number
+}
+
+interface SchedulesApiResponse {
+  success: boolean
+  data?: UpcomingProgram[]
+  error?: string
 }
 
 export default function UpcomingProgramsCarousel() {
@@ -94,10 +100,24 @@ export default function UpcomingProgramsCarousel() {
         // No cache or cache expired - fetch fresh data from schedules API (all schedules, no deduplication)
         setLoading(true)
         const response = await fetch('/api/schedules?limit=100')
-        const result = await response.json()
-        
-        if (!cancelled && result.success && result.data) {
-          const processedPrograms = processPrograms(result.data)
+        const contentType = response.headers.get('content-type') || ''
+        const result: unknown = contentType.includes('application/json')
+          ? await response.json()
+          : await response.text()
+
+        const isValidResponse =
+          typeof result === 'object' &&
+          result !== null &&
+          'success' in result &&
+          typeof (result as SchedulesApiResponse).success === 'boolean'
+
+        if (!response.ok) {
+          throw new Error(`Schedules API request failed with status ${response.status}`)
+        }
+
+        if (!cancelled && isValidResponse && (result as SchedulesApiResponse).success && Array.isArray((result as SchedulesApiResponse).data)) {
+          const apiResult = result as SchedulesApiResponse
+          const processedPrograms = processPrograms(apiResult.data || [])
           
           // Cache the processed data (only in browser)
           if (typeof window !== 'undefined') {
@@ -112,7 +132,12 @@ export default function UpcomingProgramsCarousel() {
           
           setPrograms(processedPrograms)
         } else if (!cancelled) {
-          console.error('API response error:', result)
+          console.error('Unexpected schedules API response shape:', {
+            status: response.status,
+            statusText: response.statusText,
+            contentType,
+            result,
+          })
         }
       } catch (error) {
         if (!cancelled) {
