@@ -3,21 +3,42 @@
 import { useEditor, EditorContent } from "@tiptap/react"
 import StarterKit from "@tiptap/starter-kit"
 import Placeholder from "@tiptap/extension-placeholder"
-import { Bold, Italic, List, ListOrdered, Heading1, Heading2, Heading3, Undo, Redo } from "lucide-react"
-import { useEffect, useState } from "react"
+import {
+  Bold,
+  Italic,
+  List,
+  ListOrdered,
+  Heading1,
+  Heading2,
+  Heading3,
+  Undo,
+  Redo,
+  AlignLeft,
+  AlignCenter,
+  AlignRight,
+  AlignJustify,
+} from "lucide-react"
+import { useEffect, useMemo, useState } from "react"
+import { TextAlign, type TextAlignment } from "@/lib/tiptap/text-align-extension"
 
 interface RichTextEditorProps {
   value: string
   onChange: (value: string) => void
   placeholder?: string
+  /** Show left / center / right / justify alignment controls (e.g. Introduction field) */
+  showTextAlign?: boolean
 }
 
-export function RichTextEditor({ value, onChange, placeholder = "Start typing..." }: RichTextEditorProps) {
+export function RichTextEditor({
+  value,
+  onChange,
+  placeholder = "Start typing...",
+  showTextAlign = false,
+}: RichTextEditorProps) {
   const [isMounted, setIsMounted] = useState(false)
 
-  const editor = useEditor({
-    immediatelyRender: false,
-    extensions: [
+  const extensions = useMemo(() => {
+    const base = [
       StarterKit.configure({
         heading: {
           levels: [1, 2, 3],
@@ -26,22 +47,37 @@ export function RichTextEditor({ value, onChange, placeholder = "Start typing...
       Placeholder.configure({
         placeholder,
       }),
-    ],
+    ]
+    if (showTextAlign) {
+      base.push(
+        TextAlign.configure({
+          types: ["heading", "paragraph"],
+          alignments: ["left", "center", "right", "justify"],
+          defaultAlignment: "left",
+        })
+      )
+    }
+    return base
+  }, [placeholder, showTextAlign])
+
+  const editor = useEditor({
+    immediatelyRender: false,
+    extensions,
     content: value || "",
-    onUpdate: ({ editor }) => {
-      const html = editor.getHTML()
+    onUpdate: ({ editor: ed }) => {
+      const html = ed.getHTML()
       if (html !== value) {
         onChange(html)
       }
     },
     editorProps: {
       attributes: {
-        class: "focus:outline-none",
+        class: "focus:outline-none min-h-[180px] px-4 py-3 prose prose-sm max-w-none",
       },
     },
-    onCreate: ({ editor }) => {
+    onCreate: ({ editor: ed }) => {
       if (value) {
-        editor.commands.setContent(value, false)
+        ed.commands.setContent(value, false)
       }
     },
   })
@@ -58,6 +94,13 @@ export function RichTextEditor({ value, onChange, placeholder = "Start typing...
       editor.commands.setContent(value || "", false)
     }
   }, [value, editor, isMounted])
+
+  const setAlignment = (alignment: TextAlignment) => {
+    editor?.chain().focus().setTextAlign(alignment).run()
+  }
+
+  const isAlignmentActive = (alignment: TextAlignment) =>
+    editor?.isActive({ textAlign: alignment }) ?? false
 
   if (!editor || !isMounted) {
     return (
@@ -167,6 +210,66 @@ export function RichTextEditor({ value, onChange, placeholder = "Start typing...
         >
           <ListOrdered size={18} />
         </button>
+
+        {showTextAlign && (
+          <>
+            <div className="w-px h-6 bg-border mx-1" />
+            <span className="text-xs theme-muted px-1 hidden sm:inline">Align</span>
+            <button
+              type="button"
+              onClick={(e) => {
+                e.preventDefault()
+                setAlignment("left")
+              }}
+              className={`p-2 rounded hover:bg-muted transition-colors ${
+                isAlignmentActive("left") ? "bg-primary/20 text-primary" : "theme-muted hover:theme-text"
+              }`}
+              title="Align left"
+            >
+              <AlignLeft size={18} />
+            </button>
+            <button
+              type="button"
+              onClick={(e) => {
+                e.preventDefault()
+                setAlignment("center")
+              }}
+              className={`p-2 rounded hover:bg-muted transition-colors ${
+                isAlignmentActive("center") ? "bg-primary/20 text-primary" : "theme-muted hover:theme-text"
+              }`}
+              title="Align center"
+            >
+              <AlignCenter size={18} />
+            </button>
+            <button
+              type="button"
+              onClick={(e) => {
+                e.preventDefault()
+                setAlignment("right")
+              }}
+              className={`p-2 rounded hover:bg-muted transition-colors ${
+                isAlignmentActive("right") ? "bg-primary/20 text-primary" : "theme-muted hover:theme-text"
+              }`}
+              title="Align right"
+            >
+              <AlignRight size={18} />
+            </button>
+            <button
+              type="button"
+              onClick={(e) => {
+                e.preventDefault()
+                setAlignment("justify")
+              }}
+              className={`p-2 rounded hover:bg-muted transition-colors ${
+                isAlignmentActive("justify") ? "bg-primary/20 text-primary" : "theme-muted hover:theme-text"
+              }`}
+              title="Justify"
+            >
+              <AlignJustify size={18} />
+            </button>
+          </>
+        )}
+
         <div className="w-px h-6 bg-border mx-1" />
         <button
           type="button"
@@ -195,9 +298,10 @@ export function RichTextEditor({ value, onChange, placeholder = "Start typing...
       </div>
 
       {/* Editor Content */}
-      <div className="bg-input relative">
+      <div className="bg-input relative [&_.ProseMirror]:min-h-[180px] [&_.ProseMirror]:px-4 [&_.ProseMirror]:py-3">
         <EditorContent editor={editor} />
       </div>
     </div>
   )
 }
+

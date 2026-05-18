@@ -177,6 +177,36 @@ async function getCourseData(slug: string) {
       image_url: p.cardImageUrl || null,
     }))
 
+    const certificateIds = (program.certificateIds || []).map((id) => String(id))
+    const linkedCertificates =
+      certificateIds.length > 0
+        ? await prisma.certificate.findMany({
+            where: {
+              id: { in: certificateIds },
+              status: 'Active',
+            },
+          })
+        : []
+
+    const certificates = [
+      ...linkedCertificates.map((cert) => ({
+        id: cert.id,
+        name: cert.name,
+        description: cert.description,
+        imageUrl: cert.imageUrl,
+        href: `/courses/certificate/${encodeURIComponent(cert.id)}`,
+      })),
+      ...program.certifications
+        .filter((cert) => !linkedCertificates.some((c) => c.id === cert.id))
+        .map((cert) => ({
+          id: cert.id,
+          name: cert.name,
+          description: cert.description,
+          imageUrl: cert.imageUrl,
+          href: null as string | null,
+        })),
+    ]
+
     return {
       course,
       schedules,
@@ -185,6 +215,7 @@ async function getCourseData(slug: string) {
       benefits,
       faqs,
       relatedCourses,
+      certificates,
     }
   } catch (error) {
     console.error('Error fetching course:', error)
@@ -209,6 +240,7 @@ export default async function CourseDetailPage({ params }: { params: Promise<{ s
       benefits={data.benefits as any}
       faqs={data.faqs as any}
       relatedCourses={data.relatedCourses as any}
+      certificates={data.certificates as any}
     />
   )
 }

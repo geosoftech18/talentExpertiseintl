@@ -213,6 +213,36 @@ export async function GET(
       image_url: p.cardImageUrl || null,
     }))
 
+    const certificateIds = (program.certificateIds || []).map((id) => String(id))
+    const linkedCertificates =
+      certificateIds.length > 0
+        ? await prisma.certificate.findMany({
+            where: {
+              id: { in: certificateIds },
+              status: 'Active',
+            },
+          })
+        : []
+
+    const certificates = [
+      ...linkedCertificates.map((cert) => ({
+        id: cert.id,
+        name: cert.name,
+        description: cert.description,
+        imageUrl: cert.imageUrl,
+        href: `/courses/certificate/${encodeURIComponent(cert.id)}`,
+      })),
+      ...program.certifications
+        .filter((cert) => !linkedCertificates.some((c) => c.id === cert.id))
+        .map((cert) => ({
+          id: cert.id,
+          name: cert.name,
+          description: cert.description,
+          imageUrl: cert.imageUrl,
+          href: null,
+        })),
+    ]
+
     return NextResponse.json({
       success: true,
       data: {
@@ -223,6 +253,7 @@ export async function GET(
         benefits,
         faqs,
         relatedCourses,
+        certificates,
       },
     })
   } catch (error) {

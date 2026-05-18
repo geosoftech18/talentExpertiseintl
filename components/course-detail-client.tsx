@@ -3,11 +3,12 @@
 import { useState, useEffect, useRef } from 'react'
 import { useSession } from 'next-auth/react'
 import { useRouter, usePathname } from 'next/navigation'
+import Link from 'next/link'
 import {
   Calendar, Clock, MapPin, Users, GraduationCap,
   TrendingUp, Target, BookOpen, Award, Download,
   ChevronRight, CheckCircle2, ArrowRight, Edit,
-  Mail, Building2, Video, FileText
+  Mail, Building2, Video, FileText, AlignLeft, AlignJustify
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
@@ -20,6 +21,10 @@ import { OnlineSessionForm } from '@/components/online-session-form'
 import { DownloadBrochureForm } from '@/components/download-brochure-form'
 import { RelatedCoursesCarousel } from '@/components/related-courses-carousel'
 import { parseContent } from '@/lib/utils/content-parser'
+
+/** Base prose styles for Introduction body (alignment toggled on course detail page) */
+const INTRO_CONTENT_BASE =
+  'intro-body text-slate-700 leading-relaxed prose prose-slate max-w-none [&_h1]:text-left [&_h2]:text-left [&_h3]:text-left [&_ul]:text-left [&_ol]:text-left [&_li]:text-left'
 
 interface Course {
   id: string
@@ -88,6 +93,14 @@ interface RelatedCourse {
   image_url: string | null
 }
 
+interface CourseCertificate {
+  id: string
+  name: string
+  description?: string | null
+  imageUrl?: string | null
+  href?: string | null
+}
+
 interface CourseDetailClientProps {
   course: Course
   schedules: CourseSchedule[]
@@ -96,6 +109,7 @@ interface CourseDetailClientProps {
   benefits: CourseBenefit[]
   faqs: CourseFAQ[]
   relatedCourses: RelatedCourse[]
+  certificates?: CourseCertificate[]
 }
 
 export default function CourseDetailClient({
@@ -105,7 +119,8 @@ export default function CourseDetailClient({
   outline,
   benefits,
   faqs,
-  relatedCourses
+  relatedCourses,
+  certificates = []
 }: CourseDetailClientProps) {
   const { data: session, status } = useSession()
   const router = useRouter()
@@ -118,6 +133,7 @@ export default function CourseDetailClient({
   const [showDownloadBrochure, setShowDownloadBrochure] = useState(false)
   const [showStickyTabs, setShowStickyTabs] = useState(false)
   const [headerHeight, setHeaderHeight] = useState(80)
+  const [introTextAlign, setIntroTextAlign] = useState<'left' | 'justify'>('justify')
 
   const overviewRef = useRef<HTMLDivElement>(null)
   const curriculumRef = useRef<HTMLDivElement>(null)
@@ -356,8 +372,9 @@ export default function CourseDetailClient({
         <div className="absolute inset-0 bg-grid-white/[0.05] bg-[size:30px_30px]" />
         <div className="absolute inset-0 bg-gradient-to-t from-slate-900/90 to-transparent" />
 
-        <div className="relative max-w-7xl mx-auto px-6 py-20">
-          <div className="flex items-center gap-2 mb-6 animate-fade-in">
+        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 py-12 sm:py-20">
+          <div className="max-w-3xl relative z-10">
+          <div className="flex flex-wrap items-center gap-2 mb-6 animate-fade-in">
             <Badge variant="secondary" className="bg-blue-500/20 text-blue-300 border-blue-400/30">
               {course.course_code || course.duration}
             </Badge>
@@ -371,12 +388,12 @@ export default function CourseDetailClient({
           </h1>
 
           {course.shortDescription && (
-            <p className="text-xl text-slate-300 mb-8 max-w-3xl animate-slide-up animation-delay-200">
+            <p className="text-base sm:text-xl text-slate-300 mb-6 sm:mb-8 max-w-3xl animate-slide-up animation-delay-200">
               {course.shortDescription}
             </p>
           )}
 
-          <div className="flex flex-wrap gap-6 mb-8 animate-slide-up animation-delay-300">
+          <div className="flex flex-col sm:flex-row sm:flex-wrap gap-4 sm:gap-6 mb-6 sm:mb-8 animate-slide-up animation-delay-300">
             <div className="flex items-center gap-2">
               <Clock className="w-5 h-5 text-blue-400" />
               <span className="text-slate-300">{course.duration}</span>
@@ -391,10 +408,10 @@ export default function CourseDetailClient({
             </div>
           </div>
 
-          <div className="flex flex-wrap gap-4 animate-slide-up animation-delay-400">
+          <div className="flex flex-col sm:flex-row sm:flex-wrap gap-3 sm:gap-4 animate-slide-up animation-delay-400">
             <Button
               size="lg"
-              className="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-8 shadow-lg shadow-blue-500/50 transition-all hover:shadow-xl hover:shadow-blue-500/60 hover:scale-105"
+              className="w-full sm:w-auto bg-blue-600 hover:bg-blue-700 text-white font-semibold px-8 shadow-lg shadow-blue-500/50 transition-all hover:shadow-xl hover:shadow-blue-500/60 hover:scale-105"
               onClick={handleRegisterClick}
             >
               Register Now
@@ -403,7 +420,7 @@ export default function CourseDetailClient({
             <Button
               size="lg"
               variant="outline"
-              className="border-white/30 text-blue-600 hover:text-white hover:bg-white/10 font-semibold px-8"
+              className="w-full sm:w-auto border-white/30 text-blue-600 hover:text-white hover:bg-white/10 font-semibold px-8"
               onClick={() => setShowEnquiry(true)}
             >
               Enquire About Course
@@ -411,13 +428,47 @@ export default function CourseDetailClient({
             <Button
               size="lg"
               variant="outline"
-              className="border-white/30 text-blue-600 hover:text-white hover:bg-white/10 font-semibold px-8"
+              className="w-full sm:w-auto border-white/30 text-blue-600 hover:text-white hover:bg-white/10 font-semibold px-8"
               onClick={() => setShowDownloadBrochure(true)}
             >
               <Download className="mr-2 w-5 h-5" />
               Download Brochure
             </Button>
           </div>
+          </div>
+
+          {certificates.some((c) => c.imageUrl) && (
+            <div className="mt-6 sm:mt-8 flex flex-nowrap sm:flex-wrap overflow-x-auto sm:overflow-visible justify-start sm:justify-end gap-2 sm:gap-3 pb-1 md:mt-0 md:absolute md:bottom-8 md:right-4 lg:right-6 z-10 max-w-full [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+              {certificates
+                .filter((c) => c.imageUrl)
+                .map((certificate) => {
+                  const image = (
+                    <div className="w-14 h-14 sm:w-20 sm:h-20 md:w-24 md:h-24 shrink-0 rounded-lg overflow-hidden bg-white/10 backdrop-blur-sm border-2 border-white/20 shadow-lg flex items-center justify-center">
+                      <img
+                        src={certificate.imageUrl!}
+                        alt={certificate.name}
+                        className="w-full h-full object-contain p-2"
+                      />
+                    </div>
+                  )
+
+                  return certificate.href ? (
+                    <Link
+                      key={certificate.id}
+                      href={certificate.href}
+                      className="transition-transform hover:scale-105"
+                      title={certificate.name}
+                    >
+                      {image}
+                    </Link>
+                  ) : (
+                    <div key={certificate.id} title={certificate.name}>
+                      {image}
+                    </div>
+                  )
+                })}
+            </div>
+          )}
         </div>
       </div>
 
@@ -749,53 +800,93 @@ export default function CourseDetailClient({
                     <CardContent className="pt-6">
                       <div className="flex items-start gap-3 mb-4">
                         <BookOpen className="w-6 h-6 text-blue-600 mt-1 flex-shrink-0" />
-                        <div className="w-full">
-                          <h2 className="text-2xl font-bold mb-3">Introduction</h2>
+                        <div
+                          className={`w-full introduction-content ${
+                            introTextAlign === 'justify'
+                              ? 'introduction-content--justify'
+                              : 'introduction-content--left'
+                          }`}
+                        >
+                          <div className="flex flex-wrap items-center justify-between gap-3 mb-3">
+                            <h2 className="text-2xl font-bold">Introduction</h2>
+                            <div
+                              className="flex items-center gap-1 rounded-lg border border-slate-200 bg-slate-50 p-1"
+                              role="group"
+                              aria-label="Introduction text alignment"
+                            >
+                              <button
+                                type="button"
+                                onClick={() => setIntroTextAlign('left')}
+                                className={`inline-flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-medium transition-colors ${
+                                  introTextAlign === 'left'
+                                    ? 'bg-blue-600 text-white shadow-sm'
+                                    : 'text-slate-600 hover:bg-slate-100'
+                                }`}
+                                title="Align left"
+                              >
+                                <AlignLeft className="w-3.5 h-3.5" />
+                                <span className="hidden sm:inline">Left</span>
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => setIntroTextAlign('justify')}
+                                className={`inline-flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-medium transition-colors ${
+                                  introTextAlign === 'justify'
+                                    ? 'bg-blue-600 text-white shadow-sm'
+                                    : 'text-slate-600 hover:bg-slate-100'
+                                }`}
+                                title="Justify text"
+                              >
+                                <AlignJustify className="w-3.5 h-3.5" />
+                                <span className="hidden sm:inline">Justify</span>
+                              </button>
+                            </div>
+                          </div>
                           {parsed.type === 'mixed' ? (
                             <div className="space-y-4">
                               {/* Description */}
                               {parsed.descriptionHtml ? (
                                 <div 
-                                  className="text-slate-700 leading-relaxed prose prose-slate max-w-none mb-4"
+                                  className={`${INTRO_CONTENT_BASE} mb-4`}
                                   dangerouslySetInnerHTML={{ __html: parsed.descriptionHtml }}
                                 />
                               ) : parsed.description ? (
-                                <p className="text-slate-700 leading-relaxed mb-4 whitespace-pre-line">
+                                <p className={`${INTRO_CONTENT_BASE} mb-4 whitespace-pre-line`}>
                                   {parsed.description}
                                 </p>
                               ) : null}
                               {/* Bullet Points */}
                               {parsed.itemsHtml ? (
-                                <ul className="space-y-3">
+                                <ul className="space-y-3 text-left">
                                   {parsed.itemsHtml.map((item, index) => (
                                     <li key={index} className="flex items-start gap-3">
                                       <CheckCircle2 className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" />
                                       <span 
-                                        className="text-slate-700"
+                                        className="text-slate-700 text-left"
                                         dangerouslySetInnerHTML={{ __html: item }}
                                       />
                                     </li>
                                   ))}
                                 </ul>
                               ) : parsed.items ? (
-                                <ul className="space-y-3">
+                                <ul className="space-y-3 text-left">
                                   {parsed.items.map((item, index) => (
                                     <li key={index} className="flex items-start gap-3">
                                       <CheckCircle2 className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" />
-                                      <span className="text-slate-700">{item}</span>
+                                      <span className="text-slate-700 text-left">{item}</span>
                                     </li>
                                   ))}
                                 </ul>
                               ) : null}
                             </div>
                           ) : parsed.type === 'list' && parsed.items ? (
-                            <ul className="space-y-3">
+                            <ul className="space-y-3 text-left">
                               {parsed.itemsHtml ? (
                                 parsed.itemsHtml.map((item, index) => (
                                   <li key={index} className="flex items-start gap-3">
                                     <CheckCircle2 className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" />
                                     <span 
-                                      className="text-slate-700"
+                                      className="text-slate-700 text-left"
                                       dangerouslySetInnerHTML={{ __html: item }}
                                     />
                                   </li>
@@ -804,18 +895,18 @@ export default function CourseDetailClient({
                                 parsed.items.map((item, index) => (
                                   <li key={index} className="flex items-start gap-3">
                                     <CheckCircle2 className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" />
-                                    <span className="text-slate-700">{item}</span>
+                                    <span className="text-slate-700 text-left">{item}</span>
                                   </li>
                                 ))
                               )}
                             </ul>
                           ) : parsed.type === 'html' && parsed.html ? (
                             <div 
-                              className="text-slate-700 leading-relaxed prose prose-slate max-w-none"
+                              className={INTRO_CONTENT_BASE}
                               dangerouslySetInnerHTML={{ __html: parsed.html }}
                             />
                           ) : (
-                            <p className="text-slate-700 leading-relaxed whitespace-pre-line">
+                            <p className={`${INTRO_CONTENT_BASE} whitespace-pre-line`}>
                               {parsed.plainText}
                             </p>
                           )}
@@ -1539,40 +1630,72 @@ export default function CourseDetailClient({
           </div>
         </div>
 
-        <div ref={certificatesRef} className="max-w-7xl mx-auto px-6 py-12 border-t">
-          <Card className="shadow-lg bg-gradient-to-br from-blue-50 to-white">
-            <CardContent className="pt-8">
-              <div className="flex items-start gap-4">
-                <Award className="w-8 h-8 text-blue-600 flex-shrink-0 mt-1" />
-                <div>
-                  <h2 className="text-3xl font-bold mb-4 text-slate-900">Certificates</h2>
-                  <div className="space-y-4">
-                    <div>
-                      <p className="text-lg text-slate-700 leading-relaxed">
-                        On successful completion of this training course, <span className="font-semibold text-slate-900">Certificate</span> will be awarded to the delegates.
-                      </p>
-                    </div>
-                    <div className="bg-white/80 p-6 rounded-lg border border-blue-200">
-                      <h3 className="font-bold text-lg mb-2 text-slate-900">Continuing Professional Education credits (CPE)</h3>
-                      <p className="text-slate-700 leading-relaxed">
-                        In accordance with the standards of the National Registry of CPE Sponsors, one CPE credit is granted per 50 minutes of attendance.
-                      </p>
-                    </div>
-                    <div className="flex items-center gap-3 pt-4">
-                      <div className="bg-blue-100 p-3 rounded-lg">
-                        <GraduationCap className="w-6 h-6 text-blue-600" />
-                      </div>
-                      <div>
-                        <p className="text-sm font-semibold text-slate-900">Endorsed Education Provider</p>
-                        <p className="text-xs text-slate-600">NASBA Certified</p>
-                      </div>
-                    </div>
+        {certificates.length > 0 && (
+        <div ref={certificatesRef} className="max-w-7xl mx-auto px-4 sm:px-6 py-8 sm:py-12 border-t">
+          <Card className="shadow-lg bg-gradient-to-br from-blue-50 to-white overflow-hidden">
+            <CardContent className="pt-6 pb-6 px-4 sm:pt-8 sm:pb-8 sm:px-6">
+              <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-4">
+                <Award className="w-7 h-7 sm:w-8 sm:h-8 text-blue-600 shrink-0" />
+                <div className="flex-1 min-w-0 w-full">
+                  <h2 className="text-2xl sm:text-3xl font-bold mb-3 sm:mb-4 text-slate-900">Certificates</h2>
+                  <p className="text-base sm:text-lg text-slate-700 leading-relaxed mb-5 sm:mb-6">
+                    On successful completion of this training course, the following{' '}
+                    {certificates.length === 1 ? 'certificate' : 'certificates'} will be awarded to delegates:
+                  </p>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
+                    {certificates.map((certificate) => {
+                      const cardClass =
+                        'flex w-full items-start gap-3 rounded-lg border border-blue-200 bg-white/80 p-4 transition-all group sm:p-5'
+                      const cardContent = (
+                        <>
+                          <div className="shrink-0 w-14 h-14 sm:w-16 sm:h-16 rounded-lg overflow-hidden bg-slate-100 border border-slate-200 flex items-center justify-center group-hover:border-blue-300 transition-colors">
+                            {certificate.imageUrl ? (
+                              <img
+                                src={certificate.imageUrl}
+                                alt={certificate.name}
+                                className="w-full h-full object-contain p-1"
+                              />
+                            ) : (
+                              <Award className="w-7 h-7 sm:w-8 sm:h-8 text-blue-600" />
+                            )}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <h3 className="font-bold text-base sm:text-lg text-slate-900 break-words group-hover:text-blue-600 transition-colors">
+                              {certificate.name}
+                            </h3>
+                            {certificate.description && (
+                              <p className="text-slate-600 text-sm leading-relaxed mt-1 line-clamp-2 sm:line-clamp-3 break-words">
+                                {certificate.description}
+                              </p>
+                            )}
+                          </div>
+                          {certificate.href && (
+                            <ChevronRight className="w-5 h-5 text-slate-400 shrink-0 mt-1 group-hover:text-blue-600 transition-colors" />
+                          )}
+                        </>
+                      )
+
+                      return certificate.href ? (
+                        <Link
+                          key={certificate.id}
+                          href={certificate.href}
+                          className={`${cardClass} hover:border-blue-400 hover:shadow-md`}
+                        >
+                          {cardContent}
+                        </Link>
+                      ) : (
+                        <div key={certificate.id} className={cardClass}>
+                          {cardContent}
+                        </div>
+                      )
+                    })}
                   </div>
                 </div>
               </div>
             </CardContent>
           </Card>
         </div>
+        )}
 
         <div className="max-w-7xl mx-auto px-6 py-12 bg-slate-50">
           <RelatedCoursesCarousel courses={relatedCourses} />
@@ -1640,6 +1763,16 @@ export default function CourseDetailClient({
         .bg-grid-white\\/\\[0\\.05\\] {
           background-image: linear-gradient(to right, rgba(255, 255, 255, 0.05) 1px, transparent 1px),
             linear-gradient(to bottom, rgba(255, 255, 255, 0.05) 1px, transparent 1px);
+        }
+
+        .introduction-content--justify .intro-body,
+        .introduction-content--justify .intro-body p {
+          text-align: justify;
+        }
+
+        .introduction-content--left .intro-body,
+        .introduction-content--left .intro-body p {
+          text-align: left;
         }
       `}</style>
     </div>

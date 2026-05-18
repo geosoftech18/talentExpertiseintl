@@ -747,7 +747,10 @@ export function CourseRegistrationForm({ course, schedules, selectedScheduleId, 
                   </div>
 
                   <div className="space-y-1.5">
-                    <Label htmlFor="name" className="text-xs font-semibold text-slate-700">Name *</Label>
+                    <Label htmlFor="name" className="text-xs font-semibold text-slate-700">
+                     Full Name *{' '}
+                      <span className="font-normal text-slate-500">(Entered name will be used on certificate)</span>
+                    </Label>
                     <Input
                       id="name"
                       placeholder="Name*"

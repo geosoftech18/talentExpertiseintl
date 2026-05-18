@@ -751,6 +751,7 @@ export default function AddNewProgram({ onBack, editId }: { onBack?: () => void;
             value={formData.introduction}
             onChange={(value) => handleInputChange("introduction", value)}
             placeholder="Write a comprehensive introduction to the course..."
+            showTextAlign
           />
         </div>
 
