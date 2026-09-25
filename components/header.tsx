@@ -355,7 +355,8 @@ export default function Header() {
                 alt="TEI Training" 
                 width={250} 
                 height={200}
-                className="w-48 h-auto md:w-48 lg:w-[250px]"
+                className="w-48 md:w-48 lg:w-[250px] h-auto"
+                style={{ height: "auto" }}
               />
             
             </Link>

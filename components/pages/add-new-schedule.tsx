@@ -71,6 +71,7 @@ export default function AddNewSchedule({ onBack, editId }: { onBack?: () => void
     fee: "",
     status: "Open",
     isNewProgram: false,
+    isUpcomingProgram: false,
   })
 
   const [programs, setPrograms] = useState<Program[]>([])
@@ -83,38 +84,47 @@ export default function AddNewSchedule({ onBack, editId }: { onBack?: () => void
   const [programSearch, setProgramSearch] = useState("")
   const [loadingData, setLoadingData] = useState(false)
 
-  // Load schedule data if editing
+  // Load schedule data if editing (fetch by ID — list endpoint filters/paginates and often misses it)
   useEffect(() => {
-    if (editId) {
-      const loadSchedule = async () => {
-        try {
-          setLoadingData(true)
-          const response = await fetch('/api/admin/schedules')
-          const result = await response.json()
-          
-          if (result.success) {
-            const schedule = result.data.find((s: any) => s.id === editId)
-            if (schedule) {
-              setFormData({
-                program: schedule.programName || schedule.program?.programName || "",
-                mentor: schedule.mentorId || "",
-                startDate: schedule.startDate ? new Date(schedule.startDate).toISOString().split('T')[0] : "",
-                endDate: schedule.endDate ? new Date(schedule.endDate).toISOString().split('T')[0] : "",
-                venue: schedule.venue || "",
-                fee: schedule.fee ? String(schedule.fee) : "",
-                status: schedule.status || "Open",
-                isNewProgram: schedule.isNewProgram || false,
-              })
-            }
-          }
-        } catch (err) {
-          console.error('Error loading schedule:', err)
-        } finally {
-          setLoadingData(false)
+    if (!editId) return
+
+    const loadSchedule = async () => {
+      try {
+        setLoadingData(true)
+        const response = await fetch(`/api/admin/schedules?id=${encodeURIComponent(editId)}`)
+        const result = await response.json()
+
+        if (!response.ok || !result.success || !result.data) {
+          console.error('Error loading schedule:', result.error || 'Not found')
+          return
         }
+
+        const schedule = result.data
+        const toDateInput = (value: string | Date | null | undefined) => {
+          if (!value) return ""
+          const iso = typeof value === "string" ? value : value.toISOString()
+          return iso.slice(0, 10)
+        }
+
+        setFormData({
+          program: schedule.programName || schedule.program?.programName || "",
+          mentor: schedule.mentorId || "",
+          startDate: toDateInput(schedule.startDate),
+          endDate: toDateInput(schedule.endDate),
+          venue: schedule.venue || "",
+          fee: schedule.fee != null ? String(schedule.fee) : "",
+          status: schedule.status || "Open",
+          isNewProgram: !!schedule.isNewProgram,
+          isUpcomingProgram: !!schedule.isUpcomingProgram,
+        })
+      } catch (err) {
+        console.error('Error loading schedule:', err)
+      } finally {
+        setLoadingData(false)
       }
-      loadSchedule()
     }
+
+    loadSchedule()
   }, [editId])
 
   // Fetch programs from database
@@ -244,6 +254,7 @@ export default function AddNewSchedule({ onBack, editId }: { onBack?: () => void
       fee: "",
       status: "Open",
       isNewProgram: false,
+      isUpcomingProgram: false,
     })
     setProgramSearch("")
     setProgramSearchOpen(false)
@@ -279,6 +290,7 @@ export default function AddNewSchedule({ onBack, editId }: { onBack?: () => void
         fee: formData.fee ? parseFloat(formData.fee.replace(/[^\d.]/g, '')) : null,
         status: formData.status,
         isNewProgram: formData.isNewProgram,
+        isUpcomingProgram: formData.isUpcomingProgram,
       }
 
       const response = await fetch('/api/admin/schedules', {
@@ -667,6 +679,26 @@ export default function AddNewSchedule({ onBack, editId }: { onBack?: () => void
                   id="isNewProgram"
                   checked={formData.isNewProgram}
                   onCheckedChange={(checked) => handleInputChange("isNewProgram", checked)}
+                  className="data-[state=unchecked]:bg-slate-300 dark:data-[state=unchecked]:bg-slate-600 data-[state=checked]:bg-primary"
+                />
+              </div>
+            </div>
+
+            {/* Upcoming Program Toggle */}
+            <div className="space-y-2">
+              <div className="flex items-center justify-between p-4 border border-border rounded-lg bg-input/50">
+                <div className="flex flex-col gap-1">
+                  <Label htmlFor="isUpcomingProgram" className="text-sm font-medium theme-text cursor-pointer">
+                    Show in Upcoming Programs
+                  </Label>
+                  <p className="text-xs theme-muted">
+                    Enable this to display this schedule on the Upcoming Programs carousel
+                  </p>
+                </div>
+                <Switch
+                  id="isUpcomingProgram"
+                  checked={formData.isUpcomingProgram}
+                  onCheckedChange={(checked) => handleInputChange("isUpcomingProgram", checked)}
                   className="data-[state=unchecked]:bg-slate-300 dark:data-[state=unchecked]:bg-slate-600 data-[state=checked]:bg-primary"
                 />
               </div>

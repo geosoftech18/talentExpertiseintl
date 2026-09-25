@@ -1,44 +1,46 @@
 'use client'
 
-import { Download, ArrowRight } from 'lucide-react'
+import { useEffect, useState } from 'react'
+import { ArrowRight, Loader2 } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import Image from 'next/image'
 import Link from 'next/link'
 
-const downloadCategories = [
-  {
-    slug: 'tei-profile',
-    title: 'TEI Profile',
-    description: 'Download our company profile and learn more about Talent Expertise International',
-    image: 'https://images.unsplash.com/photo-1521737604893-d14cc237f11d?w=800&h=600&fit=crop&q=90',
-    color: 'from-white/10 to-white/10',
-  },
-  {
-    slug: 'training-calendar',
-    title: 'TEI Training Calendar',
-    description: 'Access our comprehensive training calendar with all upcoming courses and schedules',
-    image: 'https://images.unsplash.com/photo-1522202176988-66273c2fd55f?w=800&h=600&fit=crop&q=90',
-    color: 'from-white/10 to-white/10',
-  },
-  {
-    slug: 'by-categories',
-    title: 'Download by Categories',
-    description: 'Browse and download course materials organized by training categories',
-    image: 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=800&h=600&fit=crop&q=90',
-    color: 'from-white/10 to-white/10',
-  },
-  {
-    slug: 'by-venue',
-    title: 'Download by Course Venue',
-    description: 'Find and download course information based on training venue locations',
-    image: 'https://images.unsplash.com/photo-1512453979798-5ea266f8880c?w=800&h=600&fit=crop&q=90',
-    color: 'from-white/10 to-white/10',
-  },
-]
+interface DownloadCategoryCard {
+  id: string
+  name: string
+  slug: string
+  description: string | null
+  imageUrl: string | null
+}
 
 export default function DownloadsPage() {
+  const [categories, setCategories] = useState<DownloadCategoryCard[]>([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    const load = async () => {
+      try {
+        setLoading(true)
+        const res = await fetch('/api/download-categories')
+        const json = await res.json()
+        if (json.success) {
+          setCategories(json.data || [])
+        } else {
+          setCategories([])
+        }
+      } catch (e) {
+        console.error('Error loading download categories:', e)
+        setCategories([])
+      } finally {
+        setLoading(false)
+      }
+    }
+    load()
+  }, [])
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-slate-50 to-white">
       {/* Hero Section */}
@@ -54,7 +56,7 @@ export default function DownloadsPage() {
               Downloads
             </h1>
             <p className="text-lg md:text-xl text-blue-100 mb-8 leading-relaxed">
-              Access our comprehensive collection of training materials, calendars, profiles, and course information 
+              Access our comprehensive collection of training materials, calendars, profiles, and course information
               organized for your convenience.
             </p>
           </div>
@@ -64,54 +66,60 @@ export default function DownloadsPage() {
       {/* Download Categories Section */}
       <section className="py-16 md:py-24 bg-white">
         <div className="max-w-7xl mx-auto px-2">
-          {/* <div className="text-center mb-12">
-            <Badge className="bg-blue-100 text-blue-700 border-blue-200 mb-4">
-              Download Categories
-            </Badge>
-            <h2 className="text-3xl md:text-4xl font-bold text-slate-900 mb-4">
-              Choose Your Download Category
-            </h2>
-            <p className="text-lg text-slate-600 max-w-3xl mx-auto">
-              Select from the categories below to access relevant documents and resources
-            </p>
-          </div> */}
-
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
-            {downloadCategories.map((category) => (
-              <Card
-                key={category.slug}
-                className="group border-2 border-slate-400 shadow-2xl hover:border-blue-300 transition-all duration-300 hover:shadow-xl overflow-hidden flex flex-col"
-              >
-                <div className="relative h-[200px]  overflow-hidden ">
-                  <Image
-                    src={category.image}
-                    alt={category.title}
-                    fill
-                    className="object-cover group-hover:scale-110 transition-transform duration-500 px-2"
-                  />
-                  {/* <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent" /> */}
-                </div>
-                <CardContent className="p-6 flex flex-col" style={{ minHeight: '140px' }}>
-                  <h3 className="text-xl text-center font-bold text-slate-900 mb-3 group-hover:text-blue-600 transition-colors">
-                    {category.title}
-                  </h3>
-                  <div className="flex-grow"></div>
-                  <Button
-                    asChild
-                    className={`w-full bg-gradient-to-r ${category.color} hover:opacity-90 text-white mt-auto`}
-                  >
-                    <Link href={`/downloads/${category.slug}`}>
-                      Click here
-                      <ArrowRight className="ml-2 w-4 h-4" />
-                    </Link>
-                  </Button>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
+          {loading ? (
+            <div className="flex justify-center py-16">
+              <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
+            </div>
+          ) : categories.length === 0 ? (
+            <div className="text-center py-16 text-slate-600">
+              No download categories available yet.
+            </div>
+          ) : (
+            <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
+              {categories.map((category) => (
+                <Card
+                  key={category.id}
+                  className="group border-2 border-slate-400 shadow-2xl hover:border-blue-300 transition-all duration-300 hover:shadow-xl overflow-hidden flex flex-col"
+                >
+                  <div className="relative h-[200px] overflow-hidden bg-slate-100">
+                    {category.imageUrl ? (
+                      <Image
+                        src={category.imageUrl}
+                        alt={category.name}
+                        fill
+                        className="object-cover group-hover:scale-110 transition-transform duration-500 px-2"
+                        unoptimized={
+                          category.imageUrl.startsWith('data:') ||
+                          category.imageUrl.startsWith('http')
+                        }
+                      />
+                    ) : (
+                      <div className="absolute inset-0 flex items-center justify-center text-slate-400 text-sm">
+                        {category.name}
+                      </div>
+                    )}
+                  </div>
+                  <CardContent className="p-6 flex flex-col" style={{ minHeight: '140px' }}>
+                    <h3 className="text-xl text-center font-bold text-slate-900 mb-3 group-hover:text-blue-600 transition-colors">
+                      {category.name}
+                    </h3>
+                    <div className="flex-grow" />
+                    <Button
+                      asChild
+                      className="w-full bg-[#0A3049] hover:opacity-90 text-white mt-auto"
+                    >
+                      <Link href={`/downloads/${category.slug}`}>
+                        Click here
+                        <ArrowRight className="ml-2 w-4 h-4" />
+                      </Link>
+                    </Button>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
         </div>
       </section>
     </div>
   )
 }
-

@@ -21,10 +21,11 @@ import { OnlineSessionForm } from '@/components/online-session-form'
 import { DownloadBrochureForm } from '@/components/download-brochure-form'
 import { RelatedCoursesCarousel } from '@/components/related-courses-carousel'
 import { parseContent } from '@/lib/utils/content-parser'
+import { SafeHtml } from '@/components/safe-html'
 
 /** Base prose styles for Introduction body (alignment toggled on course detail page) */
 const INTRO_CONTENT_BASE =
-  'intro-body text-slate-700 leading-relaxed prose prose-slate max-w-none [&_h1]:text-left [&_h2]:text-left [&_h3]:text-left [&_ul]:text-left [&_ol]:text-left [&_li]:text-left'
+  'intro-body text-slate-700 leading-relaxed prose prose-slate max-w-none prose-p:my-4 [&_p+p]:mt-4 [&_h1]:text-left [&_h2]:text-left [&_h3]:text-left [&_ul]:text-left [&_ol]:text-left [&_li]:text-left'
 
 interface Course {
   id: string
@@ -438,35 +439,55 @@ export default function CourseDetailClient({
           </div>
 
           {certificates.some((c) => c.imageUrl) && (
-            <div className="mt-6 sm:mt-8 flex flex-nowrap sm:flex-wrap overflow-x-auto sm:overflow-visible justify-start sm:justify-end gap-2 sm:gap-3 pb-1 md:mt-0 md:absolute md:bottom-8 md:right-4 lg:right-6 z-10 max-w-full [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-              {certificates
-                .filter((c) => c.imageUrl)
-                .map((certificate) => {
-                  const image = (
-                    <div className="w-14 h-14 sm:w-20 sm:h-20 md:w-24 md:h-24 shrink-0 rounded-lg overflow-hidden bg-white/10 backdrop-blur-sm border-2 border-white/20 shadow-lg flex items-center justify-center">
-                      <img
-                        src={certificate.imageUrl!}
-                        alt={certificate.name}
-                        className="w-full h-full object-contain p-2"
-                      />
-                    </div>
-                  )
+            <div className="mt-6 sm:mt-8 flex flex-col items-center gap-2 pb-1 md:mt-0 md:absolute md:bottom-8 md:right-4 lg:right-6 z-10 ml-auto w-[13.5rem] sm:w-[15rem] md:w-[16rem]">
+              <div className="flex flex-nowrap sm:flex-wrap overflow-x-auto sm:overflow-visible justify-center gap-2 sm:gap-3 w-full [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+                {certificates
+                  .filter((c) => c.imageUrl)
+                  .map((certificate) => {
+                    const image = (
+                      <div className="w-14 h-14 sm:w-20 sm:h-20 md:w-24 md:h-24 shrink-0 rounded-lg overflow-hidden bg-white/10 backdrop-blur-sm border-2 border-white/20 shadow-lg flex items-center justify-center">
+                        <img
+                          src={certificate.imageUrl!}
+                          alt={certificate.name}
+                          className="w-full h-full object-contain p-2"
+                        />
+                      </div>
+                    )
 
-                  return certificate.href ? (
-                    <Link
-                      key={certificate.id}
-                      href={certificate.href}
-                      className="transition-transform hover:scale-105"
-                      title={certificate.name}
-                    >
-                      {image}
-                    </Link>
-                  ) : (
-                    <div key={certificate.id} title={certificate.name}>
-                      {image}
-                    </div>
-                  )
-                })}
+                    return certificate.href ? (
+                      <Link
+                        key={certificate.id}
+                        href={certificate.href}
+                        className="transition-transform hover:scale-105"
+                        title={certificate.name}
+                      >
+                        {image}
+                      </Link>
+                    ) : (
+                      <div key={certificate.id} title={certificate.name}>
+                        {image}
+                      </div>
+                    )
+                  })}
+              </div>
+              {(() => {
+                const visibleCerts = certificates.filter((c) => c.imageUrl)
+                const hasShrm = visibleCerts.some((c) =>
+                  c.name?.toUpperCase().includes("SHRM")
+                )
+                const primaryName = visibleCerts[0]?.name
+                const description = hasShrm
+                  ? "Talent Expertise International is recognized by SHRM to offer Professional Development Credits (PDCs) for SHRM-CP® or SHRM-SCP® recertification activities."
+                  : primaryName
+                    ? `Explore our comprehensive training programs that lead to ${primaryName} certification.`
+                    : "Explore our comprehensive training programs for professional certification."
+
+                return (
+                  <p className="w-full text-xs text-blue-100/90 leading-relaxed text-center">
+                    {description}
+                  </p>
+                )
+              })()}
             </div>
           )}
         </div>
@@ -814,7 +835,7 @@ export default function CourseDetailClient({
                               role="group"
                               aria-label="Introduction text alignment"
                             >
-                              <button
+                              {/* <button
                                 type="button"
                                 onClick={() => setIntroTextAlign('left')}
                                 className={`inline-flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-medium transition-colors ${
@@ -839,21 +860,16 @@ export default function CourseDetailClient({
                               >
                                 <AlignJustify className="w-3.5 h-3.5" />
                                 <span className="hidden sm:inline">Justify</span>
-                              </button>
+                              </button> */}
                             </div>
                           </div>
                           {parsed.type === 'mixed' ? (
                             <div className="space-y-4">
                               {/* Description */}
                               {parsed.descriptionHtml ? (
-                                <div 
-                                  className={`${INTRO_CONTENT_BASE} mb-4`}
-                                  dangerouslySetInnerHTML={{ __html: parsed.descriptionHtml }}
-                                />
+                                <SafeHtml html={parsed.descriptionHtml} className={`${INTRO_CONTENT_BASE} mb-4`} />
                               ) : parsed.description ? (
-                                <p className={`${INTRO_CONTENT_BASE} mb-4 whitespace-pre-line`}>
-                                  {parsed.description}
-                                </p>
+                                <div className={`${INTRO_CONTENT_BASE} mb-4 whitespace-pre-line`}>{parsed.description}</div>
                               ) : null}
                               {/* Bullet Points */}
                               {parsed.itemsHtml ? (
@@ -861,10 +877,7 @@ export default function CourseDetailClient({
                                   {parsed.itemsHtml.map((item, index) => (
                                     <li key={index} className="flex items-start gap-3">
                                       <CheckCircle2 className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" />
-                                      <span 
-                                        className="text-slate-700 text-left"
-                                        dangerouslySetInnerHTML={{ __html: item }}
-                                      />
+                                      <SafeHtml html={item} className="text-slate-700 text-left" />
                                     </li>
                                   ))}
                                 </ul>
@@ -885,10 +898,7 @@ export default function CourseDetailClient({
                                 parsed.itemsHtml.map((item, index) => (
                                   <li key={index} className="flex items-start gap-3">
                                     <CheckCircle2 className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" />
-                                    <span 
-                                      className="text-slate-700 text-left"
-                                      dangerouslySetInnerHTML={{ __html: item }}
-                                    />
+                                    <SafeHtml html={item} className="text-slate-700 text-left" />
                                   </li>
                                 ))
                               ) : (
@@ -901,14 +911,9 @@ export default function CourseDetailClient({
                               )}
                             </ul>
                           ) : parsed.type === 'html' && parsed.html ? (
-                            <div 
-                              className={INTRO_CONTENT_BASE}
-                              dangerouslySetInnerHTML={{ __html: parsed.html }}
-                            />
+                            <SafeHtml html={parsed.html} className={INTRO_CONTENT_BASE} />
                           ) : (
-                            <p className={`${INTRO_CONTENT_BASE} whitespace-pre-line`}>
-                              {parsed.plainText}
-                            </p>
+                            <div className={`${INTRO_CONTENT_BASE} whitespace-pre-line`}>{parsed.plainText}</div>
                           )}
                         </div>
                       </div>
@@ -933,10 +938,7 @@ export default function CourseDetailClient({
                             <div className="space-y-4">
                               {/* Description */}
                               {parsed.descriptionHtml ? (
-                                <div 
-                                  className="text-slate-700 leading-relaxed prose prose-slate max-w-none mb-4"
-                                  dangerouslySetInnerHTML={{ __html: parsed.descriptionHtml }}
-                                />
+                                <SafeHtml html={parsed.descriptionHtml} className="text-slate-700 leading-relaxed prose prose-slate max-w-none mb-4" />
                               ) : parsed.description ? (
                                 <p className="text-slate-700 leading-relaxed mb-4 whitespace-pre-line">
                                   {parsed.description}
@@ -948,10 +950,7 @@ export default function CourseDetailClient({
                                   parsed.itemsHtml.map((item, index) => (
                                     <div key={index} className="flex items-start gap-3 p-3 bg-emerald-50 rounded-lg hover:bg-emerald-100 transition-colors">
                                       <CheckCircle2 className="w-5 h-5 text-emerald-600 mt-0.5 flex-shrink-0" />
-                                      <p 
-                                        className="text-slate-700"
-                                        dangerouslySetInnerHTML={{ __html: item }}
-                                      />
+                                      <SafeHtml html={item} className="text-slate-700" />
                                     </div>
                                   ))
                                 ) : parsed.items ? (
@@ -970,10 +969,7 @@ export default function CourseDetailClient({
                                 parsed.itemsHtml.map((item, index) => (
                                   <div key={index} className="flex items-start gap-3 p-3 bg-emerald-50 rounded-lg hover:bg-emerald-100 transition-colors">
                                     <CheckCircle2 className="w-5 h-5 text-emerald-600 mt-0.5 flex-shrink-0" />
-                                    <p 
-                                      className="text-slate-700"
-                                      dangerouslySetInnerHTML={{ __html: item }}
-                                    />
+                                    <SafeHtml html={item} className="text-slate-700" />
                                   </div>
                                 ))
                               ) : (
@@ -986,10 +982,7 @@ export default function CourseDetailClient({
                               )}
                             </div>
                           ) : parsed.type === 'html' && parsed.html ? (
-                            <div 
-                              className="prose prose-slate max-w-none"
-                              dangerouslySetInnerHTML={{ __html: parsed.html }}
-                            />
+                            <SafeHtml html={parsed.html} className="prose prose-slate max-w-none" />
                           ) : (
                             <p className="text-slate-700 leading-relaxed whitespace-pre-line">
                               {parsed.plainText}
@@ -1018,10 +1011,7 @@ export default function CourseDetailClient({
                             <div className="space-y-4">
                               {/* Description */}
                               {parsed.descriptionHtml ? (
-                                <div 
-                                  className="text-slate-700 leading-relaxed prose prose-slate max-w-none mb-4"
-                                  dangerouslySetInnerHTML={{ __html: parsed.descriptionHtml }}
-                                />
+                                <SafeHtml html={parsed.descriptionHtml} className="text-slate-700 leading-relaxed prose prose-slate max-w-none mb-4" />
                               ) : parsed.description ? (
                                 <p className="text-slate-700 leading-relaxed mb-4 whitespace-pre-line">
                                   {parsed.description}
@@ -1033,10 +1023,7 @@ export default function CourseDetailClient({
                                   {parsed.itemsHtml.map((item, index) => (
                                     <li key={index} className="flex items-start gap-3">
                                       <CheckCircle2 className="w-5 h-5 text-purple-600 mt-0.5 flex-shrink-0" />
-                                      <span 
-                                        className="text-slate-700"
-                                        dangerouslySetInnerHTML={{ __html: item }}
-                                      />
+                                      <SafeHtml html={item} className="text-slate-700" />
                                     </li>
                                   ))}
                                 </ul>
@@ -1057,10 +1044,7 @@ export default function CourseDetailClient({
                                 parsed.itemsHtml.map((item, index) => (
                                   <li key={index} className="flex items-start gap-3">
                                     <CheckCircle2 className="w-5 h-5 text-purple-600 mt-0.5 flex-shrink-0" />
-                                    <span 
-                                      className="text-slate-700"
-                                      dangerouslySetInnerHTML={{ __html: item }}
-                                    />
+                                    <SafeHtml html={item} className="text-slate-700" />
                                   </li>
                                 ))
                               ) : (
@@ -1073,10 +1057,7 @@ export default function CourseDetailClient({
                               )}
                             </ul>
                           ) : parsed.type === 'html' && parsed.html ? (
-                            <div 
-                              className="text-slate-700 leading-relaxed prose prose-slate max-w-none"
-                              dangerouslySetInnerHTML={{ __html: parsed.html }}
-                            />
+                            <SafeHtml html={parsed.html} className="text-slate-700 leading-relaxed prose prose-slate max-w-none" />
                           ) : (
                             <p className="text-slate-700 leading-relaxed whitespace-pre-line">
                               {parsed.plainText}
@@ -1105,10 +1086,7 @@ export default function CourseDetailClient({
                             <div className="space-y-4">
                               {/* Description */}
                               {parsed.descriptionHtml ? (
-                                <div 
-                                  className="text-slate-700 leading-relaxed prose prose-slate max-w-none mb-4"
-                                  dangerouslySetInnerHTML={{ __html: parsed.descriptionHtml }}
-                                />
+                                <SafeHtml html={parsed.descriptionHtml} className="text-slate-700 leading-relaxed prose prose-slate max-w-none mb-4" />
                               ) : parsed.description ? (
                                 <p className="text-slate-700 leading-relaxed mb-4 whitespace-pre-line">
                                   {parsed.description}
@@ -1120,10 +1098,7 @@ export default function CourseDetailClient({
                                   parsed.itemsHtml.map((item, index) => (
                                     <div key={index} className="flex items-center gap-3 p-3 bg-amber-50 rounded-lg hover:bg-amber-100 transition-colors">
                                       <ChevronRight className="w-5 h-5 text-amber-600 flex-shrink-0" />
-                                      <p 
-                                        className="text-slate-700 text-sm"
-                                        dangerouslySetInnerHTML={{ __html: item }}
-                                      />
+                                      <SafeHtml html={item} className="text-slate-700 text-sm" />
                                     </div>
                                   ))
                                 ) : parsed.items ? (
@@ -1142,10 +1117,7 @@ export default function CourseDetailClient({
                                 parsed.itemsHtml.map((item, index) => (
                                   <div key={index} className="flex items-center gap-3 p-3 bg-amber-50 rounded-lg hover:bg-amber-100 transition-colors">
                                     <ChevronRight className="w-5 h-5 text-amber-600 flex-shrink-0" />
-                                    <p 
-                                      className="text-slate-700 text-sm"
-                                      dangerouslySetInnerHTML={{ __html: item }}
-                                    />
+                                    <SafeHtml html={item} className="text-slate-700 text-sm" />
                                   </div>
                                 ))
                               ) : (
@@ -1158,10 +1130,7 @@ export default function CourseDetailClient({
                               )}
                             </div>
                           ) : parsed.type === 'html' && parsed.html ? (
-                            <div 
-                              className="prose prose-slate max-w-none"
-                              dangerouslySetInnerHTML={{ __html: parsed.html }}
-                            />
+                            <SafeHtml html={parsed.html} className="prose prose-slate max-w-none" />
                           ) : (
                             <p className="text-slate-700 leading-relaxed whitespace-pre-line">
                               {parsed.plainText}
@@ -1197,10 +1166,7 @@ export default function CourseDetailClient({
                             <div className="space-y-4">
                               {/* Description */}
                               {parsed.descriptionHtml ? (
-                                <div 
-                                  className="text-slate-700 leading-relaxed prose prose-slate max-w-none mb-4"
-                                  dangerouslySetInnerHTML={{ __html: parsed.descriptionHtml }}
-                                />
+                                <SafeHtml html={parsed.descriptionHtml} className="text-slate-700 leading-relaxed prose prose-slate max-w-none mb-4" />
                               ) : parsed.description ? (
                                 <p className="text-slate-700 leading-relaxed mb-4 whitespace-pre-line">
                                   {parsed.description}
@@ -1212,10 +1178,7 @@ export default function CourseDetailClient({
                                   {parsed.itemsHtml.map((item, index) => (
                                     <li key={index} className="flex items-start gap-3">
                                       <CheckCircle2 className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" />
-                                      <span 
-                                        className="text-slate-700"
-                                        dangerouslySetInnerHTML={{ __html: item }}
-                                      />
+                                      <SafeHtml html={item} className="text-slate-700" />
                                     </li>
                                   ))}
                                 </ul>
@@ -1236,10 +1199,7 @@ export default function CourseDetailClient({
                                 parsed.itemsHtml.map((item, index) => (
                                   <li key={index} className="flex items-start gap-3">
                                     <CheckCircle2 className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" />
-                                    <span 
-                                      className="text-slate-700"
-                                      dangerouslySetInnerHTML={{ __html: item }}
-                                    />
+                                    <SafeHtml html={item} className="text-slate-700" />
                                   </li>
                                 ))
                               ) : parsed.items && parsed.items.length > 0 ? (
@@ -1252,10 +1212,7 @@ export default function CourseDetailClient({
                               ) : null}
                             </ul>
                           ) : parsed.type === 'html' && parsed.html ? (
-                            <div 
-                              className="text-slate-700 leading-relaxed prose prose-slate max-w-none"
-                              dangerouslySetInnerHTML={{ __html: parsed.html }}
-                            />
+                            <SafeHtml html={parsed.html} className="text-slate-700 leading-relaxed prose prose-slate max-w-none" />
                           ) : parsed.plainText && parsed.plainText.trim() ? (
                             <div className="text-slate-700 leading-relaxed whitespace-pre-line">
                               {parsed.plainText.split('\n').map((paragraph, index) => (
@@ -1293,10 +1250,7 @@ export default function CourseDetailClient({
                             <div className="space-y-4">
                               {/* Description */}
                               {parsed.descriptionHtml ? (
-                                <div 
-                                  className="text-slate-700 leading-relaxed prose prose-slate max-w-none mb-4"
-                                  dangerouslySetInnerHTML={{ __html: parsed.descriptionHtml }}
-                                />
+                                <SafeHtml html={parsed.descriptionHtml} className="text-slate-700 leading-relaxed prose prose-slate max-w-none mb-4" />
                               ) : parsed.description ? (
                                 <p className="text-slate-700 leading-relaxed mb-4 whitespace-pre-line">
                                   {parsed.description}
@@ -1308,10 +1262,7 @@ export default function CourseDetailClient({
                                   {parsed.itemsHtml.map((item, index) => (
                                     <li key={index} className="flex items-start gap-3">
                                       <CheckCircle2 className="w-5 h-5 text-emerald-600 mt-0.5 flex-shrink-0" />
-                                      <span 
-                                        className="text-slate-700"
-                                        dangerouslySetInnerHTML={{ __html: item }}
-                                      />
+                                      <SafeHtml html={item} className="text-slate-700" />
                                     </li>
                                   ))}
                                 </ul>
@@ -1332,10 +1283,7 @@ export default function CourseDetailClient({
                                 parsed.itemsHtml.map((item, index) => (
                                   <li key={index} className="flex items-start gap-3">
                                     <CheckCircle2 className="w-5 h-5 text-emerald-600 mt-0.5 flex-shrink-0" />
-                                    <span 
-                                      className="text-slate-700"
-                                      dangerouslySetInnerHTML={{ __html: item }}
-                                    />
+                                    <SafeHtml html={item} className="text-slate-700" />
                                   </li>
                                 ))
                               ) : parsed.items && parsed.items.length > 0 ? (
@@ -1348,10 +1296,7 @@ export default function CourseDetailClient({
                               ) : null}
                             </ul>
                           ) : parsed.type === 'html' && parsed.html ? (
-                            <div 
-                              className="text-slate-700 leading-relaxed prose prose-slate max-w-none"
-                              dangerouslySetInnerHTML={{ __html: parsed.html }}
-                            />
+                            <SafeHtml html={parsed.html} className="text-slate-700 leading-relaxed prose prose-slate max-w-none" />
                           ) : parsed.plainText && parsed.plainText.trim() ? (
                             <div className="text-slate-700 leading-relaxed whitespace-pre-line">
                               {parsed.plainText.split('\n').map((paragraph, index) => (
@@ -1373,7 +1318,7 @@ export default function CourseDetailClient({
             <div className="space-y-6" ref={curriculumRef}>
               <Card className="shadow-md">
                 <CardContent className="pt-6">
-                  <h2 className="text-2xl font-bold mb-6">Course Outline</h2>
+                  <h2 className="text-2xl font-bold mb-6">Program Content</h2>
                   <Accordion type="single" collapsible className="w-full space-y-4">
                     {outlineWithContent.map((day) => (
                       <AccordionItem
@@ -1400,10 +1345,7 @@ export default function CourseDetailClient({
                               (day.isHTML ?? dayContent.includes('<'))
                             ) {
                               return (
-                                <div
-                                  className="course-outline-module-content prose prose-slate max-w-none text-slate-700 prose-p:my-3 prose-ul:my-3 prose-ol:my-3 prose-li:my-1"
-                                  dangerouslySetInnerHTML={{ __html: dayContent }}
-                                />
+                                <SafeHtml html={dayContent} className="course-outline-module-content prose prose-slate max-w-none text-slate-700 prose-p:my-3 prose-ul:my-3 prose-ol:my-3 prose-li:my-1" />
                               )
                             }
 
@@ -1413,10 +1355,7 @@ export default function CourseDetailClient({
                               return (
                                 <div className="space-y-4">
                                   {parsed.descriptionHtml ? (
-                                    <div
-                                      className="text-slate-700 leading-relaxed prose prose-slate max-w-none"
-                                      dangerouslySetInnerHTML={{ __html: parsed.descriptionHtml }}
-                                    />
+                                    <SafeHtml html={parsed.descriptionHtml} className="text-slate-700 leading-relaxed prose prose-slate max-w-none" />
                                   ) : parsed.description ? (
                                     <p className="text-slate-700 leading-relaxed whitespace-pre-line">
                                       {parsed.description}
@@ -1427,10 +1366,7 @@ export default function CourseDetailClient({
                                       {parsed.itemsHtml.map((item, index) => (
                                         <li key={index} className="flex items-start gap-3">
                                           <CheckCircle2 className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" />
-                                          <span
-                                            className="text-slate-700"
-                                            dangerouslySetInnerHTML={{ __html: item }}
-                                          />
+                                          <SafeHtml html={item} className="text-slate-700" />
                                         </li>
                                       ))}
                                     </ul>
@@ -1455,10 +1391,7 @@ export default function CourseDetailClient({
                                     parsed.itemsHtml.map((item, index) => (
                                       <li key={index} className="flex items-start gap-3">
                                         <CheckCircle2 className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" />
-                                        <span
-                                          className="text-slate-700"
-                                          dangerouslySetInnerHTML={{ __html: item }}
-                                        />
+                                        <SafeHtml html={item} className="text-slate-700" />
                                       </li>
                                     ))
                                   ) : (
@@ -1475,10 +1408,7 @@ export default function CourseDetailClient({
 
                             if (parsed.type === 'html' && parsed.html) {
                               return (
-                                <div
-                                  className="prose prose-slate max-w-none"
-                                  dangerouslySetInnerHTML={{ __html: parsed.html }}
-                                />
+                                <SafeHtml html={parsed.html} className="prose prose-slate max-w-none" />
                               )
                             }
 
@@ -1531,10 +1461,7 @@ export default function CourseDetailClient({
                         </AccordionTrigger>
                         <AccordionContent className="pt-2 text-slate-700">
                           {faq.answer && faq.answer.includes('<') ? (
-                            <div 
-                              className="prose prose-slate max-w-none"
-                              dangerouslySetInnerHTML={{ __html: faq.answer }}
-                            />
+                            <SafeHtml html={faq.answer} className="prose prose-slate max-w-none" />
                           ) : (
                             <p>{faq.answer}</p>
                           )}
@@ -1773,6 +1700,19 @@ export default function CourseDetailClient({
         .introduction-content--left .intro-body,
         .introduction-content--left .intro-body p {
           text-align: left;
+        }
+
+        .intro-body p {
+          margin-top: 0;
+          margin-bottom: 1.25em;
+        }
+
+        .intro-body p:last-child {
+          margin-bottom: 0;
+        }
+
+        .intro-body p + p {
+          margin-top: 1.25em;
         }
       `}</style>
     </div>

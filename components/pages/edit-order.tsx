@@ -94,6 +94,7 @@ export default function EditOrder() {
   const [editValues, setEditValues] = useState<Record<string, string>>({})
   const [invoice, setInvoice] = useState<Invoice | null>(null)
   const [invoiceLoading, setInvoiceLoading] = useState(false)
+  const [invoiceGenerating, setInvoiceGenerating] = useState(false)
   const [updateInvoiceDialogOpen, setUpdateInvoiceDialogOpen] = useState(false)
   const [invoiceAction, setInvoiceAction] = useState<"PAID" | "CANCELLED" | null>(null)
   const [transactionId, setTransactionId] = useState("")
@@ -176,6 +177,80 @@ export default function EditOrder() {
       fetchInvoice()
     }
   }, [order])
+
+  const refreshInvoice = async () => {
+    if (!order?.registrationId) return
+    try {
+      const response = await fetch(
+        `/api/admin/invoices/by-registration/${order.registrationId}`
+      )
+      const result = await response.json()
+      if (result.success && result.data) {
+        setInvoice(result.data)
+      } else {
+        setInvoice(null)
+      }
+    } catch (err) {
+      console.error("Error refreshing invoice:", err)
+    }
+  }
+
+  const handleGenerateOrRegenerateInvoice = async (action: "generate_invoice" | "regenerate_invoice") => {
+    if (!orderId) return
+    try {
+      setInvoiceGenerating(true)
+      const response = await fetch(`/api/admin/orders/${orderId}/actions`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action }),
+      })
+      const result = await response.json().catch(() => ({}))
+      if (!response.ok || !result.success) {
+        alert(result.error || "Failed to process invoice")
+        return
+      }
+      await refreshInvoice()
+      alert(result.message || "Invoice updated successfully")
+    } catch (err) {
+      console.error("Error generating invoice:", err)
+      alert("Failed to process invoice. Please try again.")
+    } finally {
+      setInvoiceGenerating(false)
+    }
+  }
+
+  const openInvoicePdf = (mode: "view" | "download") => {
+    if (!invoice) return
+    const url = `/api/admin/invoices/${invoice.id}/pdf`
+    if (mode === "view") {
+      window.open(url, "_blank", "noopener,noreferrer")
+      return
+    }
+    const link = document.createElement("a")
+    link.href = url
+    link.download = `${invoice.invoiceNo}.pdf`
+    link.rel = "noopener"
+    document.body.appendChild(link)
+    link.click()
+    link.remove()
+  }
+
+  const formatInvoiceMoney = (amount: number | string | null | undefined) => {
+    const n = typeof amount === "number" ? amount : Number(amount)
+    if (!Number.isFinite(n)) return "—"
+    return `$${n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+  }
+
+  const formatInvoiceDate = (value: string | null | undefined) => {
+    if (!value) return "—"
+    const d = new Date(value)
+    if (Number.isNaN(d.getTime())) return "—"
+    try {
+      return format(d, "MMM dd, yyyy")
+    } catch {
+      return "—"
+    }
+  }
 
   const handleUpdateOrder = async () => {
     if (!order) return
@@ -426,8 +501,10 @@ export default function EditOrder() {
   }
 
   const isInvoiceOverdue = (dueDate: string, status: string) => {
-    if (status !== "PENDING") return false
-    return new Date(dueDate) < new Date()
+    if (status !== "PENDING" || !dueDate) return false
+    const d = new Date(dueDate)
+    if (Number.isNaN(d.getTime())) return false
+    return d < new Date()
   }
 
   const formatDate = (date: Date | string) => {
@@ -637,13 +714,13 @@ export default function EditOrder() {
                   <span className="theme-text">
                     {order.name} {order.email && `(${order.email})`}
                   </span>
-                  <button className="text-primary hover:underline text-sm">
+                  {/* <button className="text-primary hover:underline text-sm">
                     Profile
                   </button>
                   <span className="theme-muted">|</span>
                   <button className="text-primary hover:underline text-sm">
                     View other orders →
-                  </button>
+                  </button> */}
                 </div>
               </div>
             </div>
@@ -1012,7 +1089,7 @@ export default function EditOrder() {
                       <div className="flex items-center justify-between">
                         <span className="text-xs theme-muted">Amount:</span>
                         <span className="text-sm font-semibold theme-text">
-                          ${invoice.amount.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                          {formatInvoiceMoney(invoice.amount)}
                         </span>
                       </div>
                       <div className="flex items-center justify-between">
@@ -1025,14 +1102,14 @@ export default function EditOrder() {
                       <div className="flex items-center justify-between">
                         <span className="text-xs theme-muted">Due Date:</span>
                         <span className={`text-xs ${isInvoiceOverdue(invoice.dueDate, invoice.status) ? "text-red-500 font-medium" : "theme-text"}`}>
-                          {format(new Date(invoice.dueDate), "MMM dd, yyyy")}
+                          {formatInvoiceDate(invoice.dueDate)}
                         </span>
                       </div>
                       {invoice.paymentDate && (
                         <div className="flex items-center justify-between">
                           <span className="text-xs theme-muted">Paid On:</span>
                           <span className="text-xs theme-text">
-                            {format(new Date(invoice.paymentDate), "MMM dd, yyyy")}
+                            {formatInvoiceDate(invoice.paymentDate)}
                           </span>
                         </div>
                       )}
@@ -1040,40 +1117,31 @@ export default function EditOrder() {
 
                     {/* Invoice Actions */}
                     <div className="grid grid-cols-2 gap-2">
-                      {invoice.pdfUrl && (
-                        <>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => window.open(invoice.pdfUrl || "", "_blank")}
-                            className="text-xs"
-                            title="View PDF"
-                          >
-                            <Eye size={14} className="mr-1" />
-                            View
-                          </Button>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => {
-                              const link = document.createElement("a")
-                              link.href = invoice.pdfUrl || ""
-                              link.download = `${invoice.invoiceNo}.pdf`
-                              link.click()
-                            }}
-                            className="text-xs"
-                            title="Download PDF"
-                          >
-                            <Download size={14} className="mr-1" />
-                            Download
-                          </Button>
-                        </>
-                      )}
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => openInvoicePdf("view")}
+                        className="text-xs"
+                        title="View PDF"
+                      >
+                        <Eye size={14} className="mr-1" />
+                        View
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => openInvoicePdf("download")}
+                        className="text-xs"
+                        title="Download PDF"
+                      >
+                        <Download size={14} className="mr-1" />
+                        Download
+                      </Button>
                       <Button
                         variant="outline"
                         size="sm"
                         onClick={handleResendInvoiceEmail}
-                        disabled={resendingEmail}
+                        disabled={resendingEmail || invoiceGenerating}
                         className="text-xs"
                         title="Resend Email"
                       >
@@ -1083,6 +1151,21 @@ export default function EditOrder() {
                           <Mail size={14} className="mr-1" />
                         )}
                         Resend
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleGenerateOrRegenerateInvoice("regenerate_invoice")}
+                        disabled={invoiceGenerating || resendingEmail}
+                        className="text-xs"
+                        title="Regenerate PDF"
+                      >
+                        {invoiceGenerating ? (
+                          <Loader2 size={14} className="mr-1 animate-spin" />
+                        ) : (
+                          <Receipt size={14} className="mr-1" />
+                        )}
+                        Regenerate
                       </Button>
                       {invoice.status !== "PAID" && (
                         <Button
@@ -1111,8 +1194,22 @@ export default function EditOrder() {
                     </div>
                   </div>
                 ) : (
-                  <div className="p-3 bg-muted rounded-lg text-center">
+                  <div className="p-3 bg-muted rounded-lg text-center space-y-3">
                     <p className="text-xs theme-muted">No invoice found for this order</p>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleGenerateOrRegenerateInvoice("generate_invoice")}
+                      disabled={invoiceGenerating}
+                      className="text-xs"
+                    >
+                      {invoiceGenerating ? (
+                        <Loader2 size={14} className="mr-1 animate-spin" />
+                      ) : (
+                        <Receipt size={14} className="mr-1" />
+                      )}
+                      Generate Invoice
+                    </Button>
                   </div>
                 )}
               </div>
@@ -1190,7 +1287,7 @@ export default function EditOrder() {
                   <br />
                   Customer: <strong>{invoice.customerName}</strong>
                   <br />
-                  Amount: <strong>${invoice.amount.toFixed(2)}</strong>
+                  Amount: <strong>{formatInvoiceMoney(invoice.amount)}</strong>
                 </>
               )}
             </DialogDescription>

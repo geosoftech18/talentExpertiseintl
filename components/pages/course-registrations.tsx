@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import { useRouter } from "next/navigation"
 import { Search, Eye, Loader2, Trash2 } from "lucide-react"
 
 interface Registration {
@@ -16,6 +17,7 @@ interface Registration {
 }
 
 export default function CourseRegistrations() {
+  const router = useRouter()
   const [registrations, setRegistrations] = useState<Registration[]>([])
   const [filteredRegistrations, setFilteredRegistrations] = useState<Registration[]>([])
   const [loading, setLoading] = useState(true)
@@ -273,7 +275,11 @@ export default function CourseRegistrations() {
                   </td>
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-2">
-                      <button className="p-2 hover:bg-primary/10 rounded-lg transition-colors theme-primary" title="View">
+                      <button
+                        onClick={() => router.push(`/admin/registrations/${reg.id}`)}
+                        className="p-2 hover:bg-primary/10 rounded-lg transition-colors theme-primary"
+                        title="View"
+                      >
                         <Eye size={18} />
                       </button>
                       <button

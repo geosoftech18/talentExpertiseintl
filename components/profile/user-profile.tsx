@@ -28,6 +28,7 @@ import {
   TrendingUp,
   Users,
   GraduationCap,
+  Download,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -56,6 +57,7 @@ interface Course {
   orderStatus: string | null
   paymentStatus: string | null
   enrolledDate: Date
+  studyMaterials?: Array<{ url: string; fileName: string }>
 }
 
 export default function UserProfile() {
@@ -562,6 +564,50 @@ export default function UserProfile() {
                                   )}
                                 </div>
                               </div>
+
+                              {Array.isArray(course.studyMaterials) &&
+                                course.studyMaterials.length > 0 && (
+                                  <div className="mt-4 pt-4 border-t border-slate-100">
+                                    <div className="flex items-start gap-2 mb-3">
+                                      <FileText className="w-4 h-4 text-blue-600 mt-0.5 shrink-0" />
+                                      <div>
+                                        <p className="text-sm font-semibold text-slate-800">
+                                          Study Materials
+                                        </p>
+                                        <p className="text-xs text-amber-700 mt-0.5">
+                                          Note: Study materials will be available for download for 60 days only.
+                                        </p>
+                                      </div>
+                                    </div>
+                                    <div className="space-y-2">
+                                      {course.studyMaterials.map((material, index) => (
+                                        <div
+                                          key={`${material.url}-${index}`}
+                                          className="flex items-center justify-between gap-3 rounded-md border border-slate-200 bg-slate-50 px-3 py-2"
+                                        >
+                                          <span className="text-sm text-slate-700 truncate">
+                                            {material.fileName || `Study material ${index + 1}`}
+                                          </span>
+                                          <Button
+                                            variant="outline"
+                                            size="sm"
+                                            className="shrink-0"
+                                            asChild
+                                          >
+                                            <a
+                                              href={`${material.url}?download=1`}
+                                              target="_blank"
+                                              rel="noopener noreferrer"
+                                            >
+                                              <Download className="w-3.5 h-3.5 mr-1.5" />
+                                              Download
+                                            </a>
+                                          </Button>
+                                        </div>
+                                      ))}
+                                    </div>
+                                  </div>
+                                )}
                             </div>
                           ))
                         )}

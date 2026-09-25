@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect, useMemo } from "react"
-import { ArrowLeft, Save, CheckIcon, ChevronDownIcon } from "lucide-react"
+import { ArrowLeft, Save, CheckIcon, ChevronDownIcon, Upload, X, Image as ImageIcon } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import {
   Popover,
@@ -25,6 +25,8 @@ export default function AddNewVenue({ onBack, editId }: { onBack?: () => void; e
     country: "",
     status: "Active",
   })
+  const [imagePreview, setImagePreview] = useState<string | null>(null)
+  const [removeImage, setRemoveImage] = useState(false)
   const [loading, setLoading] = useState(false)
   const [countries, setCountries] = useState<string[]>([])
   const [countrySearchOpen, setCountrySearchOpen] = useState(false)
@@ -67,35 +69,59 @@ export default function AddNewVenue({ onBack, editId }: { onBack?: () => void; e
 
   // Load venue data if editing
   useEffect(() => {
-    if (editId) {
-      const loadVenue = async () => {
-        try {
-          setLoading(true)
-          const response = await fetch('/api/admin/venues')
-          const result = await response.json()
-          
-          if (result.success) {
-            const venue = result.data.find((v: any) => String(v.id) === editId)
-            if (venue) {
-              setFormData({
-                city: venue.city || "",
-                country: venue.country || "",
-                status: venue.status || "Active",
-              })
-            }
+    if (!editId) return
+
+    const loadVenue = async () => {
+      try {
+        setLoading(true)
+        const response = await fetch(`/api/admin/venues?id=${encodeURIComponent(editId)}`)
+        const result = await response.json()
+
+        if (result.success && result.data) {
+          const venue = result.data
+          setFormData({
+            city: venue.city || "",
+            country: venue.country || "",
+            status: venue.status || "Active",
+          })
+          if (venue.imageUrl) {
+            setImagePreview(venue.imageUrl)
+            setRemoveImage(false)
+          } else {
+            setImagePreview(null)
+            setRemoveImage(false)
           }
-        } catch (err) {
-          console.error('Error loading venue:', err)
-        } finally {
-          setLoading(false)
         }
+      } catch (err) {
+        console.error('Error loading venue:', err)
+      } finally {
+        setLoading(false)
       }
-      loadVenue()
     }
+    loadVenue()
   }, [editId])
 
   const handleInputChange = (field: string, value: string) => {
     setFormData((prev) => ({ ...prev, [field]: value }))
+  }
+
+  const handleImageUpload = (file: File | null) => {
+    if (!file) return
+    if (file.size > 10 * 1024 * 1024) {
+      alert("File size should be less than 10MB")
+      return
+    }
+    const reader = new FileReader()
+    reader.onloadend = () => {
+      setImagePreview(reader.result as string)
+      setRemoveImage(false)
+    }
+    reader.readAsDataURL(file)
+  }
+
+  const handleImageRemove = () => {
+    setImagePreview(null)
+    setRemoveImage(true)
   }
 
   // Filter countries based on search
@@ -122,10 +148,17 @@ export default function AddNewVenue({ onBack, editId }: { onBack?: () => void; e
         ? `${formData.city}, ${formData.country}`
         : formData.city || formData.country || ""
 
-      const payload = {
+      const payload: Record<string, unknown> = {
         id: editId,
         name: venueName,
         ...formData,
+      }
+
+      // Optional custom image: keep Wikipedia default when empty
+      if (removeImage) {
+        payload.imageUrl = null
+      } else if (imagePreview) {
+        payload.imageUrl = imagePreview
       }
 
       const response = await fetch('/api/admin/venues', {
@@ -289,6 +322,73 @@ export default function AddNewVenue({ onBack, editId }: { onBack?: () => void; e
                 </select>
               </div>
             </div>
+
+            {/* Optional venue image */}
+            <div className="space-y-3 pt-2 border-t border-border">
+              <div>
+                <label className="block text-sm font-semibold theme-text">
+                  Venue Image <span className="theme-muted font-normal">(optional)</span>
+                </label>
+                <p className="text-sm theme-muted mt-1">
+                  Leave empty to keep the default Wikipedia city image used on the homepage and venue page.
+                </p>
+                <ul className="mt-2 text-xs theme-muted space-y-1 list-disc list-inside">
+                  <li>
+                    <span className="font-medium theme-text">Choose Your Venue carousel:</span>{" "}
+                    recommended <span className="font-mono">900 × 600 px</span> (3:2). Card display is about 300 × 200.
+                  </li>
+                  <li>
+                    <span className="font-medium theme-text">Venue detail hero:</span>{" "}
+                    recommended <span className="font-mono">1920 × 800 px</span> (wide). Keep the main subject centered — edges may crop on different screens.
+                  </li>
+                  <li>Best overall upload: <span className="font-mono">1920 × 800 px</span> or larger, JPG/PNG/WebP, max 10MB.</li>
+                </ul>
+              </div>
+
+              {imagePreview ? (
+                <div className="relative w-full max-w-xl aspect-[3/2] rounded-lg overflow-hidden border border-border bg-muted/30">
+                  <img
+                    src={imagePreview}
+                    alt="Venue preview"
+                    className="w-full h-full object-cover"
+                  />
+                  <button
+                    type="button"
+                    onClick={handleImageRemove}
+                    className="absolute top-3 right-3 p-2 bg-destructive/90 text-white rounded-lg hover:bg-destructive transition-colors"
+                    title="Remove image (use Wikipedia default)"
+                  >
+                    <X size={16} />
+                  </button>
+                  <div className="absolute bottom-0 left-0 right-0 bg-black/55 text-white text-xs px-3 py-2">
+                    Preview (3:2 crop — matches carousel card)
+                  </div>
+                </div>
+              ) : (
+                <label className="flex flex-col items-center justify-center w-full max-w-xl aspect-[3/2] border-2 border-dashed border-border rounded-lg cursor-pointer hover:border-primary transition-colors bg-muted/20">
+                  <Upload className="w-8 h-8 mb-2 theme-muted" />
+                  <p className="text-sm theme-text font-medium">Upload venue image</p>
+                  <p className="text-xs theme-muted mt-1">JPG, PNG, or WebP · up to 10MB</p>
+                  <input
+                    type="file"
+                    className="hidden"
+                    accept="image/*"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0]
+                      if (file) handleImageUpload(file)
+                      e.target.value = ""
+                    }}
+                  />
+                </label>
+              )}
+
+              {!imagePreview && (
+                <p className="text-xs theme-muted flex items-center gap-1.5">
+                  <ImageIcon size={14} />
+                  No custom image — Wikipedia default will be used automatically.
+                </p>
+              )}
+            </div>
           </div>
 
           {/* Action Buttons */}
@@ -312,7 +412,7 @@ export default function AddNewVenue({ onBack, editId }: { onBack?: () => void; e
             <button
               type="submit"
               className="px-6 py-2 bg-gradient-to-r from-primary to-accent text-primary-foreground rounded-lg font-semibold hover:shadow-lg glow-electric transition-all flex items-center gap-2 disabled:opacity-50"
-              disabled={isSubmitting}
+              disabled={isSubmitting || loading}
             >
               <Save size={18} />
               {isSubmitting ? 'Saving...' : isEditMode ? 'Update Venue' : 'Save Venue'}
@@ -323,4 +423,3 @@ export default function AddNewVenue({ onBack, editId }: { onBack?: () => void; e
     </div>
   )
 }
-

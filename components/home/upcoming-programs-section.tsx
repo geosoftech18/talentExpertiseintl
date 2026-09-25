@@ -6,6 +6,7 @@ import { format } from "date-fns"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import { isVisibleInUpcoming } from "@/lib/utils/course-visibility"
 
 interface UpcomingProgram {
   id: string
@@ -18,6 +19,7 @@ interface UpcomingProgram {
   endDate: string | null
   venue: string
   price: number       // API returns price, not fee
+  isUpcomingProgram?: boolean
 }
 
 interface SchedulesApiResponse {
@@ -31,25 +33,13 @@ export default function UpcomingProgramsSection() {
   const [programs, setPrograms] = useState<UpcomingProgram[]>([])
   const [loading, setLoading] = useState(true)
 
-  // Cache keys for upcoming schedules
-  const CACHE_KEY = 'upcoming_schedules_cache'
-  const CACHE_TIMESTAMP_KEY = 'upcoming_schedules_cache_timestamp'
-  const CACHE_DURATION = 5 * 60 * 1000 // 5 minutes
+  // Cache keys for upcoming schedules (v4: server-side carousel merge)
+  const CACHE_KEY = 'upcoming_schedules_cache_v6'
+  const CACHE_TIMESTAMP_KEY = 'upcoming_schedules_cache_timestamp_v6'
+  const CACHE_DURATION = 2 * 60 * 1000 // 2 minutes
 
-  // Process and sort programs - show all schedules, no deduplication
-  const processPrograms = (data: any[]): UpcomingProgram[] => {
-    // Filter out any invalid entries and ensure all have startDate
-    const validSchedules = data.filter((item) => item.startDate)
-    
-    // Sort by earliest start date first (ascending order)
-    const sortedPrograms = [...validSchedules].sort((a, b) => {
-      const dateA = new Date(a.startDate).getTime()
-      const dateB = new Date(b.startDate).getTime()
-      return dateA - dateB // Ascending order (earliest first)
-    })
-    
-    // Return the 10 earliest schedules (all schedules are shown, no deduplication)
-    return sortedPrograms.slice(0, 10)
+  const processPrograms = (data: UpcomingProgram[]): UpcomingProgram[] => {
+    return data.filter((item) => item.startDate && isVisibleInUpcoming(item.startDate))
   }
 
   useEffect(() => {
@@ -83,9 +73,8 @@ export default function UpcomingProgramsSection() {
           }
         }
 
-        // No cache or cache expired - fetch fresh data from schedules API (all schedules, no deduplication)
         setLoading(true)
-        const response = await fetch('/api/schedules?limit=100')
+        const response = await fetch('/api/schedules?forCarousel=true', { cache: 'no-store' })
         const contentType = response.headers.get('content-type') || ''
         const result: unknown = contentType.includes('application/json')
           ? await response.json()

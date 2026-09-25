@@ -1,15 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { generateSlug } from '@/lib/utils/slug'
+import {
+  getCourseListingMinStartDate,
+  startOfLocalDay,
+} from '@/lib/utils/course-visibility'
 
 /**
  * GET /api/courses
  * Fetch all published programs for public course listing
- * 
- * Production Performance:
- * - Cached for 60 seconds using HTTP cache headers
- * - Database queries are optimized with indexes
- * - Single query with relations instead of multiple queries
+ *
+ * Visibility when includeExpired=false:
+ * - startDate >= today + 14 days (general listings)
+ * - Within 14 days of start → Upcoming via /api/schedules?forCarousel=true
  */
 
 export async function GET(request: NextRequest) {
@@ -39,9 +42,8 @@ export async function GET(request: NextRequest) {
     }
 
     // Optimized: Fetch schedules directly with program data using Prisma relations
-    // Only fetch upcoming schedules (startDate >= today) unless includeExpired is true
-    const today = new Date()
-    today.setHours(0, 0, 0, 0)
+    // Default listings: startDate at least 14 days away (unless includeExpired)
+    const listingMinStart = getCourseListingMinStartDate()
     
     // Check if we should filter by new programs
     const isNewPrograms = searchParams.get('newPrograms') === 'true'
@@ -62,7 +64,7 @@ export async function GET(request: NextRequest) {
     // Add date filter if not including expired
     if (!includeExpired) {
       scheduleWhere.startDate = {
-        gte: today,
+        gte: listingMinStart,
       }
     }
     
@@ -131,8 +133,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Transform schedules to course entries - much faster with direct relation access
-    const now = new Date()
-    now.setHours(0, 0, 0, 0)
+    const listingCutoff = getCourseListingMinStartDate()
     
     // Use Map for O(1) duplicate checking instead of nested loops
     const seen = new Map<string, boolean>()
@@ -144,11 +145,10 @@ export async function GET(request: NextRequest) {
       // Skip if no program (shouldn't happen with proper relation, but safety check)
       if (!program) continue
 
-      // Verify schedule is upcoming (double-check) - skip if includeExpired is false
+      // Listing window: 14+ days before start (unless includeExpired)
       if (!schedule.startDate) continue
-      const startDate = new Date(schedule.startDate)
-      startDate.setHours(0, 0, 0, 0)
-      if (!includeExpired && startDate < now) continue
+      const startDate = startOfLocalDay(new Date(schedule.startDate))
+      if (!includeExpired && startDate < listingCutoff) continue
 
       // Create duplicate key: name + date + venue
       const duplicateKey = `${program.programName}-${schedule.startDate.toISOString().split('T')[0]}-${schedule.venue || 'no-venue'}`

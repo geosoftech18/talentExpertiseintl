@@ -22,6 +22,11 @@ import BrochureDownloads from "@/components/pages/brochure-downloads"
 import InHouseRequests from "@/components/pages/in-house-requests"
 import Certificates from "@/components/pages/certificates"
 import AddNewCertificate from "@/components/pages/add-new-certificate"
+import IssuedCertificates from "@/components/pages/issued-certificates"
+import DownloadManagement from "@/components/pages/download-management"
+import ClientLogos from "@/components/pages/client-logos"
+import AffiliationsAdmin from "@/components/pages/affiliations"
+import GalleryManagement from "@/components/pages/gallery-management"
 
 function AdminPageContent() {
   const pathname = usePathname()
@@ -32,16 +37,17 @@ function AdminPageContent() {
   const [editId, setEditId] = useState<string | null>(null)
   const [editType, setEditType] = useState<'program' | 'schedule' | 'mentor' | 'venue' | 'team-member' | 'certificate' | null>(null)
 
-  // Sync currentPage with pathname and query params
+  // Sync currentPage / editId with pathname and query params
   useEffect(() => {
     if (pathname === "/admin") {
-      // Check for page query parameter
       const pageParam = searchParams.get("page")
+      const idParam = searchParams.get("id")
       if (pageParam) {
         setCurrentPage(pageParam)
       } else {
         setCurrentPage("dashboard")
       }
+      setEditId(idParam)
     } else if (pathname?.startsWith("/admin/")) {
       // Don't handle orders here as it has its own route
       if (!pathname.startsWith("/admin/orders")) {
@@ -60,38 +66,58 @@ function AdminPageContent() {
     // Navigate using router for pages that have routes
     if (page === "orders") {
       router.push("/admin/orders")
+    } else if (id) {
+      router.push(`/admin?page=${page}&id=${id}`)
     } else {
-      // For SPA pages, just update state
-      setCurrentPage(page)
+      router.push(`/admin?page=${page}`)
     }
   }
 
   const handleBackFromAddProgram = () => {
-    setCurrentPage(previousPage === "dashboard" ? "dashboard" : "courses")
+    setEditId(null)
+    const target = previousPage === "dashboard" ? "dashboard" : "courses"
+    setCurrentPage(target)
+    router.push(target === "dashboard" ? "/admin" : `/admin?page=${target}`)
   }
 
   const handleBackFromAddSchedule = () => {
-    if (previousPage === "all-schedules") {
-      setCurrentPage("all-schedules")
-    } else {
-      setCurrentPage(previousPage === "dashboard" ? "dashboard" : "schedules")
-    }
+    setEditId(null)
+    const target =
+      previousPage === "all-schedules"
+        ? "all-schedules"
+        : previousPage === "dashboard"
+          ? "dashboard"
+          : "schedules"
+    setCurrentPage(target)
+    router.push(target === "dashboard" ? "/admin" : `/admin?page=${target}`)
   }
 
   const handleBackFromAddMentor = () => {
-    setCurrentPage(previousPage === "dashboard" ? "dashboard" : "mentors")
+    setEditId(null)
+    const target = previousPage === "dashboard" ? "dashboard" : "mentors"
+    setCurrentPage(target)
+    router.push(target === "dashboard" ? "/admin" : `/admin?page=${target}`)
   }
 
   const handleBackFromAddTeamMember = () => {
-    setCurrentPage(previousPage === "dashboard" ? "dashboard" : "team")
+    setEditId(null)
+    const target = previousPage === "dashboard" ? "dashboard" : "team"
+    setCurrentPage(target)
+    router.push(target === "dashboard" ? "/admin" : `/admin?page=${target}`)
   }
 
   const handleBackFromAddVenue = () => {
-    setCurrentPage(previousPage === "dashboard" ? "dashboard" : "locations")
+    setEditId(null)
+    const target = previousPage === "dashboard" ? "dashboard" : "locations"
+    setCurrentPage(target)
+    router.push(target === "dashboard" ? "/admin" : `/admin?page=${target}`)
   }
 
   const handleBackFromAddCertificate = () => {
-    setCurrentPage(previousPage === "dashboard" ? "dashboard" : "certificate-management")
+    setEditId(null)
+    const target = previousPage === "dashboard" ? "dashboard" : "certificate-management"
+    setCurrentPage(target)
+    router.push(target === "dashboard" ? "/admin" : `/admin?page=${target}`)
   }
 
   const renderPage = () => {
@@ -125,6 +151,12 @@ function AdminPageContent() {
         )
       case "testimonials":
         return <Testimonials />
+      case "client-logos":
+        return <ClientLogos />
+      case "affiliations":
+        return <AffiliationsAdmin />
+      case "gallery-management":
+        return <GalleryManagement />
       case "certificate-management":
         return (
           <Certificates
@@ -132,6 +164,10 @@ function AdminPageContent() {
             onEditCertificate={(id) => navigateToPage("add-certificate", id, "certificate")}
           />
         )
+      case "issued-certificates":
+        return <IssuedCertificates />
+      case "download-management":
+        return <DownloadManagement />
       case "registrations":
         return <CourseRegistrations />
       case "enquiries":

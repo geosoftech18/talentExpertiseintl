@@ -82,11 +82,24 @@ export async function PATCH(
 
       // Create course registration with "In Progress" status and "Unpaid" payment status
       // Invoice will be generated later when admin changes payment status to "Paid" or order status to "Completed"
+      let courseId = invoiceRequest.courseId || null
+      if (!courseId && invoiceRequest.scheduleId) {
+        try {
+          const schedule = await prisma.schedule.findUnique({
+            where: { id: invoiceRequest.scheduleId },
+            select: { programId: true },
+          })
+          if (schedule?.programId) courseId = schedule.programId
+        } catch {
+          // keep courseId null
+        }
+      }
+
       const courseRegistration = await prisma.courseRegistration.create({
         data: {
           userId: userId || null, // Link to user account if found
           scheduleId: invoiceRequest.scheduleId || null,
-          courseId: invoiceRequest.courseId || null,
+          courseId,
           courseTitle: invoiceRequest.courseTitle || null,
           title: invoiceRequest.title || null,
           name: invoiceRequest.name,

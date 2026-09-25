@@ -11,6 +11,7 @@ import { Badge } from '@/components/ui/badge'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Checkbox } from '@/components/ui/checkbox'
 import { format } from 'date-fns'
+import { isVisibleInCourseListings } from '@/lib/utils/course-visibility'
 
 interface CourseListItem {
   id: string
@@ -243,15 +244,9 @@ function NewProgramsPageContent() {
         }
       }
 
-      // Only show non-expired courses
-      if (course.startDate) {
-        const today = new Date()
-        today.setHours(0, 0, 0, 0)
-        const courseDate = new Date(course.startDate)
-        courseDate.setHours(0, 0, 0, 0)
-        if (courseDate < today) {
-          return false
-        }
+      // Only show courses with 14+ days to start (listing window)
+      if (course.startDate && !isVisibleInCourseListings(course.startDate)) {
+        return false
       }
 
       return true

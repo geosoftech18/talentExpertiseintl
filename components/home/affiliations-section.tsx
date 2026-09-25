@@ -7,95 +7,93 @@ import { Button } from "@/components/ui/button"
 import Image from "next/image"
 import { useEffect, useRef, useState } from "react"
 import { useRouter } from "next/navigation"
+import { DEFAULT_AFFILIATIONS } from "@/lib/home-content-defaults"
 
-const affiliations = [
-  { id: 1, name: "Accreditation Partner 1", image: "/Affiliations/1.png" ,url: "#"},
-  { id: 2, name: "Accreditation Partner 2", image: "/Affiliations/2.png" ,url: "#"},
-  { id: 3, name: "Accreditation Partner 3", image: "/Affiliations/3.png" ,url: "#"},
-  { id: 4, name: "Accreditation Partner 4", image: "/Affiliations/4.png" ,url: "/courses/certificate/696e0459612d640dea16b6ba"},
-  { id: 5, name: "Accreditation Partner 5", image: "/Affiliations/5.png" ,url: "#"},
-  { id: 6, name: "Accreditation Partner 6", image: "/Affiliations/1.jpg" ,url: "#"},
-  { id: 7, name: "Accreditation Partner 7", image: "/Affiliations/2.jpg" ,url: "#"},
-  { id: 8, name: "Accreditation Partner 8", image: "/Affiliations/3.jpg" ,url: "#"},
-  { id: 9, name: "Accreditation Partner 9", image: "/Affiliations/4.jpg" ,url: "#"},
-  { id: 10, name: "Accreditation Partner 10", image: "/Affiliations/5.jpg" ,url: "#"},
-  { id: 11, name: "Accreditation Partner 11", image: "/Affiliations/6.jpg" ,url: "#"},
-  { id: 12, name: "Accreditation Partner 12", image: "/Affiliations/7.jpg" ,url: "#"},
-  { id: 13, name: "Accreditation Partner 13", image: "/Affiliations/8.jpg" ,url: "#"  },
-  { id: 14, name: "Accreditation Partner 14", image: "/Affiliations/9.jpg" ,url: "#" },
-  { id: 15, name: "Accreditation Partner 15", image: "/Affiliations/10.jpg" ,url: "/courses/certificate/696e060364e06418a46a3a4f" },
-  { id: 16, name: "Accreditation Partner 16", image: "/Affiliations/11.jpg" ,url: "#" },
-  { id: 17, name: "Accreditation Partner 17", image: "/Affiliations/12.jpg" ,url: "/courses/certificate/696e06f264e06418a46a3a50"},
-  { id: 18, name: "Accreditation Partner 18", image: "/Affiliations/13.jpg" ,url: "#" },
-]
+type AffiliationItem = { id: string | number; name: string; image: string; url: string }
 
 export default function AffiliationsSection() {
   const carouselRef = useRef<HTMLDivElement>(null)
   const isPausedRef = useRef(false)
   const autoScrollRef = useRef<{ pause: () => void; resume: () => void } | null>(null)
   const router = useRouter()
-  // Auto-scroll animation
+  const [affiliations, setAffiliations] = useState<AffiliationItem[]>(
+    DEFAULT_AFFILIATIONS.map((a) => ({
+      id: a.id,
+      name: a.name,
+      image: a.imageUrl,
+      url: a.url || "#",
+    }))
+  )
+
+  useEffect(() => {
+    let cancelled = false
+    const load = async () => {
+      try {
+        const res = await fetch("/api/affiliations", { cache: "no-store" })
+        const result = await res.json()
+        if (cancelled || !result.success || !Array.isArray(result.data) || result.data.length === 0) return
+        setAffiliations(
+          result.data.map((a: any) => ({
+            id: a.id,
+            name: a.name,
+            image: a.imageUrl || a.image,
+            url: a.url || "#",
+          }))
+        )
+      } catch (e) {
+        console.error("Failed to load affiliations:", e)
+      }
+    }
+    load()
+    return () => {
+      cancelled = true
+    }
+  }, [])
+
+  // Auto-scroll using React-duplicated items only (no cloneNode — that breaks React removeChild)
   useEffect(() => {
     const carousel = carouselRef.current
-    if (!carousel) return
+    if (!carousel || affiliations.length === 0) return
 
-    let animationFrameId: number
+    let animationFrameId = 0
     let scrollPosition = 0
-    let originalWidth = 0
-    let itemWidth = 0
-    const scrollSpeed = 0.5 // pixels per frame for smooth animation
+    let loopWidth = 0
+    const scrollSpeed = 0.5
+    let cancelled = false
 
     const initAnimation = () => {
-      // Wait for DOM to be ready
-      const items = carousel.querySelectorAll('[data-affiliation-item]:not([data-affiliation-item="clone"])')
+      if (cancelled) return
+      const items = carousel.querySelectorAll('[data-affiliation-item="original"]')
       if (items.length === 0) {
         setTimeout(initAnimation, 100)
         return
       }
 
-      // Get actual item width including gap
       const firstItem = items[0] as HTMLElement
-      if (!firstItem.offsetWidth || firstItem.offsetWidth === 0) {
+      if (!firstItem.offsetWidth) {
         setTimeout(initAnimation, 100)
         return
       }
 
-      itemWidth = firstItem.offsetWidth + (window.innerWidth >= 768 ? 24 : 12) // gap-6 on desktop, gap-3 on mobile
+      const gap = window.innerWidth >= 768 ? 24 : 12
+      loopWidth = items.length * (firstItem.offsetWidth + gap)
 
-      // Clear any existing clones
-      const existingClones = carousel.querySelectorAll('[data-affiliation-item="clone"]')
-      existingClones.forEach(clone => clone.remove())
-
-      // Duplicate items for seamless loop
-      const itemsArray = Array.from(items)
-      itemsArray.forEach(item => {
-        const clone = item.cloneNode(true) as HTMLElement
-        clone.setAttribute('data-affiliation-item', 'clone')
-        carousel.appendChild(clone)
-      })
-
-      originalWidth = itemsArray.length * itemWidth
-
-      // Disable smooth scrolling for programmatic control
-      carousel.style.scrollBehavior = 'auto'
+      carousel.style.scrollBehavior = "auto"
       carousel.scrollLeft = 0
       scrollPosition = 0
 
       const animate = () => {
-        if (!isPausedRef.current) {
+        if (cancelled) return
+        if (!isPausedRef.current && loopWidth > 0) {
           scrollPosition += scrollSpeed
-          
-          // Reset scroll position when we've scrolled past all original items
-          if (scrollPosition >= originalWidth) {
-            scrollPosition = scrollPosition - originalWidth
+          if (scrollPosition >= loopWidth) {
+            scrollPosition -= loopWidth
           }
-          
           carousel.scrollLeft = scrollPosition
         }
         animationFrameId = requestAnimationFrame(animate)
       }
 
-      // Store pause/resume functions
       autoScrollRef.current = {
         pause: () => {
           isPausedRef.current = true
@@ -104,23 +102,20 @@ export default function AffiliationsSection() {
         resume: () => {
           isPausedRef.current = false
           scrollPosition = carousel.scrollLeft
-        }
+        },
       }
 
-      // Start animation
       animationFrameId = requestAnimationFrame(animate)
     }
 
-    // Initialize after a short delay
     const timeoutId = setTimeout(initAnimation, 300)
 
     return () => {
+      cancelled = true
       clearTimeout(timeoutId)
-      if (animationFrameId) {
-        cancelAnimationFrame(animationFrameId)
-      }
+      if (animationFrameId) cancelAnimationFrame(animationFrameId)
     }
-  }, [])
+  }, [affiliations])
 
   // Navigation handlers
   const scrollLeft = () => {
@@ -268,9 +263,16 @@ export default function AffiliationsSection() {
               {duplicatedAffiliations.map((affiliation, index) => (
                 <Card
                   key={`${affiliation.id}-${index}`}
-                  data-affiliation-item={index < affiliations.length ? '' : 'clone'}
+                  data-affiliation-item={index < affiliations.length ? "original" : "duplicate"}
                   className="group flex-shrink-0 w-36 h-32 sm:w-40 sm:h-36 md:w-48 md:h-40 lg:w-56 lg:h-48 relative overflow-hidden border-2 border-gray-200 hover:border-[#0A3049]/40 transition-all duration-300 bg-white shadow-md hover:shadow-2xl rounded-lg sm:rounded-xl p-3 sm:p-4 md:p-5 lg:p-6 cursor-pointer transform hover:scale-105"
-                  onClick={() => router.push(affiliation.url)}
+                  onClick={() => {
+                    if (!affiliation.url || affiliation.url === "#") return
+                    if (affiliation.url.startsWith("http")) {
+                      window.open(affiliation.url, "_blank", "noopener,noreferrer")
+                    } else {
+                      router.push(affiliation.url)
+                    }
+                  }}
                 >
                   {/* Hover Overlay */}
                   <div className="absolute inset-0 bg-gradient-to-br from-blue-600/10 to-indigo-600/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-lg sm:rounded-xl"></div>
@@ -278,14 +280,23 @@ export default function AffiliationsSection() {
                   {/* Logo Container */}
                   <div className="relative h-full flex items-center justify-center">
                     <div className="absolute inset-0 bg-gradient-to-br from-blue-50 to-indigo-50 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-                    <Image
-                      src={affiliation.image}
-                      alt={affiliation.name}
-                      width={140}
-                      height={140}
-                      className="object-contain max-h-16 sm:max-h-20 md:max-h-24 lg:max-h-32 max-w-full transition-transform duration-300 group-hover:scale-110 filter group-hover:drop-shadow-lg relative z-10"
-                      sizes="(max-width: 640px) 144px, (max-width: 768px) 160px, (max-width: 1024px) 192px, 224px"
-                    />
+                    {String(affiliation.image).startsWith("data:") ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={affiliation.image}
+                        alt={affiliation.name}
+                        className="object-contain max-h-16 sm:max-h-20 md:max-h-24 lg:max-h-32 max-w-full transition-transform duration-300 group-hover:scale-110 filter group-hover:drop-shadow-lg relative z-10"
+                      />
+                    ) : (
+                      <Image
+                        src={affiliation.image}
+                        alt={affiliation.name}
+                        width={140}
+                        height={140}
+                        className="object-contain max-h-16 sm:max-h-20 md:max-h-24 lg:max-h-32 max-w-full transition-transform duration-300 group-hover:scale-110 filter group-hover:drop-shadow-lg relative z-10"
+                        sizes="(max-width: 640px) 144px, (max-width: 768px) 160px, (max-width: 1024px) 192px, 224px"
+                      />
+                    )}
                   </div>
 
                   {/* Verified Badge */}

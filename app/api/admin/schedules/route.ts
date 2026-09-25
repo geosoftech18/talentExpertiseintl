@@ -29,6 +29,16 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    // Handle isUpcomingProgram - explicitly convert to boolean
+    let isUpcomingProgramValue = false
+    if (body.hasOwnProperty('isUpcomingProgram')) {
+      if (typeof body.isUpcomingProgram === 'boolean') {
+        isUpcomingProgramValue = body.isUpcomingProgram
+      } else if (typeof body.isUpcomingProgram === 'string') {
+        isUpcomingProgramValue = body.isUpcomingProgram === 'true'
+      }
+    }
+
     const schedule = await prisma.schedule.create({
       data: {
         programId: body.programId,
@@ -40,6 +50,7 @@ export async function POST(request: NextRequest) {
         fee: body.fee !== null && body.fee !== undefined ? parseFloat(String(body.fee).replace(/[^\d.]/g, '')) : null,
         status: body.status || 'Open',
         isNewProgram: isNewProgramValue, // Explicitly set boolean value
+        isUpcomingProgram: isUpcomingProgramValue,
       },
     })
 
@@ -59,6 +70,53 @@ export async function POST(request: NextRequest) {
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url)
+    const id = searchParams.get('id')
+
+    // Single schedule by ID (used by edit form — must not use list filters/pagination)
+    if (id) {
+      const schedule = await prisma.schedule.findUnique({
+        where: { id },
+        select: {
+          id: true,
+          programId: true,
+          programName: true,
+          mentorId: true,
+          startDate: true,
+          endDate: true,
+          venue: true,
+          fee: true,
+          status: true,
+          isNewProgram: true,
+          isUpcomingProgram: true,
+          createdAt: true,
+          program: {
+            select: {
+              id: true,
+              refCode: true,
+              programName: true,
+              category: true,
+            },
+          },
+          mentor: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+            },
+          },
+        },
+      })
+
+      if (!schedule) {
+        return NextResponse.json(
+          { success: false, error: 'Schedule not found' },
+          { status: 404 }
+        )
+      }
+
+      return NextResponse.json({ success: true, data: schedule })
+    }
+
     const page = parseInt(searchParams.get('page') || '1')
     const limit = parseInt(searchParams.get('limit') || '50') // Increased default limit
     const skip = (page - 1) * limit
@@ -178,6 +236,7 @@ export async function GET(request: NextRequest) {
           fee: true,
           status: true,
           isNewProgram: true,
+          isUpcomingProgram: true,
           createdAt: true,
           // Only include basic fields from relations
           program: {
@@ -273,6 +332,16 @@ export async function PUT(request: NextRequest) {
       }
     }
 
+    // Handle isUpcomingProgram - explicitly convert to boolean
+    let isUpcomingProgramValue = false
+    if (updateData.hasOwnProperty('isUpcomingProgram')) {
+      if (typeof updateData.isUpcomingProgram === 'boolean') {
+        isUpcomingProgramValue = updateData.isUpcomingProgram
+      } else if (typeof updateData.isUpcomingProgram === 'string') {
+        isUpcomingProgramValue = updateData.isUpcomingProgram === 'true'
+      }
+    }
+
     const schedule = await prisma.schedule.update({
       where: { id },
       data: {
@@ -287,6 +356,7 @@ export async function PUT(request: NextRequest) {
           : null,
         status: updateData.status || 'Open',
         isNewProgram: isNewProgramValue, // Explicitly set boolean value
+        isUpcomingProgram: isUpcomingProgramValue,
       },
     })
 

@@ -1,9 +1,36 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useMemo } from "react"
 import { useRouter } from "next/navigation"
-import { Search, RefreshCw, Calendar, ChevronUp, ChevronDown, Edit, Loader2, Plus, Trash2 } from "lucide-react"
+import {
+  Search,
+  RefreshCw,
+  Calendar,
+  ChevronUp,
+  ChevronDown,
+  Edit,
+  Loader2,
+  Plus,
+  Trash2,
+  Download,
+  CheckIcon,
+  ChevronDownIcon,
+} from "lucide-react"
 import { Button } from "@/components/ui/button"
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover"
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command"
+import * as XLSX from "xlsx"
 
 interface Order {
   id: number
@@ -15,10 +42,18 @@ interface Order {
   date: string
   rawDate?: Date
   scheduleDate?: string | null
+  scheduleStartDate?: string | null
+  scheduleEndDate?: string | null
   method: string
   paymentStatus: "Paid" | "Unpaid" | "Partially Refunded" | "Refunded"
   status: "Completed" | "Incomplete" | "Cancelled"
   total: number
+}
+
+function toDayStart(value: string | Date): Date {
+  const d = new Date(value)
+  d.setHours(0, 0, 0, 0)
+  return d
 }
 
 export default function Orders() {
@@ -27,8 +62,10 @@ export default function Orders() {
   const [selectedOrders, setSelectedOrders] = useState<number[]>([])
   const [searchQuery, setSearchQuery] = useState("")
   const [paymentStatusFilter, setPaymentStatusFilter] = useState<string>("")
-  const [sortBy, setSortBy] = useState<string>("DESC")
-  const [dateFilter, setDateFilter] = useState<string>("")
+  const [scheduleDateFilter, setScheduleDateFilter] = useState<string>("")
+  const [selectedCourse, setSelectedCourse] = useState("")
+  const [courseSearchOpen, setCourseSearchOpen] = useState(false)
+  const [courseSearch, setCourseSearch] = useState("")
   const [allOrders, setAllOrders] = useState<Order[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -184,6 +221,21 @@ export default function Orders() {
   // Use real data or fallback to dummy data if no data available
   const ordersToUse = allOrders.length > 0 ? allOrders : dummyOrders
 
+  const courseOptions = useMemo(() => {
+    const names = new Set<string>()
+    for (const order of ordersToUse) {
+      const title = order.courseTitle?.trim()
+      if (title) names.add(title)
+    }
+    return Array.from(names).sort((a, b) => a.localeCompare(b))
+  }, [ordersToUse])
+
+  const filteredCourses = useMemo(() => {
+    if (!courseSearch.trim()) return courseOptions
+    const q = courseSearch.toLowerCase()
+    return courseOptions.filter((name) => name.toLowerCase().includes(q))
+  }, [courseOptions, courseSearch])
+
   // Filter orders based on active tab
   const getFilteredOrders = () => {
     let filtered = ordersToUse
@@ -205,48 +257,45 @@ export default function Orders() {
       filtered = filtered.filter((order) => order.paymentStatus === paymentStatusFilter)
     }
 
-    // Filter by search query
+    // Filter by course (searchable dropdown)
+    if (selectedCourse) {
+      filtered = filtered.filter((order) => order.courseTitle === selectedCourse)
+    }
+
+    // Filter by search query (course name, user name, and existing fields)
     if (searchQuery) {
-      const query = searchQuery.toLowerCase()
+      const query = searchQuery.toLowerCase().trim()
       filtered = filtered.filter(
         (order) =>
           order.name.toLowerCase().includes(query) ||
+          (order.courseTitle || "").toLowerCase().includes(query) ||
           order.id.toString().includes(query) ||
           order.method.toLowerCase().includes(query) ||
           order.email?.toLowerCase().includes(query) ||
-          order.company?.toLowerCase().includes(query) ||
-          order.courseTitle?.toLowerCase().includes(query)
+          order.company?.toLowerCase().includes(query)
       )
     }
 
-    // Filter by date if provided
-    if (dateFilter) {
-      const filterDate = new Date(dateFilter)
-      filterDate.setHours(0, 0, 0, 0)
+    // Filter by schedule date (not order date)
+    if (scheduleDateFilter) {
+      const filterDay = toDayStart(scheduleDateFilter).getTime()
       filtered = filtered.filter((order) => {
-        if (!order.rawDate) return true
-        const orderDate = new Date(order.rawDate)
-        orderDate.setHours(0, 0, 0, 0)
-        return orderDate.getTime() === filterDate.getTime()
+        if (!order.scheduleStartDate) return false
+        const startDay = toDayStart(order.scheduleStartDate).getTime()
+        const endDay = order.scheduleEndDate
+          ? toDayStart(order.scheduleEndDate).getTime()
+          : startDay
+        return filterDay >= startDay && filterDay <= endDay
       })
     }
 
-    // Sort orders
-    if (sortBy === "DESC") {
-      filtered = filtered.sort((a, b) => {
-        if (a.rawDate && b.rawDate) {
-          return new Date(b.rawDate).getTime() - new Date(a.rawDate).getTime()
-        }
-        return b.id - a.id
-      })
-    } else {
-      filtered = filtered.sort((a, b) => {
-        if (a.rawDate && b.rawDate) {
-          return new Date(a.rawDate).getTime() - new Date(b.rawDate).getTime()
-        }
-        return a.id - b.id
-      })
-    }
+    // Sort newest first
+    filtered = filtered.sort((a, b) => {
+      if (a.rawDate && b.rawDate) {
+        return new Date(b.rawDate).getTime() - new Date(a.rawDate).getTime()
+      }
+      return b.id - a.id
+    })
 
     return filtered
   }
@@ -311,9 +360,44 @@ export default function Orders() {
   const handleReset = () => {
     setSearchQuery("")
     setPaymentStatusFilter("")
-    setSortBy("DESC")
-    setDateFilter("")
+    setScheduleDateFilter("")
+    setSelectedCourse("")
+    setCourseSearch("")
     setSelectedOrders([])
+  }
+
+  const handleExportExcel = () => {
+    const ordersToExport =
+      selectedOrders.length > 0
+        ? filteredOrders.filter((order) => selectedOrders.includes(order.id))
+        : filteredOrders
+
+    if (ordersToExport.length === 0) {
+      alert("No orders available to export")
+      return
+    }
+
+    const exportData = ordersToExport.map((order) => ({
+      ID: `#${order.id}`,
+      Name: order.name,
+      Email: order.email || "",
+      Company: order.company || "",
+      Course: order.courseTitle || "",
+      "Course Schedule Date": order.scheduleDate || "",
+      "Order Date": order.date,
+      Method: order.method,
+      "Payment Status": order.paymentStatus,
+      Status: order.status,
+      Total: order.total,
+    }))
+
+    const worksheet = XLSX.utils.json_to_sheet(exportData)
+    const workbook = XLSX.utils.book_new()
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Orders")
+
+    const selectedText = selectedOrders.length > 0 ? `_${selectedOrders.length}_selected` : "_all"
+    const filename = `orders_export_${new Date().toISOString().split("T")[0]}${selectedText}`
+    XLSX.writeFile(workbook, `${filename}.xlsx`)
   }
 
   const handleDeleteOrder = async (order: Order) => {
@@ -385,13 +469,30 @@ export default function Orders() {
       {/* Title and Create Button */}
       <div className="flex items-center justify-between">
         <h1 className="text-4xl font-bold theme-text mb-2">Orders</h1>
-        <Button
-          onClick={() => router.push("/admin/orders/create")}
-          className="bg-primary text-primary-foreground hover:bg-primary/90"
-        >
-          <Plus className="w-4 h-4 mr-2" />
-          Create Order
-        </Button>
+        <div className="flex items-center gap-3">
+          <Button
+            onClick={handleExportExcel}
+            disabled={filteredOrders.length === 0}
+            variant="outline"
+            className="border-emerald-600 text-emerald-700 hover:bg-emerald-50 hover:text-emerald-800 disabled:opacity-50"
+            title={
+              selectedOrders.length > 0
+                ? `Export ${selectedOrders.length} selected order(s)`
+                : "Export all filtered orders"
+            }
+          >
+            <Download className="w-4 h-4 mr-2" />
+            Export Excel
+            {selectedOrders.length > 0 ? ` (${selectedOrders.length})` : " (All)"}
+          </Button>
+          <Button
+            onClick={() => router.push("/admin/orders/create")}
+            className="bg-primary text-primary-foreground hover:bg-primary/90"
+          >
+            <Plus className="w-4 h-4 mr-2" />
+            Create Order
+          </Button>
+        </div>
       </div>
 
       {/* Tabs */}
@@ -485,23 +586,93 @@ export default function Orders() {
           <option value="Refunded">Refunded</option>
         </select>
 
-        {/* Sort By */}
-        <select
-          value={sortBy}
-          onChange={(e) => setSortBy(e.target.value)}
-          className="px-4 py-2 bg-input border border-border rounded-lg theme-text text-sm focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary"
-        >
-          <option value="DESC">Sort By: DESC</option>
-          <option value="ASC">Sort By: ASC</option>
-        </select>
+        {/* Course Filter (searchable) */}
+        <div className="w-full sm:w-[260px]">
+          <Popover
+            open={courseSearchOpen}
+            onOpenChange={(open) => {
+              setCourseSearchOpen(open)
+              if (!open) setCourseSearch("")
+            }}
+          >
+            <PopoverTrigger asChild>
+              <Button
+                variant="outline"
+                role="combobox"
+                aria-expanded={courseSearchOpen}
+                className="w-full justify-between bg-input border-border theme-text h-10 font-normal text-sm"
+              >
+                <span className="truncate">
+                  {selectedCourse || "All courses"}
+                </span>
+                <ChevronDownIcon className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent
+              className="w-[var(--radix-popover-trigger-width)] p-0"
+              align="start"
+            >
+              <Command shouldFilter={false}>
+                <CommandInput
+                  placeholder="Search courses..."
+                  value={courseSearch}
+                  onValueChange={setCourseSearch}
+                />
+                <CommandList>
+                  <CommandEmpty>
+                    No course found matching &quot;{courseSearch}&quot;.
+                  </CommandEmpty>
+                  <CommandGroup>
+                    <CommandItem
+                      value="__all__"
+                      onSelect={() => {
+                        setSelectedCourse("")
+                        setCourseSearchOpen(false)
+                        setCourseSearch("")
+                      }}
+                      className="cursor-pointer"
+                    >
+                      <CheckIcon
+                        className={`mr-2 h-4 w-4 ${
+                          !selectedCourse ? "opacity-100" : "opacity-0"
+                        }`}
+                      />
+                      <span>All courses</span>
+                    </CommandItem>
+                    {filteredCourses.map((course) => (
+                      <CommandItem
+                        key={course}
+                        value={course}
+                        onSelect={() => {
+                          setSelectedCourse(course)
+                          setCourseSearchOpen(false)
+                          setCourseSearch("")
+                        }}
+                        className="cursor-pointer"
+                      >
+                        <CheckIcon
+                          className={`mr-2 h-4 w-4 ${
+                            selectedCourse === course ? "opacity-100" : "opacity-0"
+                          }`}
+                        />
+                        <span className="truncate">{course}</span>
+                      </CommandItem>
+                    ))}
+                  </CommandGroup>
+                </CommandList>
+              </Command>
+            </PopoverContent>
+          </Popover>
+        </div>
 
-        {/* Date Filter */}
-        <div className="relative">
+        {/* Schedule Date Filter */}
+        <div className="relative" title="Filter by course schedule date">
           <Calendar size={16} className="absolute left-3 top-1/2 transform -translate-y-1/2 theme-muted" />
           <input
             type="date"
-            value={dateFilter}
-            onChange={(e) => setDateFilter(e.target.value)}
+            value={scheduleDateFilter}
+            onChange={(e) => setScheduleDateFilter(e.target.value)}
+            aria-label="Filter by schedule date"
             className="pl-10 pr-4 py-2 bg-input border border-border rounded-lg theme-text text-sm focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary"
           />
         </div>
@@ -511,7 +682,7 @@ export default function Orders() {
           <Search size={18} className="absolute left-3 top-1/2 transform -translate-y-1/2 theme-muted" />
           <input
             type="text"
-            placeholder="Search..."
+            placeholder="Search by course name or user name..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="w-full pl-10 pr-4 py-2 bg-input border border-border rounded-lg theme-text placeholder-muted-foreground focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary"
@@ -543,6 +714,7 @@ export default function Orders() {
                   </div>
                 </th>
                 <th className="px-6 py-4 text-left text-sm font-semibold theme-text">Name</th>
+                <th className="px-6 py-4 text-left text-sm font-semibold theme-text">Course</th>
                 <th className="px-6 py-4 text-left text-sm font-semibold theme-text">Course Schedule Date</th>
                 <th className="px-6 py-4 text-left text-sm font-semibold theme-text">
                   <div className="flex items-center gap-2">
@@ -571,7 +743,7 @@ export default function Orders() {
             <tbody>
               {filteredOrders.length === 0 ? (
                 <tr>
-                  <td colSpan={10} className="px-6 py-8 text-center theme-muted">
+                  <td colSpan={11} className="px-6 py-8 text-center theme-muted">
                     No orders found
                   </td>
                 </tr>
@@ -597,6 +769,11 @@ export default function Orders() {
                         </div>
                         <span className="theme-text font-medium">{order.name}</span>
                       </div>
+                    </td>
+                    <td className="px-6 py-4 theme-text text-sm max-w-[220px]">
+                      <span className="line-clamp-2" title={order.courseTitle || undefined}>
+                        {order.courseTitle || "—"}
+                      </span>
                     </td>
                     <td className="px-6 py-4 theme-muted text-sm">{order.scheduleDate || "—"}</td>
                     <td className="px-6 py-4 theme-muted text-sm">{order.date}</td>

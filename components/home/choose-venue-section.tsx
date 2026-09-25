@@ -162,19 +162,29 @@ export default function ChooseVenueSection() {
           // Filter only active venues and map to our format
           const activeVenues = result.data
             .filter((v: any) => v.status === 'Active')
-            .map((v: any) => ({
-              id: String(v.id),
-              city: v.city || '',
-              country: v.country || '',
-              image: getCityImageUrl(v.city || '', v.country || ''),
-              imageLoading: true
-            }))
-            .filter((v: Venue) => v.city && v.country) // Only include venues with both city and country
+            .map((v: any) => {
+              const customImage =
+                typeof v.imageUrl === 'string' && v.imageUrl.trim().length > 0
+                  ? v.imageUrl.trim()
+                  : null
+              return {
+                id: String(v.id),
+                city: v.city || '',
+                country: v.country || '',
+                image: customImage || getCityImageUrl(v.city || '', v.country || ''),
+                imageLoading: !customImage,
+                hasCustomImage: !!customImage,
+              }
+            })
+            .filter((v: Venue & { hasCustomImage?: boolean }) => v.city && v.country)
           
           setVenues(activeVenues)
           
-          // Fetch Wikipedia images for all venues
-          const imagePromises = activeVenues.map(async (venue: Venue) => {
+          // Fetch Wikipedia images only when no custom image is set
+          const imagePromises = activeVenues.map(async (venue: Venue & { hasCustomImage?: boolean }) => {
+            if (venue.hasCustomImage) {
+              return { id: venue.id, image: venue.image }
+            }
             try {
               const imageUrl = await getWikipediaImageUrl(venue.city, venue.country)
               return { id: venue.id, image: imageUrl }
@@ -209,97 +219,71 @@ export default function ChooseVenueSection() {
     fetchVenues()
   }, [])
 
-  // Auto-scroll animation - only runs when venues are loaded
+  // Auto-scroll using React-duplicated venues only (no cloneNode — that breaks React removeChild)
   useEffect(() => {
     if (loading || venues.length === 0) return
 
     const carousel = carouselRef.current
     if (!carousel) return
 
-    let animationFrameId: number
+    let animationFrameId = 0
     let scrollPosition = 0
-    let originalWidth = 0
-    let itemWidth = 0
-    const scrollSpeed = 0.8 // pixels per frame for smooth animation
+    let loopWidth = 0
+    const scrollSpeed = 0.8
+    let cancelled = false
 
     const initAnimation = () => {
-      // Wait for images to load and DOM to be ready
-      const items = carousel.querySelectorAll('[data-venue-item]:not([data-venue-item="clone"])')
+      if (cancelled) return
+      const items = carousel.querySelectorAll('[data-venue-item="original"]')
       if (items.length === 0) {
-        // Retry if items not ready yet
         setTimeout(initAnimation, 100)
         return
       }
 
-      // Get actual item width including gap
       const firstItem = items[0] as HTMLElement
-      if (!firstItem.offsetWidth || firstItem.offsetWidth === 0) {
-        // Retry if width not calculated yet
+      if (!firstItem.offsetWidth) {
         setTimeout(initAnimation, 100)
         return
       }
 
-      itemWidth = firstItem.offsetWidth + 24 // 24px gap (gap-6)
+      loopWidth = items.length * (firstItem.offsetWidth + 24)
 
-      // Clear any existing clones
-      const existingClones = carousel.querySelectorAll('[data-venue-item="clone"]')
-      existingClones.forEach(clone => clone.remove())
-
-      // Duplicate items for seamless loop
-      const itemsArray = Array.from(items)
-      itemsArray.forEach(item => {
-        const clone = item.cloneNode(true) as HTMLElement
-        clone.setAttribute('data-venue-item', 'clone')
-        carousel.appendChild(clone)
-      })
-
-      originalWidth = itemsArray.length * itemWidth
-
-      // Disable smooth scrolling for programmatic control
-      carousel.style.scrollBehavior = 'auto'
+      carousel.style.scrollBehavior = "auto"
       carousel.scrollLeft = 0
       scrollPosition = 0
 
       const animate = () => {
-        if (!isPausedRef.current) {
+        if (cancelled) return
+        if (!isPausedRef.current && loopWidth > 0) {
           scrollPosition += scrollSpeed
-          
-          // Reset scroll position when we've scrolled past all original items
-          if (scrollPosition >= originalWidth) {
-            scrollPosition = scrollPosition - originalWidth
+          if (scrollPosition >= loopWidth) {
+            scrollPosition -= loopWidth
           }
-          
           carousel.scrollLeft = scrollPosition
         }
         animationFrameId = requestAnimationFrame(animate)
       }
 
-      // Store pause/resume functions with sync capability
       autoScrollRef.current = {
         pause: () => {
           isPausedRef.current = true
-          // Sync scrollPosition with actual scroll position when pausing
           scrollPosition = carousel.scrollLeft
         },
         resume: () => {
           isPausedRef.current = false
-          // Sync scrollPosition with actual scroll position when resuming
           scrollPosition = carousel.scrollLeft
-        }
+        },
       }
 
-      // Start animation
       animationFrameId = requestAnimationFrame(animate)
     }
 
-    // Initialize after a short delay to ensure DOM is ready
     const timeoutId = setTimeout(initAnimation, 300)
 
     return () => {
+      cancelled = true
       clearTimeout(timeoutId)
-      if (animationFrameId) {
-        cancelAnimationFrame(animationFrameId)
-      }
+      if (animationFrameId) cancelAnimationFrame(animationFrameId)
     }
   }, [loading, venues.length])
 
@@ -432,10 +416,10 @@ export default function ChooseVenueSection() {
                 WebkitOverflowScrolling: 'touch',
               }}
             >
-              {venues.map((venue) => (
+              {([...venues, ...venues]).map((venue, index) => (
               <div
-                key={venue.id}
-                data-venue-item
+                key={`${venue.id}-${index}`}
+                data-venue-item={index < venues.length ? "original" : "duplicate"}
                 className="flex-shrink-0 w-[280px] sm:w-[300px]"
               >
                 <Card 
@@ -457,11 +441,9 @@ export default function ChooseVenueSection() {
                       sizes="(max-width: 640px) 280px, 300px"
                       quality={95}
                       priority={false}
-                      onError={(e) => {
-                        // Fallback to a default placeholder if image fails to load
-                        const target = e.currentTarget as HTMLImageElement
-                        target.src = 'https://upload.wikimedia.org/wikipedia/commons/thumb/8/8f/Wikipedia-logo-v2-en.svg/1200px-Wikipedia-logo-v2-en.svg.png'
-                      }}
+                      unoptimized={
+                        venue.image.startsWith("http") || venue.image.startsWith("data:")
+                      }
                     />
                     
                     {/* Venue Name - Solid background for readability */}

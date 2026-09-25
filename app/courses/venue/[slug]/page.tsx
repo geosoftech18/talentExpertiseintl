@@ -8,6 +8,7 @@ import { Badge } from '@/components/ui/badge'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { format } from 'date-fns'
 import { generateSlug } from '@/lib/utils/slug'
+import { isVisibleInCourseListings } from '@/lib/utils/course-visibility'
 import * as XLSX from 'xlsx'
 import Image from 'next/image'
 
@@ -248,12 +249,37 @@ export default function VenueCoursesPage() {
     fetchCertificates()
   }, [])
 
-  // Fetch Wikipedia image for venue
+  // Fetch venue image: custom upload first, then Wikipedia default
   useEffect(() => {
     const fetchVenueImage = async () => {
       try {
         setImageLoading(true)
         const { city, country } = parseVenueName(venueName)
+
+        // Prefer admin-uploaded image when present for this venue
+        try {
+          const venuesRes = await fetch('/api/admin/venues?limit=1000')
+          const venuesJson = await venuesRes.json()
+          if (venuesJson.success && Array.isArray(venuesJson.data)) {
+            const match = venuesJson.data.find((v: any) => {
+              const vCity = (v.city || '').trim().toLowerCase()
+              const vCountry = (v.country || '').trim().toLowerCase()
+              return (
+                vCity === city.trim().toLowerCase() &&
+                vCountry === country.trim().toLowerCase() &&
+                typeof v.imageUrl === 'string' &&
+                v.imageUrl.trim().length > 0
+              )
+            })
+            if (match?.imageUrl) {
+              setVenueImage(match.imageUrl)
+              return
+            }
+          }
+        } catch (lookupError) {
+          console.error('Error looking up custom venue image:', lookupError)
+        }
+
         const imageUrl = await getWikipediaImageUrl(city, country)
         setVenueImage(imageUrl)
       } catch (error) {
@@ -269,28 +295,11 @@ export default function VenueCoursesPage() {
     }
   }, [venueName])
 
-  // Filter courses by venue and exclude expired courses
+  // Filter courses by venue — listing window: 14+ days before start
   const venueCourses = useMemo(() => {
-    const today = new Date()
-    today.setHours(0, 0, 0, 0) // Reset time to start of day for accurate comparison
-    
     return allCourses.filter(course => {
-      // Must match venue
       if (course.venue !== venueName) return false
-      
-      // Filter out expired courses - only show active/upcoming courses
-      if (course.endDate) {
-        const endDate = new Date(course.endDate)
-        endDate.setHours(0, 0, 0, 0)
-        return endDate >= today
-      } else if (course.startDate) {
-        const startDate = new Date(course.startDate)
-        startDate.setHours(0, 0, 0, 0)
-        return startDate >= today
-      }
-      
-      // If no dates, include it (might be TBD courses)
-      return true
+      return isVisibleInCourseListings(course.startDate)
     })
   }, [allCourses, venueName])
 
@@ -561,6 +570,9 @@ export default function VenueCoursesPage() {
               priority
               quality={90}
               sizes="100vw"
+              unoptimized={
+                venueImage.startsWith('http') || venueImage.startsWith('data:')
+              }
               onError={(e) => {
                 // Hide image on error, fallback to gradient background
                 const target = e.currentTarget as HTMLImageElement

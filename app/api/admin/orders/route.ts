@@ -34,7 +34,17 @@ export async function GET(request: NextRequest) {
     const schedules = scheduleIds.length > 0
       ? await prisma.schedule.findMany({
           where: { id: { in: scheduleIds } },
-          select: { id: true, fee: true, status: true, startDate: true, endDate: true },
+          select: {
+            id: true,
+            fee: true,
+            status: true,
+            startDate: true,
+            endDate: true,
+            programName: true,
+            program: {
+              select: { programName: true },
+            },
+          },
         })
       : []
 
@@ -44,6 +54,11 @@ export async function GET(request: NextRequest) {
     const orders = registrations.map((reg, index) => {
       const schedule = reg.scheduleId ? scheduleMap.get(reg.scheduleId) : null
       const orderTotal = schedule?.fee || 0
+      const courseTitle =
+        reg.courseTitle ||
+        schedule?.programName ||
+        schedule?.program?.programName ||
+        null
 
       // Map payment method to display name
       const paymentMethodMap: Record<string, string> = {
@@ -87,24 +102,28 @@ export async function GET(request: NextRequest) {
 
       // Format schedule date
       let scheduleDate: string | null = null
+      let scheduleStartDate: string | null = null
+      let scheduleEndDate: string | null = null
       if (schedule?.startDate) {
-        const scheduleStartDate = new Date(schedule.startDate)
-        const scheduleEndDate = schedule.endDate ? new Date(schedule.endDate) : null
+        const scheduleStart = new Date(schedule.startDate)
+        const scheduleEnd = schedule.endDate ? new Date(schedule.endDate) : null
+        scheduleStartDate = scheduleStart.toISOString()
+        scheduleEndDate = scheduleEnd ? scheduleEnd.toISOString() : null
         
-        if (scheduleEndDate && scheduleStartDate.getTime() !== scheduleEndDate.getTime()) {
+        if (scheduleEnd && scheduleStart.getTime() !== scheduleEnd.getTime()) {
           // Date range
-          scheduleDate = `${scheduleStartDate.toLocaleDateString('en-US', {
+          scheduleDate = `${scheduleStart.toLocaleDateString('en-US', {
             month: 'short',
             day: 'numeric',
             year: 'numeric',
-          })} - ${scheduleEndDate.toLocaleDateString('en-US', {
+          })} - ${scheduleEnd.toLocaleDateString('en-US', {
             month: 'short',
             day: 'numeric',
             year: 'numeric',
           })}`
         } else {
           // Single date
-          scheduleDate = scheduleStartDate.toLocaleDateString('en-US', {
+          scheduleDate = scheduleStart.toLocaleDateString('en-US', {
             month: 'short',
             day: 'numeric',
             year: 'numeric',
@@ -118,10 +137,12 @@ export async function GET(request: NextRequest) {
         name: reg.name,
         email: reg.email,
         company: reg.company,
-        courseTitle: reg.courseTitle,
+        courseTitle,
         date: formattedDate,
         rawDate: date,
         scheduleDate,
+        scheduleStartDate,
+        scheduleEndDate,
         method: paymentMethodMap[reg.paymentMethod] || reg.paymentMethod,
         paymentStatus,
         status,

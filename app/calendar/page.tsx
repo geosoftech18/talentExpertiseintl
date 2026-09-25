@@ -82,8 +82,8 @@ export default function CalendarPage() {
 
         // No cache or cache expired - fetch fresh data
         setLoading(true)
-        // Fetch only active/upcoming courses (not expired)
-        const response = await fetch('/api/courses?limit=10000')
+        // Fetch all schedules; client keeps anything that has not ended yet
+        const response = await fetch('/api/courses?limit=10000&includeExpired=true')
         const result = await response.json()
 
         if (!cancelled && result.success) {

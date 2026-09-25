@@ -1,5 +1,29 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { setProgramStudyMaterials, type StudyMaterialItem } from '@/lib/program-study-material'
+
+function normalizeStudyMaterialsFromBody(body: Record<string, unknown>): StudyMaterialItem[] {
+  if (Array.isArray(body.studyMaterials)) {
+    return body.studyMaterials
+      .map((item) => {
+        if (!item || typeof item !== 'object') return null
+        const url = String((item as { url?: unknown }).url || '').trim()
+        const fileName = String((item as { fileName?: unknown }).fileName || '').trim()
+        if (!url) return null
+        return { url, fileName: fileName || 'Study material' }
+      })
+      .filter((item): item is StudyMaterialItem => item !== null)
+  }
+
+  // Backward compatibility with single-file payload
+  const url = typeof body.studyMaterialUrl === 'string' ? body.studyMaterialUrl.trim() : ''
+  if (!url) return []
+  const fileName =
+    typeof body.studyMaterialFileName === 'string' && body.studyMaterialFileName.trim()
+      ? body.studyMaterialFileName.trim()
+      : 'Study material'
+  return [{ url, fileName }]
+}
 
 export async function POST(request: NextRequest) {
   try {
@@ -48,8 +72,20 @@ export async function POST(request: NextRequest) {
       },
     })
 
+    const studyMaterials = normalizeStudyMaterialsFromBody(body)
+    await setProgramStudyMaterials(program.id, studyMaterials)
+    const first = studyMaterials[0] ?? null
+
     return NextResponse.json(
-      { success: true, data: program },
+      {
+        success: true,
+        data: {
+          ...program,
+          studyMaterials,
+          studyMaterialUrl: first?.url ?? null,
+          studyMaterialFileName: first?.fileName ?? null,
+        },
+      },
       { status: 201 }
     )
   } catch (error) {
@@ -259,7 +295,46 @@ export async function PUT(request: NextRequest) {
       },
     })
 
-    return NextResponse.json({ success: true, data: program })
+    let studyMaterials: StudyMaterialItem[] = []
+    if (Object.prototype.hasOwnProperty.call(updateData, 'studyMaterials')) {
+      studyMaterials = normalizeStudyMaterialsFromBody(updateData)
+      await setProgramStudyMaterials(id, studyMaterials)
+    } else if (Object.prototype.hasOwnProperty.call(updateData, 'studyMaterialUrl')) {
+      // Legacy single-file payload
+      studyMaterials = normalizeStudyMaterialsFromBody(updateData)
+      await setProgramStudyMaterials(id, studyMaterials)
+    } else {
+      const existing = (program as { studyMaterials?: unknown }).studyMaterials
+      if (Array.isArray(existing)) {
+        studyMaterials = existing
+          .map((item) => {
+            if (!item || typeof item !== 'object') return null
+            const url = String((item as { url?: unknown }).url || '').trim()
+            const fileName = String((item as { fileName?: unknown }).fileName || '').trim()
+            if (!url) return null
+            return { url, fileName: fileName || 'Study material' }
+          })
+          .filter((item): item is StudyMaterialItem => item !== null)
+      } else {
+        const url = (program as { studyMaterialUrl?: string | null }).studyMaterialUrl
+        const fileName = (program as { studyMaterialFileName?: string | null }).studyMaterialFileName
+        if (url) {
+          studyMaterials = [{ url, fileName: fileName || 'Study material' }]
+        }
+      }
+    }
+
+    const first = studyMaterials[0] ?? null
+
+    return NextResponse.json({
+      success: true,
+      data: {
+        ...program,
+        studyMaterials,
+        studyMaterialUrl: first?.url ?? null,
+        studyMaterialFileName: first?.fileName ?? null,
+      },
+    })
   } catch (error) {
     console.error('Error updating program:', error)
     return NextResponse.json(

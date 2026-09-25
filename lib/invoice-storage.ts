@@ -27,19 +27,35 @@ export function getLocalInvoicePdfUrl(pdfFileName: string): string {
  */
 export function resolveLocalInvoicePdfPath(pdfUrl: string): string | null {
   if (!pdfUrl) return null
-  if (pdfUrl.startsWith('http://') || pdfUrl.startsWith('https://')) {
+
+  // Absolute same-origin URLs that still point at local invoice routes
+  let normalized = pdfUrl
+  try {
+    if (pdfUrl.startsWith('http://') || pdfUrl.startsWith('https://')) {
+      const parsed = new URL(pdfUrl)
+      // Keep path for local API / public invoice routes; treat other hosts as remote
+      if (
+        parsed.pathname.includes('/api/invoices/file/') ||
+        parsed.pathname.startsWith('/invoices/')
+      ) {
+        normalized = parsed.pathname
+      } else {
+        return null
+      }
+    }
+  } catch {
     return null
   }
 
-  const apiMatch = pdfUrl.match(/\/api\/invoices\/file\/([^/?#]+)/)
+  const apiMatch = normalized.match(/\/api\/invoices\/file\/([^/?#]+)/)
   if (apiMatch) {
     const name = decodeURIComponent(apiMatch[1])
     if (!INV_PDF_NAME.test(name)) return null
     return path.join(getInvoiceStorageDir(), name)
   }
 
-  if (pdfUrl.startsWith('/invoices/')) {
-    const base = path.basename(pdfUrl)
+  if (normalized.startsWith('/invoices/')) {
+    const base = path.basename(normalized)
     if (!INV_PDF_NAME.test(base)) return null
     const legacyPublic = path.join(process.cwd(), 'public', 'invoices', base)
     const storage = path.join(getInvoiceStorageDir(), base)

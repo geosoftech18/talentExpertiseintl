@@ -9,6 +9,7 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Search, Filter, X, Calendar, MapPin, BookOpen, Users, Star, ChevronDown, Sparkles } from "lucide-react"
 import CalendarView from "./calendar-view"
+import { isVisibleInCourseListings } from "@/lib/utils/course-visibility"
 
 interface Course {
   category: string
@@ -223,6 +224,7 @@ export default function CourseFilterSection() {
       // Count courses for this month (check if startDate falls in this month)
       const courseCount = courses.filter((course) => {
         if (!course.startDate) return false
+        if (!isVisibleInCourseListings(course.startDate)) return false
         try {
           const courseDate = new Date(course.startDate)
           return courseDate.getMonth() === index && courseDate.getFullYear() >= currentYear
@@ -255,30 +257,11 @@ export default function CourseFilterSection() {
     return colorMap[categoryName] || "bg-gray-100 text-gray-800"
   }
 
-  // Count courses per category (only non-expired courses)
+  // Count courses per category (only listing-window courses: 14+ days to start)
   const getCategoryCount = (categoryName: string) => {
-    const today = new Date()
-    today.setHours(0, 0, 0, 0) // Set to start of day for accurate comparison
-    
     return courses.filter((course) => {
-      // Must match the category
       if (course.category !== categoryName) return false
-      
-      // Check if course has a startDate and it's not expired
-      if (course.startDate) {
-        try {
-          const courseDate = new Date(course.startDate)
-          courseDate.setHours(0, 0, 0, 0)
-          // Only count courses with startDate in the future (not expired)
-          return courseDate >= today
-        } catch {
-          // If date parsing fails, exclude the course
-          return false
-        }
-      }
-      
-      // If no startDate, exclude the course (can't determine if expired)
-      return false
+      return isVisibleInCourseListings(course.startDate)
     }).length
   }
 
@@ -382,7 +365,7 @@ export default function CourseFilterSection() {
         <Card className="max-w-6xl mx-auto shadow-2xl border-0 bg-white/80 backdrop-blur-sm">
           <CardContent className="p-8">
             {/* Quick Stats */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+            {/* <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
               <div className="text-center p-4 bg-gradient-to-br from-purple-50 to-purple-100 rounded-xl">
                 <BookOpen className="w-8 h-8 text-purple-600 mx-auto mb-2" />
                 <div className="text-2xl font-bold text-purple-900">1000+</div>
@@ -403,7 +386,7 @@ export default function CourseFilterSection() {
                 <div className="text-2xl font-bold text-orange-900">4.9</div>
                 <div className="text-sm text-orange-700">Average Rating</div>
               </div>
-            </div>
+            </div> */}
 
             {/* Main Search Bar */}
             <div className="relative mb-6">

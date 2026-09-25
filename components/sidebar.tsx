@@ -74,8 +74,13 @@ export default function Sidebar({ isOpen, onNavigate, currentPage }: SidebarProp
       label: "Content Management",
       icon: FileText,
       submenu: [
+        { id: "client-logos", label: "Client Logos" },
+        { id: "affiliations", label: "Affiliations" },
         { id: "testimonials", label: "Testimonials" },
+        { id: "gallery-management", label: "Gallery" },
         { id: "certificate-management", label: "Certificate Management" },
+        { id: "issued-certificates", label: "Issued Certificates" },
+        { id: "download-management", label: "Downloads" },
       ],
     },
     {

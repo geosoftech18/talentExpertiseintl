@@ -37,6 +37,7 @@ import {
   Calendar,
   Loader2,
 } from "lucide-react"
+import { isVisibleInCourseListings } from "@/lib/utils/course-visibility"
 // Registration form is now on a dedicated page
 
 // Category metadata mapping - static styling for each category
@@ -366,10 +367,8 @@ export default function CourseCategoriesSection() {
         
         if (result.success && result.data) {
           const courses = result.data
-          const today = new Date()
-          today.setHours(0, 0, 0, 0)
           
-          // Group courses by category and count non-expired courses
+          // Group courses by category and count listing-window courses (14+ days to start)
           const categoryMap = new Map<string, {
             count: number
             description?: string
@@ -378,20 +377,7 @@ export default function CourseCategoriesSection() {
           courses.forEach((course: any) => {
             if (!course.category) return
             
-            // Check if course is not expired
-            let isNotExpired = false
-            if (course.startDate) {
-              try {
-                const courseDate = new Date(course.startDate)
-                courseDate.setHours(0, 0, 0, 0)
-                isNotExpired = courseDate >= today
-              } catch {
-                isNotExpired = false
-              }
-            }
-            
-            // Only count non-expired courses
-            if (isNotExpired) {
+            if (isVisibleInCourseListings(course.startDate)) {
               const existing = categoryMap.get(course.category) || { count: 0 }
               categoryMap.set(course.category, {
                 count: existing.count + 1,

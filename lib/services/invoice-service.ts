@@ -108,8 +108,9 @@ interface CreateInvoiceParams {
   city?: string | null
   country?: string | null
   participants?: number
-  paymentStatus?: string // Only generate for paid orders
+  paymentStatus?: string // Only generate for paid orders unless allowUnpaid
   skipEmail?: boolean // Skip sending invoice email (for attaching to other emails)
+  allowUnpaid?: boolean // Admin can generate PENDING invoices for unpaid orders
 }
 
 /**
@@ -132,8 +133,12 @@ export async function createInvoice(params: CreateInvoiceParams) {
     paymentStatus,
   } = params
 
-  // Only generate invoices for paid orders
-  if (paymentStatus && paymentStatus.toUpperCase() !== 'PAID') {
+  // Only generate invoices for paid orders unless admin explicitly allows unpaid
+  if (
+    !params.allowUnpaid &&
+    paymentStatus &&
+    paymentStatus.toUpperCase() !== 'PAID'
+  ) {
     throw new Error('Invoices can only be generated for paid orders')
   }
 
@@ -304,6 +309,107 @@ export async function createInvoice(params: CreateInvoiceParams) {
   return {
     success: true,
     invoiceNo,
+    invoiceId: invoice.id,
+    pdfUrl,
+    emailSent,
+  }
+}
+
+/**
+ * Regenerate PDF for an existing invoice (and optionally re-send email).
+ * Used by admin Invoice Management on live when PDF is missing or stale.
+ */
+export async function regenerateInvoicePdf(
+  invoiceId: string,
+  options?: { sendEmail?: boolean }
+) {
+  const invoice = await prisma.invoice.findUnique({ where: { id: invoiceId } })
+  if (!invoice) {
+    throw new Error('Invoice not found')
+  }
+
+  let participantsCount = 1
+  let unitPrice = invoice.amount
+  if (invoice.courseRegistrationId) {
+    const registration = await prisma.courseRegistration.findUnique({
+      where: { id: invoice.courseRegistrationId },
+      select: { participants: true },
+    })
+    if (registration?.participants && registration.participants > 0) {
+      participantsCount = registration.participants
+      unitPrice = invoice.amount / participantsCount
+    }
+  }
+
+  const pdfFileName = `${invoice.invoiceNo}.pdf`
+  let pdfUrl: string
+  let pdfPath: string | null = null
+  let pdfBuffer: Buffer | null = null
+
+  const invoicePdfData = {
+    invoiceNo: invoice.invoiceNo,
+    issueDate: invoice.issueDate,
+    customerName: invoice.customerName,
+    customerEmail: invoice.customerEmail,
+    customerAddress: invoice.customerAddress || undefined,
+    customerCity: invoice.customerCity || undefined,
+    customerCountry: invoice.customerCountry || undefined,
+    courseTitle: invoice.courseTitle || 'Course Registration',
+    amount: invoice.amount,
+    status: invoice.status,
+    participants: participantsCount,
+    unitPrice,
+  }
+
+  if (isR2Configured()) {
+    try {
+      pdfBuffer = await generateInvoicePDFBuffer(invoicePdfData)
+      pdfUrl = await uploadToR2(pdfBuffer, pdfFileName, 'application/pdf')
+    } catch (r2Error) {
+      console.error('Error uploading regenerated invoice to R2, using local:', r2Error)
+      const invoicesDir = getInvoiceStorageDir()
+      pdfPath = path.join(invoicesDir, pdfFileName)
+      await generateInvoicePDF(invoicePdfData, pdfPath)
+      pdfUrl = getLocalInvoicePdfUrl(pdfFileName)
+      pdfBuffer = null
+    }
+  } else {
+    const invoicesDir = getInvoiceStorageDir()
+    pdfPath = path.join(invoicesDir, pdfFileName)
+    await generateInvoicePDF(invoicePdfData, pdfPath)
+    pdfUrl = getLocalInvoicePdfUrl(pdfFileName)
+  }
+
+  await prisma.invoice.update({
+    where: { id: invoice.id },
+    data: { pdfUrl },
+  })
+
+  let emailSent = false
+  if (options?.sendEmail) {
+    const emailHtml = generateInvoiceEmailHTML(
+      invoice.invoiceNo,
+      invoice.customerName,
+      invoice.courseTitle || 'Course Registration',
+      invoice.amount,
+      invoice.dueDate
+    )
+    const attachment = pdfBuffer
+      ? { filename: pdfFileName, content: pdfBuffer, contentType: 'application/pdf' }
+      : { filename: pdfFileName, path: pdfPath!, contentType: 'application/pdf' }
+
+    emailSent = await sendEmail({
+      to: invoice.customerEmail,
+      subject: `Invoice ${invoice.invoiceNo} - ${invoice.courseTitle || 'Course Registration'}`,
+      html: emailHtml,
+      text: `Invoice ${invoice.invoiceNo} for ${invoice.courseTitle || 'Course Registration'}. Amount: $${invoice.amount.toFixed(2)}. Please find the invoice PDF attached.`,
+      attachments: [attachment],
+    })
+  }
+
+  return {
+    success: true,
+    invoiceNo: invoice.invoiceNo,
     invoiceId: invoice.id,
     pdfUrl,
     emailSent,

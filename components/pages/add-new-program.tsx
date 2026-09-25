@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect, useMemo, useCallback } from "react"
-import { ArrowLeft, Plus, X, Save, Eye, Upload, Image as ImageIcon, ChevronDownIcon, CheckIcon } from "lucide-react"
+import { ArrowLeft, Plus, X, Save, Eye, Upload, Image as ImageIcon, ChevronDownIcon, CheckIcon, FileText } from "lucide-react"
 import dynamic from "next/dynamic"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { Button } from "@/components/ui/button"
@@ -147,6 +147,10 @@ export default function AddNewProgram({ onBack, editId }: { onBack?: () => void;
   const [mainCourseImagePreview, setMainCourseImagePreview] = useState<string | null>(null)
   const [cardImage, setCardImage] = useState<File | null>(null)
   const [cardImagePreview, setCardImagePreview] = useState<string | null>(null)
+  const [studyMaterials, setStudyMaterials] = useState<
+    Array<{ url: string; fileName: string }>
+  >([])
+  const [pendingStudyFiles, setPendingStudyFiles] = useState<File[]>([])
   const [typeDropdownOpen, setTypeDropdownOpen] = useState(false)
   const [loadingData, setLoadingData] = useState(false)
   const [refCodeError, setRefCodeError] = useState<string | null>(null)
@@ -187,6 +191,28 @@ export default function AddNewProgram({ onBack, editId }: { onBack?: () => void;
             }
             if (program.cardImageUrl) {
               setCardImagePreview(program.cardImageUrl)
+            }
+            if (Array.isArray(program.studyMaterials) && program.studyMaterials.length > 0) {
+              setStudyMaterials(
+                program.studyMaterials
+                  .filter((m: { url?: string }) => m?.url)
+                  .map((m: { url: string; fileName?: string }) => ({
+                    url: m.url,
+                    fileName: m.fileName || "Study material",
+                  }))
+              )
+              setPendingStudyFiles([])
+            } else if (program.studyMaterialUrl) {
+              setStudyMaterials([
+                {
+                  url: program.studyMaterialUrl,
+                  fileName: program.studyMaterialFileName || "Study material",
+                },
+              ])
+              setPendingStudyFiles([])
+            } else {
+              setStudyMaterials([])
+              setPendingStudyFiles([])
             }
             
             // Load course outline
@@ -454,7 +480,30 @@ export default function AddNewProgram({ onBack, editId }: { onBack?: () => void;
       const mainCourseImageUrl = mainCourseImagePreview
       const cardImageUrl = cardImagePreview
 
-      const payload = {
+      let nextStudyMaterials = [...studyMaterials]
+
+      if (pendingStudyFiles.length > 0) {
+        for (const file of pendingStudyFiles) {
+          const uploadBody = new FormData()
+          uploadBody.append("file", file)
+          const uploadRes = await fetch("/api/admin/programs/study-material", {
+            method: "POST",
+            body: uploadBody,
+          })
+          const uploadResult = await uploadRes.json()
+          if (!uploadRes.ok || !uploadResult.success) {
+            throw new Error(uploadResult.error || `Failed to upload ${file.name}`)
+          }
+          nextStudyMaterials.push({
+            url: uploadResult.data.url,
+            fileName: uploadResult.data.fileName || file.name,
+          })
+        }
+      }
+
+      const first = nextStudyMaterials[0] ?? null
+
+      const payload: Record<string, unknown> = {
         id: editId,
         ...formData,
         courseOutline: courseOutline.map(item => ({
@@ -469,6 +518,9 @@ export default function AddNewProgram({ onBack, editId }: { onBack?: () => void;
         })),
         mainCourseImageUrl,
         cardImageUrl,
+        studyMaterials: nextStudyMaterials,
+        studyMaterialUrl: first?.url ?? null,
+        studyMaterialFileName: first?.fileName ?? null,
       }
 
       const response = await fetch('/api/admin/programs', {
@@ -936,10 +988,135 @@ export default function AddNewProgram({ onBack, editId }: { onBack?: () => void;
           </div>
         </div>
 
+        {/* Study Material (optional) */}
+        <div className="theme-card rounded-xl p-6 space-y-4">
+          <div>
+            <h2 className="text-2xl font-bold theme-text border-b border-border pb-3">
+              Study Material <span className="text-base font-normal theme-muted">(optional)</span>
+            </h2>
+            <p className="text-sm theme-muted mt-3">
+              Upload one or more PDF, Word, or Excel files. Stored on the server persistent volume; leave empty if not needed.
+            </p>
+          </div>
+
+          {(studyMaterials.length > 0 || pendingStudyFiles.length > 0) && (
+            <div className="space-y-2">
+              {studyMaterials.map((material, index) => (
+                <div
+                  key={`${material.url}-${index}`}
+                  className="flex items-center justify-between gap-4 p-4 border border-border rounded-lg bg-muted/20"
+                >
+                  <div className="flex items-center gap-3 min-w-0">
+                    <div className="p-2 rounded-lg bg-primary/10 theme-primary shrink-0">
+                      <FileText size={20} />
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-sm font-medium theme-text truncate">
+                        {material.fileName || "Study material"}
+                      </p>
+                      <p className="text-xs theme-muted">Saved on server</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2 shrink-0">
+                    <a
+                      href={`${material.url}?download=1`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="px-3 py-1.5 text-sm border border-border rounded-lg theme-text hover:bg-muted transition-colors"
+                    >
+                      Download
+                    </a>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setStudyMaterials((prev) => prev.filter((_, i) => i !== index))
+                      }}
+                      className="p-2 hover:bg-destructive/10 text-destructive rounded-lg transition-colors"
+                      title="Remove study material"
+                    >
+                      <X size={18} />
+                    </button>
+                  </div>
+                </div>
+              ))}
+
+              {pendingStudyFiles.map((file, index) => (
+                <div
+                  key={`pending-${file.name}-${file.size}-${index}`}
+                  className="flex items-center justify-between gap-4 p-4 border border-border rounded-lg bg-muted/20"
+                >
+                  <div className="flex items-center gap-3 min-w-0">
+                    <div className="p-2 rounded-lg bg-primary/10 theme-primary shrink-0">
+                      <FileText size={20} />
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-sm font-medium theme-text truncate">{file.name}</p>
+                      <p className="text-xs theme-muted">
+                        {(file.size / 1024 / 1024).toFixed(2)} MB · will upload on save
+                      </p>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setPendingStudyFiles((prev) => prev.filter((_, i) => i !== index))
+                    }}
+                    className="p-2 hover:bg-destructive/10 text-destructive rounded-lg transition-colors shrink-0"
+                    title="Remove file"
+                  >
+                    <X size={18} />
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+
+          <label className="flex flex-col items-center justify-center w-full h-36 border-2 border-dashed border-border rounded-lg cursor-pointer hover:border-primary transition-colors bg-muted/30">
+            <div className="flex flex-col items-center justify-center px-4 text-center">
+              <Upload className="w-8 h-8 mb-2 theme-muted" />
+              <p className="mb-1 text-sm theme-text">
+                <span className="font-semibold">Click to upload</span> study materials
+              </p>
+              <p className="text-xs theme-muted">
+                PDF, Word (.doc, .docx), Excel (.xls, .xlsx) · up to 20MB each · multiple files allowed
+              </p>
+            </div>
+            <input
+              type="file"
+              className="hidden"
+              multiple
+              accept=".pdf,.doc,.docx,.xls,.xlsx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+              onChange={(e) => {
+                const files = Array.from(e.target.files || [])
+                e.target.value = ""
+                if (files.length === 0) return
+
+                const accepted: File[] = []
+                for (const file of files) {
+                  if (file.size > 20 * 1024 * 1024) {
+                    alert(`"${file.name}" is larger than 20MB and was skipped`)
+                    continue
+                  }
+                  const allowed = /\.(pdf|doc|docx|xls|xlsx)$/i.test(file.name)
+                  if (!allowed) {
+                    alert(`"${file.name}" is not an allowed format and was skipped`)
+                    continue
+                  }
+                  accepted.push(file)
+                }
+
+                if (accepted.length > 0) {
+                  setPendingStudyFiles((prev) => [...prev, ...accepted])
+                }
+              }}
+            />
+          </label>
+        </div>
+
         {/* Course Outline */}
         <div className="theme-card rounded-xl p-6 space-y-4">
           <div className="flex items-center justify-between border-b border-border pb-3">
-            <h2 className="text-2xl font-bold theme-text">Course Outline</h2>
+            <h2 className="text-2xl font-bold theme-text">Program Content</h2>
             <button
               type="button"
               onClick={addCourseOutlineItem}

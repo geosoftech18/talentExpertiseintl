@@ -29,3 +29,11 @@ next-env.d.ts
 
 # temp files
 /temp
+
+# Local / Coolify study material uploads (set STUDY_MATERIAL_STORAGE_PATH on server)
+/storage/study-materials/*
+!/storage/study-materials/.gitkeep
+
+# Public downloadable files (set DOWNLOAD_STORAGE_PATH on Coolify)
+/storage/downloads/*
+!/storage/downloads/.gitkeep

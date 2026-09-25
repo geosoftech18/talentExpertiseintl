@@ -124,7 +124,7 @@ export default function CopyProtection() {
       document.removeEventListener('dragstart', handleDragStart)
       document.removeEventListener('copy', handleCopy)
       document.removeEventListener('cut', handleCut)
-      document.head.removeChild(style)
+      style.remove()
     }
   }, [pathname])
 

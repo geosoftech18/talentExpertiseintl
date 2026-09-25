@@ -19,127 +19,19 @@ import {
   CheckCircle,
   ArrowRight,
 } from "lucide-react"
+import { DEFAULT_TESTIMONIALS } from "@/lib/home-content-defaults"
 
-const testimonials = [
-  {
-    id: 1,
-    course: "Project Management Masterclass",
-    rating: 5,
-    review: "One of the most beneficial course attended this year. Instructors capabilities to keep attention is excellent and he presented subjects clearly with great examples.",
-    name: "Umar Bakoji",
-    position: "Manager Services",
-    company: "Qatar Financial Authority",
-    avatar: "/placeholder.svg?height=60&width=60",
-    verified: true,
-  },
-  {
-    id: 2,
-    course: "Putting Strategy into Action",
-    rating: 5,
-    review: "This program was excellent. Very practical, nice facilities and a great instructor who understood our business",
-    name: "Maryrose R O",
-    position: "General Manager",
-   
-    avatar: "/placeholder.svg?height=60&width=60",
-   
-    verified: true,
- 
-  },
-  {
-    id: 3,
-    course: "Leadership for 4IR: the 4.0D Leadership Model",
-    rating: 5,
-    review: "I have attended more than 30 training programs in my career and this was by far the best Leadership training event EVER! Johann and John are a compelling double act.",
-    name: "Dr. James D. Wilson.",
-    position: "BDS",
-  
-    avatar: "/placeholder.svg?height=60&width=60",
- 
-    verified: true,
-   
-  },
-  {
-    id: 4,
-    course: "Due Diligence in the Petroleum Business",
-    rating: 5,
-    review:
-      "The instructor made the complexities of corporate governance seem easy. Thoroughly recommend this program.",
-    name: "Yakubu A",
-    position: "General Manager",
-   
-    avatar: "/placeholder.svg?height=60&width=60",
-   
-    verified: true,
- 
-  },
-  {
-      id: 5,
-      course: "Key Managerial Skills for New Managers & Supervisors",
-    rating: 5,
-    review:
-      "A good mix of theory and practice I feel much more confident now in my new role as Shift Supervisor.",
-    name: "Rachel N",
-    position: "Office Procurement",
-   
-    avatar: "/placeholder.svg?height=60&width=60",
-   
-    verified: true,
- 
-  },
-  {
-    id: 6,
-    course: "Procurement & Supply Chain Management",
-    rating: 5,
-    review:
-      "This was an intensive program over 10 days, but the time flew by, thank you.",
-    name: "Imi Umaru",
-    position: "Manager Procurement",
-   
-    avatar: "/placeholder.svg?height=60&width=60",
-   
-    verified: true,
- 
-  },
-  {
-    id: 7,
-    course: "Financial Statement Analysis of the Public Sector",
-    rating: 5,
-    review:
-      "Excellent course 5* Great instructors who knew their subject matter well.",
-    name: "Abdullah Al Thani",
-    position: "Senior Financial Analyst",
-   
-    avatar: "/placeholder.svg?height=60&width=60",
-    verified: true,
-
-  },
-  {
-    id: 8,
-    course: "Developing Professional Skills for Executive Secretaries & PA’s",
-    rating: 5,
-    review:
-      "The trainer was excellent, she helped everyone and provided excellent examples",
-    name: "Moza Al Ali",
-    position: "PA - Group Chairman",
-   
-    avatar: "/placeholder.svg?height=60&width=60",
-    verified: true,
-
-  },
-  {
-    id: 9,
-    course: "Pumps & Compressors: Operation, Maintenance & Troubleshooting",
-    rating: 5,
-    review:
-      "High level training delivered by High level instructors",
-    name: "Mohammed Al Abdallah",
-    position: "Maintenance Engineer",
-   
-    avatar: "/placeholder.svg?height=60&width=60",
-    verified: true,
-
-  },
-]
+type TestimonialItem = {
+  id: string | number
+  course: string
+  rating: number
+  review: string
+  name: string
+  position: string
+  company?: string | null
+  avatar: string
+  verified: boolean
+}
 
 const stats = [
   { label: "Happy Clients", value: "15,000+", icon: Users },
@@ -148,7 +40,19 @@ const stats = [
   { label: "Satisfaction Rate", value: "99.2%", icon: TrendingUp },
 ]
 
-
+function mapTestimonial(t: any): TestimonialItem {
+  return {
+    id: t.id,
+    course: t.course || "",
+    rating: t.rating ?? 5,
+    review: t.review,
+    name: t.name,
+    position: t.position || "",
+    company: t.company || null,
+    avatar: t.avatarUrl || t.avatar || "/placeholder.svg?height=60&width=60",
+    verified: t.verified !== false,
+  }
+}
 
 export default function TestimonialsSection() {
   const router = useRouter()
@@ -158,9 +62,31 @@ export default function TestimonialsSection() {
   const [viewMode, setViewMode] = useState<"carousel" | "grid">("carousel")
   const [testimonialsPerSlide, setTestimonialsPerSlide] = useState(1)
   const [isDesktop, setIsDesktop] = useState(false)
+  const [testimonials, setTestimonials] = useState<TestimonialItem[]>(
+    DEFAULT_TESTIMONIALS.map(mapTestimonial)
+  )
+
+  useEffect(() => {
+    let cancelled = false
+    const load = async () => {
+      try {
+        const res = await fetch("/api/testimonials", { cache: "no-store" })
+        const result = await res.json()
+        if (cancelled || !result.success || !Array.isArray(result.data) || result.data.length === 0) return
+        setTestimonials(result.data.map(mapTestimonial))
+        setCurrentSlide(0)
+      } catch (e) {
+        console.error("Failed to load testimonials:", e)
+      }
+    }
+    load()
+    return () => {
+      cancelled = true
+    }
+  }, [])
 
   const filteredTestimonials = testimonials.filter(
-    (testimonial) => selectedCategory === "All Categories" ,
+    () => selectedCategory === "All Categories",
   )
 
   // Calculate testimonials per slide based on screen size

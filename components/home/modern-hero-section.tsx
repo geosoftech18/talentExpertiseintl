@@ -33,6 +33,25 @@ export default function ModernHeroSection() {
     { icon: TrendingUp, delay: 2, x: 50, y: 10 },
   ]
 
+  // Fixed positions — Math.random() in render causes SSR/client hydration mismatch + removeChild crashes
+  const particles = [
+    { left: 12, top: 18, delay: 0.2, duration: 2.4 },
+    { left: 28, top: 62, delay: 1.1, duration: 3.1 },
+    { left: 45, top: 12, delay: 0.6, duration: 2.2 },
+    { left: 63, top: 78, delay: 1.8, duration: 2.9 },
+    { left: 81, top: 34, delay: 0.4, duration: 3.4 },
+    { left: 7, top: 88, delay: 2.2, duration: 2.6 },
+    { left: 52, top: 45, delay: 1.4, duration: 2.8 },
+    { left: 91, top: 8, delay: 0.9, duration: 3.2 },
+    { left: 19, top: 41, delay: 2.5, duration: 2.3 },
+    { left: 74, top: 55, delay: 0.3, duration: 3.0 },
+    { left: 36, top: 91, delay: 1.7, duration: 2.7 },
+    { left: 58, top: 27, delay: 2.0, duration: 3.3 },
+    { left: 85, top: 69, delay: 0.7, duration: 2.5 },
+    { left: 41, top: 6, delay: 1.3, duration: 2.9 },
+    { left: 15, top: 53, delay: 2.8, duration: 3.1 },
+  ]
+
   return (
     <div className="relative min-h-[75vh] flex items-center justify-center overflow-hidden">
       {/* Animated Gradient Background - Using website colors */}
@@ -79,15 +98,15 @@ export default function ModernHeroSection() {
 
       {/* Animated Particles */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        {[...Array(15)].map((_, i) => (
+        {particles.map((particle, i) => (
           <div
             key={i}
             className="absolute w-1 h-1 bg-[#06b6d4]/40 rounded-full animate-twinkle"
             style={{
-              left: `${Math.random() * 100}%`,
-              top: `${Math.random() * 100}%`,
-              animationDelay: `${Math.random() * 3}s`,
-              animationDuration: `${2 + Math.random() * 2}s`,
+              left: `${particle.left}%`,
+              top: `${particle.top}%`,
+              animationDelay: `${particle.delay}s`,
+              animationDuration: `${particle.duration}s`,
             }}
           />
         ))}
@@ -114,7 +133,7 @@ export default function ModernHeroSection() {
             </h1>
             
             <p className="text-lg md:text-xl text-white/90 leading-relaxed max-w-2xl mx-auto">
-              Exceptional provider of world-class training, coaching & consulting services across 70+ global cities.
+            Empowering People. Transforming Organizations
             </p>
           </div>
 
@@ -141,9 +160,9 @@ export default function ModernHeroSection() {
           {/* Stats with staggered animation */}
           <div className={`grid grid-cols-2 md:grid-cols-4 gap-6 md:gap-8 pt-12 border-t border-white/10 transition-all duration-1000 delay-600 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}>
             {[
-              { value: "200+", label: "Expert Consultants" },
+              { value: "1000+", label: "Courses" },
               { value: "40+", label: "Global Cities" },
-              { value: "30+", label: "Years Experience" },
+              { value: "4.9", label: "Average Rating" },
               { value: "50K+", label: "Professionals Trained" },
             ].map((stat, index) => (
               <div

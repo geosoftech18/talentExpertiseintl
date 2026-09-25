@@ -8,6 +8,7 @@ import { Badge } from '@/components/ui/badge'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { format } from 'date-fns'
 import { generateSlug } from '@/lib/utils/slug'
+import { isVisibleInCourseListings } from '@/lib/utils/course-visibility'
 
 const months = [
   'January', 'February', 'March', 'April', 'May', 'June',
@@ -122,28 +123,11 @@ export default function CategoryCoursesPage() {
     fetchCertificates()
   }, [])
 
-  // Filter courses by category and exclude expired courses
+  // Filter courses by category — listing window: 14+ days before start
   const categoryCourses = useMemo(() => {
-    const today = new Date()
-    today.setHours(0, 0, 0, 0) // Reset time to start of day for accurate comparison
-    
     return allCourses.filter(course => {
-      // Must match category
       if (course.category !== categoryName) return false
-      
-      // Filter out expired courses - only show active/upcoming courses
-      if (course.endDate) {
-        const endDate = new Date(course.endDate)
-        endDate.setHours(0, 0, 0, 0)
-        return endDate >= today
-      } else if (course.startDate) {
-        const startDate = new Date(course.startDate)
-        startDate.setHours(0, 0, 0, 0)
-        return startDate >= today
-      }
-      
-      // If no dates, include it (might be TBD courses)
-      return true
+      return isVisibleInCourseListings(course.startDate)
     })
   }, [allCourses, categoryName])
 

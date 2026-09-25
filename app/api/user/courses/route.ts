@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { auth } from '@/lib/auth'
 import { generateSlug } from '@/lib/utils/slug'
+import { getProgramStudyMaterial } from '@/lib/program-study-material'
 
 export async function GET(request: NextRequest) {
   try {
@@ -178,10 +179,14 @@ export async function GET(request: NextRequest) {
 
     const scheduleMap = new Map(schedules.map((s) => [s.id, s]))
 
-    // Fetch program details for courses
-    const courseIds = registrations
-      .map((reg) => reg.courseId)
-      .filter((id): id is string => id !== null)
+    // Resolve program ids from registration courseId and/or linked schedule
+    const programIdSet = new Set<string>()
+    for (const reg of registrations) {
+      if (reg.courseId) programIdSet.add(reg.courseId)
+      const schedule = reg.scheduleId ? scheduleMap.get(reg.scheduleId) : null
+      if (schedule?.programId) programIdSet.add(schedule.programId)
+    }
+    const courseIds = Array.from(programIdSet)
 
     const programs = courseIds.length > 0
       ? await prisma.program.findMany({
@@ -198,14 +203,34 @@ export async function GET(request: NextRequest) {
 
     const programMap = new Map(programs.map((p) => [p.id, p]))
 
+    // Load study materials for enrolled programs (after invoice approval / enrollment)
+    const studyMaterialMap = new Map<
+      string,
+      Array<{ url: string; fileName: string }>
+    >()
+    await Promise.all(
+      courseIds.map(async (programId) => {
+        try {
+          const sm = await getProgramStudyMaterial(programId)
+          studyMaterialMap.set(programId, sm.studyMaterials || [])
+        } catch {
+          studyMaterialMap.set(programId, [])
+        }
+      })
+    )
+
     // Combine registration data with schedule and program info
     const courses = registrations.map((reg) => {
       const schedule = reg.scheduleId ? scheduleMap.get(reg.scheduleId) : null
-      const program = reg.courseId ? programMap.get(reg.courseId) : null
+      const programId = reg.courseId || schedule?.programId || null
+      const program = programId ? programMap.get(programId) : null
+      const studyMaterials = programId
+        ? studyMaterialMap.get(programId) || []
+        : []
 
       return {
         id: reg.id,
-        courseId: reg.courseId,
+        courseId: programId || reg.courseId,
         courseSlug: program?.programName ? generateSlug(program.programName) : null,
         courseTitle: reg.courseTitle || program?.programName || 'Course',
         courseCode: program?.refCode || null,
@@ -223,6 +248,7 @@ export async function GET(request: NextRequest) {
         orderStatus: reg.orderStatus,
         paymentStatus: reg.paymentStatus,
         enrolledDate: reg.submittedAt || reg.createdAt,
+        studyMaterials,
       }
     })
 

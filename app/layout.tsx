@@ -18,6 +18,9 @@ export async function generateMetadata(): Promise<Metadata> {
     title: meta.title,
     description: meta.description,
     generator: "v0.app",
+    icons: {
+      icon: "/talent-logo.png",
+    },
   }
 }
 

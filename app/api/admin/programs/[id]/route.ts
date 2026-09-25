@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { getProgramStudyMaterial } from '@/lib/program-study-material'
 
 /**
  * GET /api/admin/programs/[id]
@@ -30,9 +31,14 @@ export async function GET(
       )
     }
 
+    const studyMaterial = await getProgramStudyMaterial(id)
+
     return NextResponse.json({
       success: true,
-      data: program,
+      data: {
+        ...program,
+        ...studyMaterial,
+      },
     })
   } catch (error) {
     console.error('Error fetching program:', error)
@@ -42,4 +48,3 @@ export async function GET(
     )
   }
 }
-

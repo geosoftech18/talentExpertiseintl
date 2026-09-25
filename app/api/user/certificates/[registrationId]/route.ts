@@ -2,6 +2,11 @@ import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { generateCertificatePdfBuffer } from '@/lib/utils/certificate-pdf'
+import {
+  buildCertificateNumber,
+  isOrderCompleted,
+  isScheduleEligibleForCertificate,
+} from '@/lib/utils/certificate-helpers'
 
 export async function GET(
   request: NextRequest,
@@ -45,7 +50,7 @@ export async function GET(
     if (!registration.scheduleId) {
       return NextResponse.json({ success: false, error: 'Certificate is not available for this course yet' }, { status: 400 })
     }
-    if (!isPreviewMode && (registration.orderStatus || '').toLowerCase() !== 'completed') {
+    if (!isPreviewMode && !isOrderCompleted(registration.orderStatus)) {
       return NextResponse.json(
         { success: false, error: 'Certificate is available only for completed enrollments' },
         { status: 400 }
@@ -71,12 +76,7 @@ export async function GET(
       return NextResponse.json({ success: false, error: 'Schedule not found' }, { status: 404 })
     }
 
-    const now = new Date()
-    const endDate = schedule.endDate || schedule.startDate
-    const isCompletedByDate = endDate.getTime() <= now.getTime()
-    const isCompletedByStatus = (schedule.status || '').toLowerCase() === 'completed'
-
-    if (!isPreviewMode && !isCompletedByDate && !isCompletedByStatus) {
+    if (!isPreviewMode && !isScheduleEligibleForCertificate(schedule)) {
       return NextResponse.json(
         { success: false, error: 'Certificate can be generated after course completion' },
         { status: 400 }
@@ -85,7 +85,7 @@ export async function GET(
 
     const fullName = registration.name || session.user.name || 'Participant'
     const courseTitle = registration.courseTitle || schedule.program?.programName || 'Training Course'
-    const certificateNo = `TEI/${new Date().getFullYear()}/${registration.id.slice(-4).toUpperCase()}`
+    const certificateNo = buildCertificateNumber(registration.id)
 
     const pdfBuffer = await generateCertificatePdfBuffer({
       fullName,
@@ -97,7 +97,7 @@ export async function GET(
     })
 
     const filename = `certificate-${registration.id}.pdf`
-    return new NextResponse(pdfBuffer, {
+    return new NextResponse(new Uint8Array(pdfBuffer), {
       status: 200,
       headers: {
         'Content-Type': 'application/pdf',

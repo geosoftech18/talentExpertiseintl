@@ -11,6 +11,7 @@ export async function POST(request: NextRequest) {
         city: body.city,
         country: body.country,
         status: body.status || 'Active',
+        imageUrl: body.imageUrl || null,
       },
     })
 
@@ -30,6 +31,20 @@ export async function POST(request: NextRequest) {
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url)
+    const id = searchParams.get('id')
+
+    // Single venue by ID (edit form)
+    if (id) {
+      const venue = await prisma.venue.findUnique({ where: { id } })
+      if (!venue) {
+        return NextResponse.json(
+          { success: false, error: 'Venue not found' },
+          { status: 404 }
+        )
+      }
+      return NextResponse.json({ success: true, data: venue })
+    }
+
     const page = parseInt(searchParams.get('page') || '1')
     const limit = parseInt(searchParams.get('limit') || '10')
     const skip = (page - 1) * limit
@@ -78,14 +93,27 @@ export async function PUT(request: NextRequest) {
       )
     }
 
+    const data: {
+      name?: string
+      city?: string
+      country?: string
+      status?: string
+      imageUrl?: string | null
+    } = {
+      name: updateData.name,
+      city: updateData.city,
+      country: updateData.country,
+      status: updateData.status || 'Active',
+    }
+
+    // Only update image when the field is explicitly sent (null clears custom image)
+    if (Object.prototype.hasOwnProperty.call(updateData, 'imageUrl')) {
+      data.imageUrl = updateData.imageUrl || null
+    }
+
     const venue = await prisma.venue.update({
       where: { id: id },
-      data: {
-        name: updateData.name,
-        city: updateData.city,
-        country: updateData.country,
-        status: updateData.status || 'Active',
-      },
+      data,
     })
 
     return NextResponse.json({ success: true, data: venue })

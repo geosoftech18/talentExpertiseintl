@@ -1,11 +1,41 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { createInvoice } from '@/lib/services/invoice-service'
+import { createInvoice, regenerateInvoicePdf } from '@/lib/services/invoice-service'
 import { sendEmail } from '@/lib/email'
 import {
   generateOrderNotificationEmailHTML,
   generateOrderNotificationEmailText,
 } from '@/lib/utils/order-notification-email'
+
+async function resolveInvoiceCustomer(registration: {
+  email: string
+  address: string | null
+  courseId: string | null
+}) {
+  let invoiceEmail = registration.email
+  let invoiceAddress = registration.address || null
+
+  try {
+    const invoiceRequest = await prisma.invoiceRequest.findFirst({
+      where: {
+        email: registration.email,
+        courseId: registration.courseId,
+        status: 'APPROVED',
+      },
+      orderBy: { createdAt: 'desc' },
+    })
+
+    if (invoiceRequest) {
+      invoiceEmail = invoiceRequest.invoiceEmail || invoiceRequest.email
+      invoiceAddress =
+        invoiceRequest.invoiceAddress || invoiceRequest.address || invoiceAddress
+    }
+  } catch {
+    // Fall back to registration data
+  }
+
+  return { invoiceEmail, invoiceAddress }
+}
 
 // POST - Execute order action
 export async function POST(
@@ -242,18 +272,98 @@ export async function POST(
         }
         break
 
+      case 'generate_invoice':
       case 'send_invoice':
-        // Placeholder for sending invoice
-        // In a full implementation, you'd send an email here
-        break
+      case 'regenerate_invoice': {
+        const existingInvoice = await prisma.invoice.findFirst({
+          where: { courseRegistrationId: id },
+          orderBy: { createdAt: 'desc' },
+        })
+
+        // Regenerate PDF (+ email for send_invoice) when invoice already exists
+        if (existingInvoice && (action === 'regenerate_invoice' || action === 'send_invoice')) {
+          try {
+            const result = await regenerateInvoicePdf(existingInvoice.id, {
+              sendEmail: action === 'send_invoice',
+            })
+            return NextResponse.json({
+              success: true,
+              message:
+                action === 'send_invoice'
+                  ? `Invoice ${result.invoiceNo} emailed successfully`
+                  : `Invoice ${result.invoiceNo} PDF regenerated`,
+              data: result,
+            })
+          } catch (invoiceError) {
+            const msg =
+              invoiceError instanceof Error
+                ? invoiceError.message
+                : 'Failed to regenerate invoice'
+            return NextResponse.json({ success: false, error: msg }, { status: 500 })
+          }
+        }
+
+        if (existingInvoice && action === 'generate_invoice') {
+          return NextResponse.json({
+            success: true,
+            message: `Invoice already exists (${existingInvoice.invoiceNo})`,
+            data: { invoiceId: existingInvoice.id, invoiceNo: existingInvoice.invoiceNo },
+          })
+        }
+
+        // Create new invoice (admin may generate for unpaid → PENDING)
+        try {
+          const { invoiceEmail, invoiceAddress } = await resolveInvoiceCustomer({
+            email: registration.email,
+            address: registration.address || null,
+            courseId: registration.courseId || null,
+          })
+
+          const unitFee = schedule?.fee ?? 0
+          if (unitFee <= 0) {
+            return NextResponse.json(
+              {
+                success: false,
+                error:
+                  'Cannot generate invoice: schedule fee is missing or zero. Set a fee on the schedule first.',
+              },
+              { status: 400 }
+            )
+          }
+
+          const paymentStatus = registration.paymentStatus || 'Unpaid'
+          const invoiceResult = await createInvoice({
+            courseId: registration.courseId || null,
+            scheduleId: registration.scheduleId || null,
+            courseRegistrationId: id,
+            userId: null,
+            amount: unitFee,
+            email: invoiceEmail,
+            name: registration.name,
+            courseTitle: registration.courseTitle || programName || null,
+            address: invoiceAddress,
+            city: registration.city || null,
+            country: registration.country || null,
+            participants: registration.participants || 1,
+            paymentStatus,
+            allowUnpaid: true,
+            skipEmail: false,
+          })
+
+          return NextResponse.json({
+            success: true,
+            message: `Invoice ${invoiceResult.invoiceNo} generated successfully`,
+            data: invoiceResult,
+          })
+        } catch (invoiceError) {
+          const msg =
+            invoiceError instanceof Error ? invoiceError.message : 'Failed to generate invoice'
+          return NextResponse.json({ success: false, error: msg }, { status: 500 })
+        }
+      }
 
       case 'send_email':
         // Placeholder for sending email
-        // In a full implementation, you'd send an email here
-        break
-
-      case 'regenerate_invoice':
-        // Placeholder for regenerating invoice
         break
 
       default:

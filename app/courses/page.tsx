@@ -11,6 +11,7 @@ import { Badge } from '@/components/ui/badge'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Checkbox } from '@/components/ui/checkbox'
 import { format } from 'date-fns'
+import { isVisibleInCourseListings } from '@/lib/utils/course-visibility'
 // Registration form is now on a dedicated page
 
 interface CourseListItem {
@@ -279,27 +280,18 @@ function CourseFinderPageContent() {
   const filteredCourses = useMemo(() => {
     let filtered = allCourses
 
-    // Filter out expired courses - only show upcoming schedules
-    // BUT: If user has selected a specific month or year, show courses for that period even if expired
-    const today = new Date()
-    today.setHours(0, 0, 0, 0) // Reset time to start of day for accurate comparison
-    
-    // Only filter out expired courses if no specific month/year is selected
+    // Listing window: 14+ days before start.
+    // If a specific month/year is selected, show that period (including past).
     const hasSpecificMonthFilter = selectedMonth !== 'all'
     const hasSpecificYearFilter = selectedYear !== 'all'
     
     if (!hasSpecificMonthFilter && !hasSpecificYearFilter) {
-      // No specific month/year selected - only show upcoming courses
+      // No specific month/year selected - only show courses with 14+ days to start
       filtered = filtered.filter(course => {
-        // If course has no start date, exclude it (only show courses with upcoming dates)
         if (!course.startDate) {
           return false
         }
-        
-        // Check if start date is today or in the future
-        const startDate = new Date(course.startDate)
-        startDate.setHours(0, 0, 0, 0)
-        return startDate >= today
+        return isVisibleInCourseListings(course.startDate)
       })
     } else {
       // Specific month/year selected - show courses for that period (including past)
