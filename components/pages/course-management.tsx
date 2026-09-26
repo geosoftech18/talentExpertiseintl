@@ -172,17 +172,16 @@ export default function CourseManagement({ onAddProgram, onAddSchedule, onEditPr
     }
   }, [selectedMonth, selectedYear, searchTerm, activeTab])
 
-  // Fetch programs from database with pagination (search is handled client-side like schedules)
+  // Fetch programs from database (light list — details load on expand only)
   useEffect(() => {
     const fetchPrograms = async () => {
       try {
         setLoading(true)
         
-        // Build query params (no search filter - handled client-side)
+        // Light list payload (no outlines/faqs). Client-side search + pagination.
         const params = new URLSearchParams()
-        params.append('page', programPage.toString())
-        params.append('limit', '1000') // Fetch more to allow client-side filtering
-        params.append('includeDetails', 'true') // Include details for preview
+        params.append('page', '1')
+        params.append('limit', '1000')
         
         const response = await fetch(`/api/admin/programs?${params.toString()}`)
         const result = await response.json()
@@ -203,36 +202,15 @@ export default function CourseManagement({ onAddProgram, onAddSchedule, onEditPr
         }))
 
         setPrograms(transformedPrograms)
-
-        // Preload program details into a Map for instant access
-        const detailsMap = new Map<string, ProgramDetails>()
-        result.data.forEach((program: any) => {
-          detailsMap.set(program.id, {
-            id: program.id,
-            refCode: program.refCode,
-            programName: program.programName,
-            category: program.category,
-            type: program.type || [],
-            status: program.status,
-            duration: program.duration,
-            targetAudience: program.targetAudience,
-            learningObjectives: program.learningObjectives,
-            trainingMethodology: program.trainingMethodology,
-            introduction: program.introduction,
-            description: program.description,
-            organisationalImpact: program.organisationalImpact,
-            personalImpact: program.personalImpact,
-            whoShouldAttend: program.whoShouldAttend,
-            mainCourseImageUrl: program.mainCourseImageUrl,
-            cardImageUrl: program.cardImageUrl,
-            courseOutline: program.courseOutline || [],
-            certifications: program.certifications || [],
-            faqs: program.faqs || [],
-          })
+        // Keep any previously expanded details cached; do not preload heavy relations
+        setProgramDetailsMap((prev) => {
+          const next = new Map(prev)
+          const ids = new Set(transformedPrograms.map((p: Program) => p.id))
+          for (const id of Array.from(next.keys())) {
+            if (!ids.has(id)) next.delete(id)
+          }
+          return next
         })
-        setProgramDetailsMap(detailsMap)
-        
-        // Note: Pagination is now handled client-side based on filtered results
       } catch (err) {
         console.error('Error fetching programs:', err)
         setError(err instanceof Error ? err.message : 'Failed to load programs')
@@ -245,14 +223,16 @@ export default function CourseManagement({ onAddProgram, onAddSchedule, onEditPr
     if (activeTab === 'programs') {
       fetchPrograms()
     }
-  }, [programPage, activeTab])
+  }, [activeTab])
 
-  // Fetch all unique months and years from all schedules (for filter dropdowns)
+  // Fetch schedule month/year filter options only when schedules tab is opened
   useEffect(() => {
+    if (activeTab !== 'schedules') return
+
     const fetchAllScheduleMetadata = async () => {
       try {
-        // Fetch first page with large limit to get all unique months/years
-        // Or we can fetch all schedules metadata separately
+        if (allScheduleMonths.length > 0 && allScheduleYears.length > 0) return
+
         const response = await fetch('/api/admin/schedules?page=1&limit=10000')
         const result = await response.json()
         
@@ -277,7 +257,7 @@ export default function CourseManagement({ onAddProgram, onAddSchedule, onEditPr
     }
 
     fetchAllScheduleMetadata()
-  }, [])
+  }, [activeTab, allScheduleMonths.length, allScheduleYears.length])
 
   // Fetch schedules from database with pagination and filters
   useEffect(() => {
@@ -347,8 +327,8 @@ export default function CourseManagement({ onAddProgram, onAddSchedule, onEditPr
     fetchSchedules()
   }, [schedulePage, selectedMonth, selectedYear])
 
-  // Handle program preview - toggle inline expansion (instant, no API call)
-  const handleProgramPreview = (programId: string) => {
+  // Handle program preview - lazy-load details once, then cache
+  const handleProgramPreview = async (programId: string) => {
     // If already expanded, collapse it
     if (expandedProgramId === programId) {
       setExpandedProgramId(null)
@@ -356,11 +336,57 @@ export default function CourseManagement({ onAddProgram, onAddSchedule, onEditPr
       return
     }
 
-    // Get program details from preloaded map (instant access, no API call)
-    const programDetails = programDetailsMap.get(programId)
-    if (programDetails) {
-      setPreviewProgram(programDetails)
+    const cached = programDetailsMap.get(programId)
+    if (cached) {
+      setPreviewProgram(cached)
       setExpandedProgramId(programId)
+      return
+    }
+
+    try {
+      setExpandedProgramId(programId)
+      setPreviewProgram(null)
+      const response = await fetch(`/api/admin/programs/${programId}`)
+      const result = await response.json()
+      if (!response.ok || !result.success || !result.data) {
+        throw new Error(result.error || 'Failed to load program details')
+      }
+
+      const program = result.data
+      const details: ProgramDetails = {
+        id: program.id,
+        refCode: program.refCode,
+        programName: program.programName,
+        category: program.category,
+        type: program.type || [],
+        status: program.status,
+        duration: program.duration,
+        targetAudience: program.targetAudience,
+        learningObjectives: program.learningObjectives,
+        trainingMethodology: program.trainingMethodology,
+        introduction: program.introduction,
+        description: program.description,
+        organisationalImpact: program.organisationalImpact,
+        personalImpact: program.personalImpact,
+        whoShouldAttend: program.whoShouldAttend,
+        mainCourseImageUrl: program.mainCourseImageUrl,
+        cardImageUrl: program.cardImageUrl,
+        courseOutline: program.courseOutline || [],
+        certifications: program.certifications || [],
+        faqs: program.faqs || [],
+      }
+
+      setProgramDetailsMap((prev) => {
+        const next = new Map(prev)
+        next.set(programId, details)
+        return next
+      })
+      setPreviewProgram(details)
+    } catch (err) {
+      console.error('Error fetching program details:', err)
+      setExpandedProgramId(null)
+      setPreviewProgram(null)
+      alert(err instanceof Error ? err.message : 'Failed to load program details')
     }
   }
 
@@ -410,7 +436,7 @@ export default function CourseManagement({ onAddProgram, onAddSchedule, onEditPr
       if (result.success) {
         // Refresh the list
         if (itemToDelete.type === 'program') {
-          const response = await fetch('/api/admin/programs?includeDetails=true')
+          const response = await fetch('/api/admin/programs?page=1&limit=1000')
           const result = await response.json()
           if (result.success) {
             const transformedPrograms = result.data.map((program: any) => ({
@@ -424,33 +450,15 @@ export default function CourseManagement({ onAddProgram, onAddSchedule, onEditPr
             }))
             setPrograms(transformedPrograms)
 
-            // Update program details map
-            const detailsMap = new Map<string, ProgramDetails>()
-            result.data.forEach((program: any) => {
-              detailsMap.set(program.id, {
-                id: program.id,
-                refCode: program.refCode,
-                programName: program.programName,
-                category: program.category,
-                type: program.type || [],
-                status: program.status,
-                duration: program.duration,
-                targetAudience: program.targetAudience,
-                learningObjectives: program.learningObjectives,
-                trainingMethodology: program.trainingMethodology,
-                introduction: program.introduction,
-                description: program.description,
-                organisationalImpact: program.organisationalImpact,
-                personalImpact: program.personalImpact,
-                whoShouldAttend: program.whoShouldAttend,
-                mainCourseImageUrl: program.mainCourseImageUrl,
-                cardImageUrl: program.cardImageUrl,
-                courseOutline: program.courseOutline || [],
-                certifications: program.certifications || [],
-                faqs: program.faqs || [],
-              })
+            setProgramDetailsMap((prev) => {
+              const next = new Map(prev)
+              next.delete(itemToDelete.id)
+              return next
             })
-            setProgramDetailsMap(detailsMap)
+            if (expandedProgramId === itemToDelete.id) {
+              setExpandedProgramId(null)
+              setPreviewProgram(null)
+            }
           }
         } else {
           const response = await fetch('/api/admin/schedules')
@@ -1048,6 +1056,13 @@ export default function CourseManagement({ onAddProgram, onAddSchedule, onEditPr
                       </td>
                     </tr>
                     {/* Expanded Details Row */}
+                    {expandedProgramId === program.id && !previewProgram && (
+                      <tr className="border-b border-border bg-muted/20">
+                        <td colSpan={8} className="px-6 py-6 text-center theme-muted text-sm">
+                          Loading program details…
+                        </td>
+                      </tr>
+                    )}
                     {expandedProgramId === program.id && previewProgram && (
                       <tr className="border-b border-border bg-muted/20">
                         <td colSpan={8} className="px-6 py-6">

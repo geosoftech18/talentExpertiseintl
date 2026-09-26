@@ -101,87 +101,60 @@ export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url)
     const page = parseInt(searchParams.get('page') || '1')
-    const limit = parseInt(searchParams.get('limit') || '50') // Increased default limit
+    const limit = Math.min(parseInt(searchParams.get('limit') || '50') || 50, 2000)
     const skip = (page - 1) * limit
     const status = searchParams.get('status')
     const search = searchParams.get('search') // Search term for refCode, programName, category
     const includeDetails = searchParams.get('includeDetails') === 'true' // Only include nested data if explicitly requested
 
     // Build where clause
-    const where: any = status ? { status } : {}
-    
-    // Note: We don't add search to the database query here because MongoDB with Prisma
-    // doesn't support case-insensitive search well. We'll filter results after fetching.
+    const where: { status?: string } = status ? { status } : {}
+    const hasSearch = Boolean(search && search.trim())
 
-    // Build query based on whether details are needed
-    const queryOptions: any = {
-      where,
-      skip,
-      take: limit,
-      orderBy: { createdAt: 'desc' },
-    }
+    // List views: select only essential fields (much faster).
+    // Details (outline/faqs) are loaded per-program via /api/admin/programs/[id].
+    const listSelect = {
+      id: true,
+      refCode: true,
+      programName: true,
+      shortDescription: true,
+      category: true,
+      type: true,
+      status: true,
+      duration: true,
+      certificateIds: true,
+      createdAt: true,
+      updatedAt: true,
+    } as const
 
-    if (includeDetails) {
-      // Include all fields and nested relations when details are needed
-      queryOptions.include = {
-        courseOutline: true,
-        certifications: true,
-        faqs: true,
-      }
-      // certificateIds is already included as it's a field, not a relation
-    } else {
-      // Only select essential fields for list views (much faster)
-      queryOptions.select = {
-        id: true,
-        refCode: true,
-        programName: true,
-        shortDescription: true,
-        category: true,
-        type: true,
-        status: true,
-        duration: true,
-        certificateIds: true,
-        createdAt: true,
-        updatedAt: true,
-      }
-    }
-
-    // Fetch programs (without search filter for now)
+    // When searching, MongoDB case-insensitive matching is applied in memory,
+    // so fetch a capped set then filter+paginate. Without search, paginate in DB.
     const [allPrograms, totalBeforeSearch] = await Promise.all([
       prisma.program.findMany({
-        where: status ? { status } : {},
-        ...(includeDetails ? {
-          include: {
-            courseOutline: true,
-            certifications: true,
-            faqs: true,
-          }
-        } : {
-          select: {
-            id: true,
-            refCode: true,
-            programName: true,
-            shortDescription: true,
-            category: true,
-            type: true,
-            status: true,
-            duration: true,
-            certificateIds: true,
-            createdAt: true,
-            updatedAt: true,
-          }
-        }),
+        where,
+        ...(includeDetails
+          ? {
+              include: {
+                courseOutline: true,
+                certifications: true,
+                faqs: true,
+              },
+            }
+          : { select: listSelect }),
         orderBy: { createdAt: 'desc' },
+        ...(hasSearch
+          ? { take: Math.min(Math.max(limit * 50, 2000), 5000) }
+          : { skip, take: limit }),
       }),
-      prisma.program.count({ where: status ? { status } : {} }),
+      prisma.program.count({ where }),
     ])
 
     // Apply case-insensitive search filter if provided
     let filteredPrograms = allPrograms
     let filteredTotal = totalBeforeSearch
     
-    if (search && search.trim()) {
-      const searchLower = search.trim().toLowerCase()
+    if (hasSearch) {
+      const searchLower = search!.trim().toLowerCase()
       filteredPrograms = allPrograms.filter((program: any) => {
         const refCodeMatch = program.refCode?.toLowerCase().includes(searchLower) || false
         const nameMatch = program.programName?.toLowerCase().includes(searchLower) || false
@@ -191,8 +164,10 @@ export async function GET(request: NextRequest) {
       filteredTotal = filteredPrograms.length
     }
 
-    // Apply pagination after filtering
-    const paginatedPrograms = filteredPrograms.slice(skip, skip + limit)
+    // Apply pagination after filtering (search path). Non-search already paginated in DB.
+    const paginatedPrograms = hasSearch
+      ? filteredPrograms.slice(skip, skip + limit)
+      : filteredPrograms
 
     return NextResponse.json({
       success: true,
@@ -201,7 +176,7 @@ export async function GET(request: NextRequest) {
         page,
         limit,
         total: filteredTotal,
-        totalPages: Math.ceil(filteredTotal / limit),
+        totalPages: Math.ceil(filteredTotal / limit) || 1,
       },
     })
   } catch (error) {

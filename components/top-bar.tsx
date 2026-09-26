@@ -14,7 +14,7 @@ export default function TopBar({ onMenuClick }: TopBarProps) {
         <Menu size={24} />
       </button>
 
-      <div className="flex-1 max-w-md mx-6">
+      {/* <div className="flex-1 max-w-md mx-6">
         <div className="relative">
           <Search size={18} className="absolute left-3 top-1/2 transform -translate-y-1/2 theme-muted" />
           <input
@@ -23,13 +23,13 @@ export default function TopBar({ onMenuClick }: TopBarProps) {
             className="w-full pl-10 pr-4 py-2 bg-input border border-border rounded-lg theme-text placeholder-muted-foreground focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all"
           />
         </div>
-      </div>
+      </div> */}
 
       <div className="flex items-center gap-4">
-        <button className="p-2 hover:bg-muted rounded-lg transition-colors theme-muted hover:theme-primary relative">
+        {/* <button className="p-2 hover:bg-muted rounded-lg transition-colors theme-muted hover:theme-primary relative">
           <Bell size={20} />
           <span className="absolute top-1 right-1 w-2 h-2 bg-destructive rounded-full"></span>
-        </button>
+        </button> */}
 
         {/* Theme Toggle */}
         <div className="flex items-center">

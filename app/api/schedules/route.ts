@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { generateSlug } from '@/lib/utils/slug'
 import {
-  getCourseListingMinStartDate,
+  getUpcomingMinStartDate,
   startOfLocalDay,
 } from '@/lib/utils/course-visibility'
 
@@ -62,8 +62,8 @@ const scheduleSelect = {
 
 /**
  * GET /api/schedules
- * - Default: all future schedules (startDate >= today) — enquiry etc.
- * - upcomingPrograms / forCarousel: only startDate >= today + 14 days
+ * - Default: all future schedules (startDate >= today) — enquiry / general use
+ * - upcomingPrograms / forCarousel: only startDate >= today + 14 days (Upcoming section)
  */
 export async function GET(request: NextRequest) {
   try {
@@ -73,7 +73,7 @@ export async function GET(request: NextRequest) {
     const forCarousel = searchParams.get('forCarousel') === 'true'
 
     const today = startOfLocalDay()
-    const minStartAfterLead = getCourseListingMinStartDate()
+    const minStartAfterLead = getUpcomingMinStartDate()
 
     const allFutureWhere = {
       status: { in: ['Open', 'Published'] as string[] },

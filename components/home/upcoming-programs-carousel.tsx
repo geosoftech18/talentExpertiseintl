@@ -47,9 +47,9 @@ export default function UpcomingProgramsCarousel() {
   const [api, setApi] = useState<CarouselApi>()
   const [isHovered, setIsHovered] = useState(false)
 
-  // Cache keys (v6: Upcoming only shows startDate >= today + 14 days)
-  const CACHE_KEY = 'upcoming_schedules_cache_v6'
-  const CACHE_TIMESTAMP_KEY = 'upcoming_schedules_cache_timestamp_v6'
+  // Cache keys (v7: Upcoming keeps 14-day rule; rest of site shows until start date)
+  const CACHE_KEY = 'upcoming_schedules_cache_v7'
+  const CACHE_TIMESTAMP_KEY = 'upcoming_schedules_cache_timestamp_v7'
   const CACHE_DURATION = 2 * 60 * 1000 // 2 minutes
 
   // API returns merged list when forCarousel=true (top 10 + toggled extras)

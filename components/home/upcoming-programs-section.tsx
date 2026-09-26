@@ -33,9 +33,9 @@ export default function UpcomingProgramsSection() {
   const [programs, setPrograms] = useState<UpcomingProgram[]>([])
   const [loading, setLoading] = useState(true)
 
-  // Cache keys for upcoming schedules (v4: server-side carousel merge)
-  const CACHE_KEY = 'upcoming_schedules_cache_v6'
-  const CACHE_TIMESTAMP_KEY = 'upcoming_schedules_cache_timestamp_v6'
+  // Cache keys (v7: Upcoming keeps 14-day rule; rest of site shows until start date)
+  const CACHE_KEY = 'upcoming_schedules_cache_v7'
+  const CACHE_TIMESTAMP_KEY = 'upcoming_schedules_cache_timestamp_v7'
   const CACHE_DURATION = 2 * 60 * 1000 // 2 minutes
 
   const processPrograms = (data: UpcomingProgram[]): UpcomingProgram[] => {

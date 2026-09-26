@@ -11,8 +11,8 @@ import {
  * Fetch all published programs for public course listing
  *
  * Visibility when includeExpired=false:
- * - startDate >= today + 14 days (general listings)
- * - Within 14 days of start → Upcoming via /api/schedules?forCarousel=true
+ * - startDate >= today (show until course start date)
+ * - Upcoming homepage section uses /api/schedules?forCarousel=true (14-day rule)
  */
 
 export async function GET(request: NextRequest) {
@@ -42,7 +42,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Optimized: Fetch schedules directly with program data using Prisma relations
-    // Default listings: startDate at least 14 days away (unless includeExpired)
+    // Default listings: startDate >= today (unless includeExpired)
     const listingMinStart = getCourseListingMinStartDate()
     
     // Check if we should filter by new programs
@@ -145,7 +145,7 @@ export async function GET(request: NextRequest) {
       // Skip if no program (shouldn't happen with proper relation, but safety check)
       if (!program) continue
 
-      // Listing window: 14+ days before start (unless includeExpired)
+      // Listing window: show until start date (unless includeExpired)
       if (!schedule.startDate) continue
       const startDate = startOfLocalDay(new Date(schedule.startDate))
       if (!includeExpired && startDate < listingCutoff) continue
