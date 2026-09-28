@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { getProgramStudyMaterial } from '@/lib/program-study-material'
+import { sortCourseOutlineItems } from '@/lib/utils/course-outline-order'
 
 /**
  * GET /api/admin/programs/[id]
@@ -17,7 +18,7 @@ export async function GET(
       where: { id },
       include: {
         courseOutline: {
-          orderBy: { day: 'asc' },
+          orderBy: { createdAt: 'asc' },
         },
         certifications: true,
         faqs: true,
@@ -32,11 +33,13 @@ export async function GET(
     }
 
     const studyMaterial = await getProgramStudyMaterial(id)
+    const courseOutline = sortCourseOutlineItems(program.courseOutline || [])
 
     return NextResponse.json({
       success: true,
       data: {
         ...program,
+        courseOutline,
         ...studyMaterial,
       },
     })

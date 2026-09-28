@@ -25,7 +25,7 @@ import { SafeHtml } from '@/components/safe-html'
 
 /** Base prose styles for Introduction body (alignment toggled on course detail page) */
 const INTRO_CONTENT_BASE =
-  'intro-body text-slate-700 leading-relaxed prose prose-slate max-w-none prose-p:my-4 [&_p+p]:mt-4 [&_h1]:text-left [&_h2]:text-left [&_h3]:text-left [&_ul]:text-left [&_ol]:text-left [&_li]:text-left'
+  'intro-body text-slate-700 leading-relaxed prose prose-slate max-w-none prose-p:my-4 [&_p+p]:mt-4 [&_p:empty]:min-h-[1.5em] [&_p:has(>br:only-child)]:min-h-[1.5em] [&_h1]:text-left [&_h2]:text-left [&_h3]:text-left [&_ul]:text-left [&_ol]:text-left [&_li]:text-left'
 
 interface Course {
   id: string

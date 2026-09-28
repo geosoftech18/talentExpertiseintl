@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { generateSlug } from '@/lib/utils/slug'
+import { sortCourseOutlineItems } from '@/lib/utils/course-outline-order'
 
 /**
  * GET /api/courses/[slug]
@@ -44,7 +45,7 @@ export async function GET(
       },
       include: {
         courseOutline: {
-          orderBy: { day: 'asc' },
+          orderBy: { createdAt: 'asc' },
         },
         certifications: true,
         faqs: true,
@@ -106,8 +107,8 @@ export async function GET(
       status: schedule.status.toLowerCase(),
     }))
 
-    // Transform course outline
-    const outline = program.courseOutline.map((item, index) => {
+    // Transform course outline (numeric Day order, not string sort)
+    const outline = sortCourseOutlineItems(program.courseOutline || []).map((item, index) => {
       // Check if content is HTML or plain text
       const isHTML = item.content && item.content.includes('<')
       

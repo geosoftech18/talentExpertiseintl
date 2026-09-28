@@ -14,6 +14,10 @@ import {
   CommandItem,
   CommandList,
 } from "@/components/ui/command"
+import {
+  renumberCourseOutlineDays,
+  sortCourseOutlineItems,
+} from "@/lib/utils/course-outline-order"
 
 // Dynamically import RichTextEditor to avoid SSR issues
 const RichTextEditor = dynamic(
@@ -215,14 +219,19 @@ export default function AddNewProgram({ onBack, editId }: { onBack?: () => void;
               setPendingStudyFiles([])
             }
             
-            // Load course outline
+            // Load course outline in numeric Day order (Day 1, Day 2, …)
             if (program.courseOutline && program.courseOutline.length > 0) {
-              setCourseOutline(program.courseOutline.map((item: any, index: number) => ({
-                id: String(index + 1),
-                day: item.day || `Day ${index + 1}`,
-                title: item.title || "",
-                content: item.content || "",
-              })))
+              const ordered = sortCourseOutlineItems(program.courseOutline)
+              setCourseOutline(
+                renumberCourseOutlineDays(
+                  ordered.map((item: any, index: number) => ({
+                    id: item.id ? String(item.id) : `outline-${index + 1}`,
+                    day: item.day || `Day ${index + 1}`,
+                    title: item.title || "",
+                    content: item.content || "",
+                  }))
+                )
+              )
             }
             
             // Load certificate IDs
@@ -383,7 +392,7 @@ export default function AddNewProgram({ onBack, editId }: { onBack?: () => void;
 
   const addCourseOutlineItem = () => {
     const newItem: CourseOutlineItem = {
-      id: Date.now().toString(),
+      id: `outline-${Date.now()}`,
       day: `Day ${courseOutline.length + 1}`,
       title: "",
       content: "",
@@ -392,7 +401,9 @@ export default function AddNewProgram({ onBack, editId }: { onBack?: () => void;
   }
 
   const removeCourseOutlineItem = (id: string) => {
-    setCourseOutline(courseOutline.filter((item) => item.id !== id))
+    setCourseOutline(
+      renumberCourseOutlineDays(courseOutline.filter((item) => item.id !== id))
+    )
   }
 
   const updateCourseOutlineItem = (id: string, field: string, value: string) => {
@@ -506,8 +517,8 @@ export default function AddNewProgram({ onBack, editId }: { onBack?: () => void;
       const payload: Record<string, unknown> = {
         id: editId,
         ...formData,
-        courseOutline: courseOutline.map(item => ({
-          day: item.day,
+        courseOutline: courseOutline.map((item, index) => ({
+          day: `Day ${index + 1}`,
           title: item.title,
           content: item.content,
         })),
@@ -1160,6 +1171,7 @@ export default function AddNewProgram({ onBack, editId }: { onBack?: () => void;
                 <div>
                   <label className="block text-sm font-semibold theme-text mb-2">Module Content</label>
                   <RichTextEditor
+                    key={`outline-editor-${item.id}`}
                     value={item.content}
                     onChange={(value) => updateCourseOutlineItem(item.id, "content", value)}
                     placeholder="Enter module content/topics..."

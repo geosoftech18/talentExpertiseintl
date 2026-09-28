@@ -413,6 +413,33 @@
   align-items: flex-start;
 }
 
+/*
+ * TipTap blank lines: empty <p></p> / <p><br></p> collapse on the public site.
+ * Preserve one line-height so Enter spacing from the admin editor is visible.
+ * Applied to SafeHtml (.rich-text-content), introduction (.intro-body),
+ * course outline modules, and general .prose course HTML.
+ */
+.rich-text-content p:empty,
+.intro-body p:empty,
+.course-outline-module-content p:empty,
+.prose p:empty {
+  min-height: 1.5em;
+}
+
+.rich-text-content p:empty::before,
+.intro-body p:empty::before,
+.course-outline-module-content p:empty::before,
+.prose p:empty::before {
+  content: "\00a0";
+}
+
+.rich-text-content p:has(> br:only-child),
+.intro-body p:has(> br:only-child),
+.course-outline-module-content p:has(> br:only-child),
+.prose p:has(> br:only-child) {
+  min-height: 1.5em;
+}
+
 /* Course Registration Form Animations */
 @keyframes fade-in {
   from {

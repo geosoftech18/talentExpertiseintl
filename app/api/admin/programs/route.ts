@@ -1,6 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { setProgramStudyMaterials, type StudyMaterialItem } from '@/lib/program-study-material'
+import {
+  normalizeCourseOutlineForSave,
+  sortCourseOutlineItems,
+} from '@/lib/utils/course-outline-order'
 
 function normalizeStudyMaterialsFromBody(body: Record<string, unknown>): StudyMaterialItem[] {
   if (Array.isArray(body.studyMaterials)) {
@@ -51,11 +55,7 @@ export async function POST(request: NextRequest) {
         cardImageUrl: body.cardImageUrl || null,
         // Create related data
         courseOutline: {
-          create: body.courseOutline?.map((item: any) => ({
-            day: item.day,
-            title: item.title,
-            content: item.content,
-          })) || [],
+          create: normalizeCourseOutlineForSave(body.courseOutline || []),
         },
         certificateIds: body.certificateIds || [],
         faqs: {
@@ -169,9 +169,16 @@ export async function GET(request: NextRequest) {
       ? filteredPrograms.slice(skip, skip + limit)
       : filteredPrograms
 
+    const data = includeDetails
+      ? paginatedPrograms.map((program: any) => ({
+          ...program,
+          courseOutline: sortCourseOutlineItems(program.courseOutline || []),
+        }))
+      : paginatedPrograms
+
     return NextResponse.json({
       success: true,
-      data: paginatedPrograms,
+      data,
       pagination: {
         page,
         limit,
@@ -228,14 +235,10 @@ export async function PUT(request: NextRequest) {
 
     // Update nested relations if provided
     if (updateData.courseOutline) {
-      // Delete existing course outline and create new ones
+      // Delete existing course outline and create new ones in form order
       await prisma.courseOutline.deleteMany({ where: { programId: id } })
       updatePayload.courseOutline = {
-        create: updateData.courseOutline.map((item: any) => ({
-          day: item.day,
-          title: item.title,
-          content: item.content,
-        })),
+        create: normalizeCourseOutlineForSave(updateData.courseOutline),
       }
     }
 

@@ -66,8 +66,11 @@ export function RichTextEditor({
     content: value || "",
     onUpdate: ({ editor: ed }) => {
       const html = ed.getHTML()
-      if (html !== value) {
-        onChange(html)
+      // Keep blank lines as <p><br></p> so frontend spacing matches the editor
+      const normalized = html
+        .replace(/<p([^>]*)>(?:\s|&nbsp;|&#160;|\u00a0)*<\/p>/gi, '<p$1><br></p>')
+      if (normalized !== value) {
+        onChange(normalized)
       }
     },
     editorProps: {

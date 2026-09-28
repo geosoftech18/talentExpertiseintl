@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect, useMemo } from "react"
-import { Search, Eye, Download, Loader2, Award, CheckIcon, ChevronDownIcon, FileSpreadsheet } from "lucide-react"
+import { Search, Eye, Download, Loader2, Award, CheckIcon, ChevronDownIcon, FileSpreadsheet, Calendar } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
 import {
@@ -29,6 +29,14 @@ interface IssuedCertificate {
   schedule: string
   venue: string | null
   submittedAt: string
+  startDate?: string | null
+  endDate?: string | null
+}
+
+function toDayStart(value: string | Date): Date {
+  const d = new Date(value)
+  d.setHours(0, 0, 0, 0)
+  return d
 }
 
 export default function IssuedCertificates() {
@@ -39,6 +47,7 @@ export default function IssuedCertificates() {
   const [selectedCourse, setSelectedCourse] = useState("")
   const [courseSearchOpen, setCourseSearchOpen] = useState(false)
   const [courseSearch, setCourseSearch] = useState("")
+  const [scheduleDateFilter, setScheduleDateFilter] = useState("")
   const [busyId, setBusyId] = useState<string | null>(null)
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
 
@@ -88,6 +97,16 @@ export default function IssuedCertificates() {
       list = list.filter((c) => c.courseName === selectedCourse)
     }
 
+    if (scheduleDateFilter) {
+      const filterDay = toDayStart(scheduleDateFilter).getTime()
+      list = list.filter((c) => {
+        if (!c.startDate) return false
+        const startDay = toDayStart(c.startDate).getTime()
+        const endDay = c.endDate ? toDayStart(c.endDate).getTime() : startDay
+        return filterDay >= startDay && filterDay <= endDay
+      })
+    }
+
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase()
       list = list.filter(
@@ -101,7 +120,7 @@ export default function IssuedCertificates() {
     }
 
     return list
-  }, [certificates, searchQuery, selectedCourse])
+  }, [certificates, searchQuery, selectedCourse, scheduleDateFilter])
 
   const allFilteredSelected =
     filtered.length > 0 && filtered.every((c) => selectedIds.has(c.id))
@@ -233,7 +252,9 @@ export default function IssuedCertificates() {
     )
   }
 
-  const hasActiveFilters = Boolean(searchQuery.trim() || selectedCourse)
+  const hasActiveFilters = Boolean(
+    searchQuery.trim() || selectedCourse || scheduleDateFilter
+  )
 
   return (
     <div className="p-8 space-y-6 theme-bg">
@@ -363,6 +384,20 @@ export default function IssuedCertificates() {
               </Command>
             </PopoverContent>
           </Popover>
+        </div>
+
+        <div className="w-full sm:w-[200px] shrink-0 relative" title="Filter by course schedule date">
+          <Calendar
+            size={16}
+            className="absolute left-3 top-1/2 -translate-y-1/2 theme-muted pointer-events-none"
+          />
+          <input
+            type="date"
+            value={scheduleDateFilter}
+            onChange={(e) => setScheduleDateFilter(e.target.value)}
+            aria-label="Filter by schedule date"
+            className="w-full pl-10 pr-3 py-2 bg-input border border-border rounded-lg theme-text text-sm focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary h-11"
+          />
         </div>
       </div>
 

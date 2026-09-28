@@ -6,6 +6,7 @@ async function getCourseData(slug: string) {
     // Use internal API call (faster, no network overhead)
     const { prisma } = await import('@/lib/prisma')
     const { generateSlug } = await import('@/lib/utils/slug')
+    const { sortCourseOutlineItems } = await import('@/lib/utils/course-outline-order')
 
     // Fetch all published programs to find matching slug
     const allPrograms = await prisma.program.findMany({
@@ -25,7 +26,7 @@ async function getCourseData(slug: string) {
     const program = await prisma.program.findUnique({
       where: { id: matchingProgram.id },
       include: {
-        courseOutline: { orderBy: { day: 'asc' } },
+        courseOutline: { orderBy: { createdAt: 'asc' } },
         certifications: true,
         faqs: true,
         schedules: {
@@ -76,7 +77,7 @@ async function getCourseData(slug: string) {
       status: schedule.status.toLowerCase(),
     }))
 
-    const outline = program.courseOutline.map((item, index) => {
+    const outline = sortCourseOutlineItems(program.courseOutline || []).map((item, index) => {
       const isHTML = item.content && item.content.includes('<')
       
       return {
