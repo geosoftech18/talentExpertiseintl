@@ -2,13 +2,26 @@
 
 import { useState, useEffect, useMemo } from "react"
 import React from "react"
-import { Plus, Edit2, Trash2, Search, Eye, X, Calendar, Filter, Download, Upload, FileSpreadsheet, ChevronLeft, ChevronRight } from "lucide-react"
+import { Plus, Edit2, Trash2, Search, Eye, X, Calendar, Filter, Download, Upload, FileSpreadsheet, ChevronLeft, ChevronRight, CheckIcon, ChevronDownIcon } from "lucide-react"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog"
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Checkbox } from "@/components/ui/checkbox"
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover"
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command"
 import { format } from "date-fns"
 import * as XLSX from "xlsx"
 
@@ -87,6 +100,10 @@ export default function CourseManagement({ onAddProgram, onAddSchedule, onEditPr
   const [error, setError] = useState<string | null>(null)
   const [scheduleError, setScheduleError] = useState<string | null>(null)
   const [searchTerm, setSearchTerm] = useState("")
+  const [selectedCategory, setSelectedCategory] = useState("")
+  const [categoryOptions, setCategoryOptions] = useState<string[]>([])
+  const [categorySearchOpen, setCategorySearchOpen] = useState(false)
+  const [categorySearch, setCategorySearch] = useState("")
   const [selectedMonth, setSelectedMonth] = useState<string>('all')
   const [selectedYear, setSelectedYear] = useState<string>('all')
   
@@ -170,7 +187,23 @@ export default function CourseManagement({ onAddProgram, onAddSchedule, onEditPr
     } else if (activeTab === 'programs') {
       setProgramPage(1)
     }
-  }, [selectedMonth, selectedYear, searchTerm, activeTab])
+  }, [selectedMonth, selectedYear, searchTerm, selectedCategory, activeTab])
+
+  // Fetch distinct categories from database (programs tab filter)
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const response = await fetch('/api/admin/programs/categories')
+        const result = await response.json()
+        if (result.success && Array.isArray(result.data)) {
+          setCategoryOptions(result.data)
+        }
+      } catch (err) {
+        console.error('Error fetching program categories:', err)
+      }
+    }
+    fetchCategories()
+  }, [])
 
   // Fetch programs from database (light list — details load on expand only)
   useEffect(() => {
@@ -706,9 +739,13 @@ export default function CourseManagement({ onAddProgram, onAddSchedule, onEditPr
   }
 
   // Programs are already filtered server-side, so use them directly
-  // Filter programs based on search term (client-side for instant feedback, like schedules)
+  // Filter programs based on search term + category (client-side for instant feedback)
   const filteredPrograms = useMemo(() => {
     let filtered = programs
+
+    if (selectedCategory) {
+      filtered = filtered.filter((program) => program.category === selectedCategory)
+    }
 
     // Filter by search term (client-side for instant feedback)
     if (searchTerm.trim() && activeTab === 'programs') {
@@ -723,7 +760,13 @@ export default function CourseManagement({ onAddProgram, onAddSchedule, onEditPr
     }
 
     return filtered
-  }, [programs, searchTerm, activeTab])
+  }, [programs, searchTerm, selectedCategory, activeTab])
+
+  const filteredCategories = useMemo(() => {
+    if (!categorySearch.trim()) return categoryOptions
+    const q = categorySearch.toLowerCase()
+    return categoryOptions.filter((c) => c.toLowerCase().includes(q))
+  }, [categoryOptions, categorySearch])
 
   // Calculate pagination for filtered programs (client-side pagination)
   const paginatedPrograms = useMemo(() => {
@@ -856,24 +899,106 @@ export default function CourseManagement({ onAddProgram, onAddSchedule, onEditPr
 
       {/* Search and Filter */}
       <div className="space-y-4">
-        {/* Search Bar */}
-        <div className="relative">
-          <Search size={18} className="absolute left-3 top-1/2 transform -translate-y-1/2 theme-muted" />
-          <input
-            type="text"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            placeholder={activeTab === "programs" ? "Search by reference code, name, or category..." : "Search by program name or venue..."}
-            className="w-full pl-10 pr-10 py-2 bg-input border border-border rounded-lg theme-text placeholder-muted-foreground focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all"
-          />
-          {searchTerm && (
-            <button
-              onClick={() => setSearchTerm("")}
-              className="absolute right-3 top-1/2 transform -translate-y-1/2 theme-muted hover:theme-text transition-colors"
-              title="Clear search"
-            >
-              <X size={18} />
-            </button>
+        {/* Search Bar + Category filter (programs) */}
+        <div className="flex flex-col sm:flex-row gap-4">
+          <div className="relative flex-1">
+            <Search size={18} className="absolute left-3 top-1/2 transform -translate-y-1/2 theme-muted" />
+            <input
+              type="text"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              placeholder={activeTab === "programs" ? "Search by reference code, name, or category..." : "Search by program name or venue..."}
+              className="w-full pl-10 pr-10 py-2 bg-input border border-border rounded-lg theme-text placeholder-muted-foreground focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all h-11"
+            />
+            {searchTerm && (
+              <button
+                onClick={() => setSearchTerm("")}
+                className="absolute right-3 top-1/2 transform -translate-y-1/2 theme-muted hover:theme-text transition-colors"
+                title="Clear search"
+              >
+                <X size={18} />
+              </button>
+            )}
+          </div>
+
+          {activeTab === "programs" && (
+            <div className="w-full sm:w-[280px] shrink-0">
+              <Popover
+                open={categorySearchOpen}
+                onOpenChange={(open) => {
+                  setCategorySearchOpen(open)
+                  if (!open) setCategorySearch("")
+                }}
+              >
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    role="combobox"
+                    aria-expanded={categorySearchOpen}
+                    className="w-full justify-between bg-input border-border theme-text h-11 font-normal"
+                  >
+                    <span className="truncate">
+                      {selectedCategory || "All categories"}
+                    </span>
+                    <ChevronDownIcon className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent
+                  className="w-[var(--radix-popover-trigger-width)] p-0"
+                  align="start"
+                >
+                  <Command shouldFilter={false}>
+                    <CommandInput
+                      placeholder="Search categories..."
+                      value={categorySearch}
+                      onValueChange={setCategorySearch}
+                    />
+                    <CommandList>
+                      <CommandEmpty>
+                        No category found matching &quot;{categorySearch}&quot;.
+                      </CommandEmpty>
+                      <CommandGroup>
+                        <CommandItem
+                          value="__all__"
+                          onSelect={() => {
+                            setSelectedCategory("")
+                            setCategorySearchOpen(false)
+                            setCategorySearch("")
+                          }}
+                          className="cursor-pointer"
+                        >
+                          <CheckIcon
+                            className={`mr-2 h-4 w-4 ${
+                              !selectedCategory ? "opacity-100" : "opacity-0"
+                            }`}
+                          />
+                          <span>All categories</span>
+                        </CommandItem>
+                        {filteredCategories.map((category) => (
+                          <CommandItem
+                            key={category}
+                            value={category}
+                            onSelect={() => {
+                              setSelectedCategory(category)
+                              setCategorySearchOpen(false)
+                              setCategorySearch("")
+                            }}
+                            className="cursor-pointer"
+                          >
+                            <CheckIcon
+                              className={`mr-2 h-4 w-4 ${
+                                selectedCategory === category ? "opacity-100" : "opacity-0"
+                              }`}
+                            />
+                            <span className="truncate">{category}</span>
+                          </CommandItem>
+                        ))}
+                      </CommandGroup>
+                    </CommandList>
+                  </Command>
+                </PopoverContent>
+              </Popover>
+            </div>
           )}
         </div>
 

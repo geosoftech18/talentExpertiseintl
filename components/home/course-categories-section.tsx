@@ -37,7 +37,6 @@ import {
   Calendar,
   Loader2,
 } from "lucide-react"
-import { isVisibleInCourseListings } from "@/lib/utils/course-visibility"
 // Registration form is now on a dedicated page
 
 // Category metadata mapping - static styling for each category
@@ -293,6 +292,8 @@ const specialOffers = [
 
 interface Course {
   id: string
+  programId?: string
+  scheduleId?: string
   slug: string
   title: string
   description: string
@@ -356,64 +357,58 @@ export default function CourseCategoriesSection() {
     return text.trim()
   }
 
-  // Fetch courses and generate categories dynamically
+  // Fetch categories with total published program counts (scheduled + unscheduled)
   useEffect(() => {
     const fetchCategories = async () => {
       try {
         setLoadingCategories(true)
-        // Fetch all courses (including expired to get all categories)
-        const response = await fetch('/api/courses?limit=10000&includeExpired=true')
+        const response = await fetch('/api/courses/categories')
         const result = await response.json()
-        
-        if (result.success && result.data) {
-          const courses = result.data
-          
-          // Group courses by category and count listing-window courses (14+ days to start)
-          const categoryMap = new Map<string, {
-            count: number
-            description?: string
-          }>()
-          
-          courses.forEach((course: any) => {
-            if (!course.category) return
-            
-            if (isVisibleInCourseListings(course.startDate)) {
-              const existing = categoryMap.get(course.category) || { count: 0 }
-              categoryMap.set(course.category, {
-                count: existing.count + 1,
-                description: existing.description || course.description || undefined
-              })
-            }
-          })
-          
-          // Generate categories array from the map
-          const generatedCategories = Array.from(categoryMap.entries())
-            .map(([categoryName, data]) => {
-              const metadata = categoryMetadata[categoryName] || getDefaultMetadata(categoryName)
-              
-              // Use description from first course if available, otherwise use metadata description
-              const description = data.description 
-                ? stripHtml(data.description).substring(0, 100) + (stripHtml(data.description).length > 100 ? '...' : '')
-                : metadata.description
-              
-              return {
-                id: metadata.id,
-                title: categoryName,
-                description: description,
-                icon: metadata.icon,
-                courseCount: data.count,
-                color: metadata.color,
-                bgColor: metadata.bgColor,
-                textColor: metadata.textColor,
-                borderColor: metadata.borderColor,
-                image: "/placeholder.svg?height=200&width=300",
-                trending: metadata.trending,
-                featured: metadata.featured,
+
+        if (result.success && Array.isArray(result.data)) {
+          const generatedCategories = result.data
+            .map(
+              (row: {
+                category: string
+                count: number
+                description?: string | null
+              }) => {
+                const categoryName = row.category
+                const metadata =
+                  categoryMetadata[categoryName] ||
+                  getDefaultMetadata(categoryName)
+
+                const rawDescription = row.description || ''
+                const description = rawDescription
+                  ? stripHtml(rawDescription).substring(0, 100) +
+                    (stripHtml(rawDescription).length > 100 ? '...' : '')
+                  : metadata.description
+
+                return {
+                  id: metadata.id,
+                  title: categoryName,
+                  description,
+                  icon: metadata.icon,
+                  courseCount: row.count,
+                  color: metadata.color,
+                  bgColor: metadata.bgColor,
+                  textColor: metadata.textColor,
+                  borderColor: metadata.borderColor,
+                  image: '/placeholder.svg?height=200&width=300',
+                  trending: metadata.trending,
+                  featured: metadata.featured,
+                }
               }
-            })
-            .sort((a, b) => b.courseCount - a.courseCount) // Sort by course count descending
-          
+            )
+            .filter((cat: { courseCount: number }) => cat.courseCount > 0)
+            .sort(
+              (a: { courseCount: number }, b: { courseCount: number }) =>
+                b.courseCount - a.courseCount
+            )
+
           setCourseCategories(generatedCategories)
+        } else {
+          setCourseCategories([])
         }
       } catch (error) {
         console.error('Error fetching categories:', error)
@@ -422,7 +417,7 @@ export default function CourseCategoriesSection() {
         setLoadingCategories(false)
       }
     }
-    
+
     fetchCategories()
   }, [])
 
@@ -513,11 +508,22 @@ export default function CourseCategoriesSection() {
         // The database category should match the category title
         const categoryName = category.title
         
-        const response = await fetch(`/api/courses?category=${encodeURIComponent(categoryName)}&limit=50`)
+        const response = await fetch(
+          `/api/courses?category=${encodeURIComponent(categoryName)}&limit=10000`
+        )
         const result = await response.json()
 
         if (result.success && result.data) {
-          setCategoryCourses(result.data)
+          // Show upcoming scheduled runs; card count includes unscheduled programs too
+          const seenPrograms = new Set<string>()
+          const uniqueByProgram: Course[] = []
+          for (const course of result.data as Course[]) {
+            const key = course.programId || course.id
+            if (seenPrograms.has(key)) continue
+            seenPrograms.add(key)
+            uniqueByProgram.push(course)
+          }
+          setCategoryCourses(uniqueByProgram)
         } else {
           setCategoryCourses([])
         }
