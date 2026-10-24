@@ -136,6 +136,7 @@ export const ADMIN_EMAILS = [
   'info@talentexpertiseintl.com',
   'admin@talentexpertiseintl.com',
   'mitchelle.bob@talentexpertiseintl.com',
+  'ashley.bob@talentexpertiseintl.com',
   'info@geosoftech.com'
 ]
 
